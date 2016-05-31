@@ -16,8 +16,9 @@ process.source = cms.Source("PoolSource",
                             fileNames = cms.untracked.vstring()
 )
 
-process.load("Haamm.HaNaMiniAnalyzer.TTH_cfi")
-process.load("Haamm.HaNaMiniAnalyzer.Hamb_cfi")
+process.load("tHqAnalyzer.HaNaMiniAnalyzer.TTH_cfi")
+process.load("tHqAnalyzer.HaNaMiniAnalyzer.Hamb_cfi")
+process.load("tHqAnalyzer.HaNaMiniAnalyzer.GenMT2Studies_cff")
 #process.TTH 
 
 import FWCore.ParameterSet.VarParsing as opts
@@ -62,13 +63,19 @@ if options.sync == 0 :
         if sample.Name == options.sample :
             theSample = sample
 
-    if not theSample.Name == options.sample:
-        raise NameError("The correct sample is not found %s !+ %s" % (sample.Name , options.sample) )
-
+    if theSample == None:
+        from Samples76.TTDmSignal import TTDMSignals as SignalSamples
+        for sample in SignalSamples:
+            if sample.Name == options.sample :
+                theSample = sample
+    
     if theSample == None:
         raise NameError("Sample with name %s wasn't found" % (options.sample))
+
+    if not theSample.Name == options.sample:
+        raise NameError("The correct sample is not found %s !+ %s" % (sample.Name , options.sample) )
 else:
-    from Haamm.HaNaMiniAnalyzer.Sample import *
+    from tHqAnalyzer.HaNaMiniAnalyzer.Sample import *
     theSample = Sample( "Sync" , "Sync" , 100 , False , 0 , "" )
     theSample.Files = ['/store/mc/RunIIFall15MiniAODv2/TT_TuneCUETP8M1_13TeV-powheg-pythia8/MINIAODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12_ext3-v1/00000/0C5BB11A-E2C1-E511-8C02-002590A831B6.root']
     options.nFilesPerJob = 1
@@ -121,7 +128,8 @@ else :
 
     process.TTH.Jets.Input = "patJetsReapplyJEC"
     process.Hamb.Jets.Input = "patJetsReapplyJEC"
-    process.p = cms.Path( process.patJetCorrFactorsReapplyJEC + process.patJetsReapplyJEC + process.TTH + process.Hamb)
+    process.genPath = cms.Path( process.GenMT2 )
+    #process.p = cms.Path( process.patJetCorrFactorsReapplyJEC + process.patJetsReapplyJEC + process.TTH + process.Hamb)
     if options.sync == 0 :
         for v in range(0 , 10 ):
             process.TTH.HLT.HLT_To_Or.append( 'HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ_v%d' % (v) )

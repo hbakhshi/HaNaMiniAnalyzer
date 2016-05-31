@@ -1,4 +1,4 @@
-#include "Haamm/HaNaMiniAnalyzer/interface/DiMuonReader.h"
+#include "tHqAnalyzer/HaNaMiniAnalyzer/interface/DiMuonReader.h"
 
 using namespace edm;
 using namespace pat;

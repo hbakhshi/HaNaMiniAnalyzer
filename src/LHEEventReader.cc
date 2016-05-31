@@ -1,4 +1,4 @@
-#include "Haamm/HaNaMiniAnalyzer/interface/LHEEventReader.h"
+#include "tHqAnalyzer/HaNaMiniAnalyzer/interface/LHEEventReader.h"
 
 LHEEventReader::LHEEventReader( edm::ParameterSet const& iPS, edm::ConsumesCollector && iC) :
   BaseEventReader< LHEEventProduct >( iPS , &iC )

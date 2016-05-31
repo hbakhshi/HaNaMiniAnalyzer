@@ -1,4 +1,4 @@
-#include "Haamm/HaNaMiniAnalyzer/interface/METReader.h"
+#include "tHqAnalyzer/HaNaMiniAnalyzer/interface/METReader.h"
 
 using namespace edm;
 using namespace reco;

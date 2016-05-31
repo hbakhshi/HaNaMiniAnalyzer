@@ -43,32 +43,32 @@
  * Here is an example of it's use:
  
 
-double mVisA = 10; // mass of visible object on side A.  Must be >=0.
-double pxA = 20; // x momentum of visible object on side A.
-double pyA = 30; // y momentum of visible object on side A.
+ double mVisA = 10; // mass of visible object on side A.  Must be >=0.
+ double pxA = 20; // x momentum of visible object on side A.
+ double pyA = 30; // y momentum of visible object on side A.
 
-double mVisB = 10; // mass of visible object on side B.  Must be >=0.
-double pxB = -20; // x momentum of visible object on side B.
-double pyB = -30; // y momentum of visible object on side B.
+ double mVisB = 10; // mass of visible object on side B.  Must be >=0.
+ double pxB = -20; // x momentum of visible object on side B.
+ double pyB = -30; // y momentum of visible object on side B.
 
-double pxMiss = -5; // x component of missing transverse momentum.
-double pyMiss = -5; // y component of missing transverse momentum.
+ double pxMiss = -5; // x component of missing transverse momentum.
+ double pyMiss = -5; // y component of missing transverse momentum.
 
-double chiA = 4; // hypothesised mass of invisible on side A.  Must be >=0.
-double chiB = 7; // hypothesised mass of invisible on side B.  Must be >=0.
+ double chiA = 4; // hypothesised mass of invisible on side A.  Must be >=0.
+ double chiB = 7; // hypothesised mass of invisible on side B.  Must be >=0.
 
-double desiredPrecisionOnMt2 = 0; // Must be >=0.  If 0 alg aims for machine precision.  if >0, MT2 computed to supplied absolute precision.
+ double desiredPrecisionOnMt2 = 0; // Must be >=0.  If 0 alg aims for machine precision.  if >0, MT2 computed to supplied absolute precision.
 
-// asymm_mt2_lester_bisect::disableCopyrightMessage();
+ // asymm_mt2_lester_bisect::disableCopyrightMessage();
 
-double MT2 =  asymm_mt2_lester_bisect::get_mT2(
-           mVisA, pxA, pyA,
-           mVisB, pxB, pyB,
-           pxMiss, pyMiss,
-           chiA, chiB,
-           desiredPrecisionOnMt2);
+ double MT2 =  asymm_mt2_lester_bisect::get_mT2(
+ mVisA, pxA, pyA,
+ mVisB, pxB, pyB,
+ pxMiss, pyMiss,
+ chiA, chiB,
+ desiredPrecisionOnMt2);
 
- */
+*/
 
 
 #ifndef LESTER_TESTWHETHERELLIPSESAREDISJOINT_H
@@ -88,13 +88,13 @@ double MT2 =  asymm_mt2_lester_bisect::get_mT2(
  *
  * It uses the method of:
 
-Computer Aided Geometric Design 23 (2006) 324–350
-A new approach to characterizing the relative position of two ellipses depending on one parameter
-Fernando Etayo 1,3, Laureano Gonzalez-Vega ∗,2,3, Natalia del Rio 3
-Departamento de Matematicas, Estadistica y Computacion, Universidad de Cantabria, Spain
-Received 15 September 2004; received in revised form 2 November 2005; accepted 10 January 2006 Available online 28 February 2006
+ Computer Aided Geometric Design 23 (2006) 324–350
+ A new approach to characterizing the relative position of two ellipses depending on one parameter
+ Fernando Etayo 1,3, Laureano Gonzalez-Vega ∗,2,3, Natalia del Rio 3
+ Departamento de Matematicas, Estadistica y Computacion, Universidad de Cantabria, Spain
+ Received 15 September 2004; received in revised form 2 November 2005; accepted 10 January 2006 Available online 28 February 2006
 
-pointed out to me by Gary B. Huges and Mohcine Chraibi authors of
+ pointed out to me by Gary B. Huges and Mohcine Chraibi authors of
 
  Comput Visual Sci (2012) 15:291–301 DOI 10.1007/s00791-013-0214-3
  Calculating ellipse overlap areas Gary B. Hughes · Mohcine Chraibi
@@ -127,150 +127,150 @@ pointed out to me by Gary B. Huges and Mohcine Chraibi authors of
 
 namespace Lester {
 
-struct EllipseParams {
+  struct EllipseParams {
 
 
-  // Constructor for non-degenerate ellipses:
-  /*
-   * Ellipse is represented algebraically by:
-   * c_xx x^2 + 2 c_xy x y + c_yy y^2 + 2 c_x x + 2 c_y y + c = 0.
-   */
-  EllipseParams(
-    const double c_xx2,
-    const double c_yy2,
-    const double c_xy2,
-    const double c_x2,
-    const double c_y2,
-    const double c2) :
-    c_xx(c_xx2),
-    c_yy(c_yy2),
-    c_xy(c_xy2),
-    c_x(c_x2),
-    c_y(c_y2),
-    c(c2) {
-     //Etayo et al REQUIRE that c_xx and c_yy are non-negative, so:
-     if (c_xx<0 || c_yy<0) {
-       throw "precondition violation";
-     }
-    setDet();
+    // Constructor for non-degenerate ellipses:
+    /*
+     * Ellipse is represented algebraically by:
+     * c_xx x^2 + 2 c_xy x y + c_yy y^2 + 2 c_x x + 2 c_y y + c = 0.
+     */
+    EllipseParams(
+		  const double c_xx2,
+		  const double c_yy2,
+		  const double c_xy2,
+		  const double c_x2,
+		  const double c_y2,
+		  const double c2) :
+      c_xx(c_xx2),
+      c_yy(c_yy2),
+      c_xy(c_xy2),
+      c_x(c_x2),
+      c_y(c_y2),
+      c(c2) {
+      //Etayo et al REQUIRE that c_xx and c_yy are non-negative, so:
+      if (c_xx<0 || c_yy<0) {
+	throw "precondition violation";
+      }
+      setDet();
+    }
+    EllipseParams() {
+    }
+    void setDet() {
+      det = (2.0*c_x*c_xy*c_y + c*c_xx*c_yy - c_yy*c_x*c_x - c*c_xy*c_xy - c_xx*c_y*c_y) ;
+    }
+    // Consstructor for degenerate ellipse (i.e. a "dot" at (x0,y0) ).
+    EllipseParams(
+		  const double x0,
+		  const double y0) :
+      c_xx(1),
+      c_yy(1),
+      c_xy(0),
+      c_x(-x0),
+      c_y(-y0),
+      c(x0*x0 + y0*y0),
+      det(0) {
+    }
+    double lesterFactor(const EllipseParams & e2) const {
+      const EllipseParams & e1 = *this;
+      const double ans  = e1.c_xx*e1.c_yy*e2.c + 2.0*e1.c_xy*e1.c_y*e2.c_x - 2.0*e1.c_x*e1.c_yy*e2.c_x + e1.c*e1.c_yy*e2.c_xx - 2.0*e1.c*e1.c_xy*e2.c_xy + 2.0*e1.c_x*e1.c_y*e2.c_xy + 2.0*e1.c_x*e1.c_xy*e2.c_y - 2.0*e1.c_xx*e1.c_y*e2.c_y + e1.c*e1.c_xx*e2.c_yy - e2.c_yy*(e1.c_x*e1.c_x) - e2.c*(e1.c_xy*e1.c_xy) - e2.c_xx*(e1.c_y*e1.c_y);
+      return ans;
+    }
+    bool operator==(const EllipseParams & other) const {
+      return
+	c_xx == other.c_xx &&
+	c_yy == other.c_yy &&
+	c_xy == other.c_xy &&
+	c_x == other.c_x &&
+	c_y == other.c_y &&
+	c == other.c;
+    }
+  public:
+    // Data
+    double c_xx;
+    double c_yy;
+    double c_xy; // note factor of 2 above
+    double c_x;  // note factor of 2 above
+    double c_y;  // note factor of 2 above
+    double c;
+    double det; // The determinant of the 3x3 conic matrix
+  };
+
+  // This is the interface: users should call this function:
+  bool ellipsesAreDisjoint(const EllipseParams & e1, const EllipseParams & e2);
+
+  // This is an implementation thing: users should not call it:
+  bool __private_ellipsesAreDisjoint(const double coeffLamPow3, const double coeffLamPow2, const double coeffLamPow1, const double coeffLamPow0);
+
+  bool ellipsesAreDisjoint(const EllipseParams & e1, const EllipseParams & e2) {
+    /* We want to construct the polynomial "Det(lamdba A + B)" where A and B are the 3x3 matrices associated with e1 and e2, and we want to get that
+       polynomial in the form lambda^3 + a lambda^2 + b lambda + c.
+
+
+       Note that by default we will not have unity as the coefficient of the lambda^3 term, however the redundancy in the parametrisation of A and B allows us to scale the whole ply until the first term does have a unit coefficient.
+    */
+
+    if (e1==e2) {
+      return false; // Probably won't catch many cases, but may as well have it here.
+    }
+
+    // first get unscaled terms:
+    const double coeffLamPow3 = e1.det; // Note that this is the determinant of the symmetric matrix associated with e1.
+    const double coeffLamPow2 = e1.lesterFactor(e2);
+    const double coeffLamPow1 = e2.lesterFactor(e1);
+    const double coeffLamPow0 = e2.det; // Note that this is the determinant of the symmetric matrix associated with e2.
+
+    // Since question is "symmetric" and since we need to dovide by coeffLamPow3 ... do this the way round that involves dividing by the largest number:
+
+    if (fabs(coeffLamPow3) >= fabs(coeffLamPow0)) {
+      return __private_ellipsesAreDisjoint(coeffLamPow3, coeffLamPow2, coeffLamPow1, coeffLamPow0); // normal order
+    } else {
+      return __private_ellipsesAreDisjoint(coeffLamPow0, coeffLamPow1, coeffLamPow2, coeffLamPow3); // reversed order
+    }
   }
-  EllipseParams() {
-  }
-  void setDet() {
-    det = (2.0*c_x*c_xy*c_y + c*c_xx*c_yy - c_yy*c_x*c_x - c*c_xy*c_xy - c_xx*c_y*c_y) ;
-  }
-  // Consstructor for degenerate ellipse (i.e. a "dot" at (x0,y0) ).
-  EllipseParams(
-    const double x0,
-    const double y0) :
-    c_xx(1),
-    c_yy(1),
-    c_xy(0),
-    c_x(-x0),
-    c_y(-y0),
-    c(x0*x0 + y0*y0),
-    det(0) {
-  }
-  double lesterFactor(const EllipseParams & e2) const {
-    const EllipseParams & e1 = *this;
-    const double ans  = e1.c_xx*e1.c_yy*e2.c + 2.0*e1.c_xy*e1.c_y*e2.c_x - 2.0*e1.c_x*e1.c_yy*e2.c_x + e1.c*e1.c_yy*e2.c_xx - 2.0*e1.c*e1.c_xy*e2.c_xy + 2.0*e1.c_x*e1.c_y*e2.c_xy + 2.0*e1.c_x*e1.c_xy*e2.c_y - 2.0*e1.c_xx*e1.c_y*e2.c_y + e1.c*e1.c_xx*e2.c_yy - e2.c_yy*(e1.c_x*e1.c_x) - e2.c*(e1.c_xy*e1.c_xy) - e2.c_xx*(e1.c_y*e1.c_y);
-    return ans;
-  }
-  bool operator==(const EllipseParams & other) const {
-    return
-      c_xx == other.c_xx &&
-      c_yy == other.c_yy &&
-      c_xy == other.c_xy &&
-      c_x == other.c_x &&
-      c_y == other.c_y &&
-      c == other.c;
-  }
- public:
-  // Data
-  double c_xx;
-  double c_yy;
-  double c_xy; // note factor of 2 above
-  double c_x;  // note factor of 2 above
-  double c_y;  // note factor of 2 above
-  double c;
-  double det; // The determinant of the 3x3 conic matrix
-};
+  bool __private_ellipsesAreDisjoint(const double coeffLamPow3, const double coeffLamPow2, const double coeffLamPow1, const double coeffLamPow0) {
 
-// This is the interface: users should call this function:
-bool ellipsesAreDisjoint(const EllipseParams & e1, const EllipseParams & e2);
+    // precondition of being called:
+    //assert(fabs(coeffLamPow3)>=fabs(coeffLamPow0));
 
-// This is an implementation thing: users should not call it:
-bool __private_ellipsesAreDisjoint(const double coeffLamPow3, const double coeffLamPow2, const double coeffLamPow1, const double coeffLamPow0);
+    if(coeffLamPow3==0) {
+      // The ellipses were singular in some way.
+      // Cannot determine whether they are overlapping or not.
+      throw 1;
+    }
 
-bool ellipsesAreDisjoint(const EllipseParams & e1, const EllipseParams & e2) {
-  /* We want to construct the polynomial "Det(lamdba A + B)" where A and B are the 3x3 matrices associated with e1 and e2, and we want to get that
-  polynomial in the form lambda^3 + a lambda^2 + b lambda + c.
-
-
-  Note that by default we will not have unity as the coefficient of the lambda^3 term, however the redundancy in the parametrisation of A and B allows us to scale the whole ply until the first term does have a unit coefficient.
-  */
-
-  if (e1==e2) {
-    return false; // Probably won't catch many cases, but may as well have it here.
-  }
-
-  // first get unscaled terms:
-  const double coeffLamPow3 = e1.det; // Note that this is the determinant of the symmetric matrix associated with e1.
-  const double coeffLamPow2 = e1.lesterFactor(e2);
-  const double coeffLamPow1 = e2.lesterFactor(e1);
-  const double coeffLamPow0 = e2.det; // Note that this is the determinant of the symmetric matrix associated with e2.
-
-  // Since question is "symmetric" and since we need to dovide by coeffLamPow3 ... do this the way round that involves dividing by the largest number:
-
-  if (fabs(coeffLamPow3) >= fabs(coeffLamPow0)) {
-    return __private_ellipsesAreDisjoint(coeffLamPow3, coeffLamPow2, coeffLamPow1, coeffLamPow0); // normal order
-  } else {
-    return __private_ellipsesAreDisjoint(coeffLamPow0, coeffLamPow1, coeffLamPow2, coeffLamPow3); // reversed order
-  }
-}
-bool __private_ellipsesAreDisjoint(const double coeffLamPow3, const double coeffLamPow2, const double coeffLamPow1, const double coeffLamPow0) {
-
-  // precondition of being called:
-  //assert(fabs(coeffLamPow3)>=fabs(coeffLamPow0));
-
-  if(coeffLamPow3==0) {
-    // The ellipses were singular in some way.
-    // Cannot determine whether they are overlapping or not.
-    throw 1;
-  }
-
-  // now scale terms to monomial form:
-  const double a = coeffLamPow2 / coeffLamPow3;
-  const double b = coeffLamPow1 / coeffLamPow3;
-  const double c = coeffLamPow0 / coeffLamPow3;
+    // now scale terms to monomial form:
+    const double a = coeffLamPow2 / coeffLamPow3;
+    const double b = coeffLamPow1 / coeffLamPow3;
+    const double c = coeffLamPow0 / coeffLamPow3;
 
 #ifdef LESTER_DEEP_FIDDLE
-  {
-    const double thing1 = -3.0*b + a*a;
-    const double thing2 = -27.0*c*c + 18.0*c*a*b + a*a*b*b - 4.0*a*a*a*c - 4.0*b*b*b;
-    std::cout 
-      << (thing1>0) << " && " << (thing2>0) << " && [[ " << (a>=0) << " " << (3.0*a*c + b*a*a - 4.0*b*b<0)  << " ] or "
-      << "[ " << (a< 0)   << " ] =("<< ((a >= 0 /*&& thing1 > 0*/ && 3.0*a*c + b*a*a - 4.0*b*b< 0 /*&& thing2 > 0*/) ||
-                                 (a <  0 /*&& thing1 > 0*/                                 /*&& thing2 > 0*/)) << ")] " << (
-          ( (a >= 0 && thing1 > 0 && 3.0*a*c + b*a*a - 4.0*b*b< 0 && thing2 > 0) ||
-                                 (a <  0 && thing1 > 0                                 && thing2 > 0))
+    {
+      const double thing1 = -3.0*b + a*a;
+      const double thing2 = -27.0*c*c + 18.0*c*a*b + a*a*b*b - 4.0*a*a*a*c - 4.0*b*b*b;
+      std::cout 
+	<< (thing1>0) << " && " << (thing2>0) << " && [[ " << (a>=0) << " " << (3.0*a*c + b*a*a - 4.0*b*b<0)  << " ] or "
+	<< "[ " << (a< 0)   << " ] =("<< ((a >= 0 /*&& thing1 > 0*/ && 3.0*a*c + b*a*a - 4.0*b*b< 0 /*&& thing2 > 0*/) ||
+					  (a <  0 /*&& thing1 > 0*/                                 /*&& thing2 > 0*/)) << ")] " << (
+																     ( (a >= 0 && thing1 > 0 && 3.0*a*c + b*a*a - 4.0*b*b< 0 && thing2 > 0) ||
+																       (a <  0 && thing1 > 0                                 && thing2 > 0))
           
-          ) << std::endl;
-  }
+																     ) << std::endl;
+    }
 #endif
 
-  // Use the main result of the above paper:
-  const double thing1 = -3.0*b + a*a;
-  if (thing1<=0) return false;
-  const double thing2 = -27.0*c*c + 18.0*c*a*b + a*a*b*b - 4.0*a*a*a*c - 4.0*b*b*b;
-  if (thing2<=0) return false;
+    // Use the main result of the above paper:
+    const double thing1 = -3.0*b + a*a;
+    if (thing1<=0) return false;
+    const double thing2 = -27.0*c*c + 18.0*c*a*b + a*a*b*b - 4.0*a*a*a*c - 4.0*b*b*b;
+    if (thing2<=0) return false;
 
-  // ans true means ellipses are disjoint:
-  const bool ans = ( (a >= 0 /*&& thing1 > 0*/ && 3.0*a*c + b*a*a - 4.0*b*b< 0 /*&& thing2 > 0*/) ||
-                     (a <  0 /*&& thing1 > 0*/                                 /*&& thing2 > 0*/));
-  return ans;
+    // ans true means ellipses are disjoint:
+    const bool ans = ( (a >= 0 /*&& thing1 > 0*/ && 3.0*a*c + b*a*a - 4.0*b*b< 0 /*&& thing2 > 0*/) ||
+		       (a <  0 /*&& thing1 > 0*/                                 /*&& thing2 > 0*/));
+    return ans;
 
-}
+  }
 
 }
 
@@ -293,26 +293,26 @@ bool __private_ellipsesAreDisjoint(const double coeffLamPow3, const double coeff
 
 
 class asymm_mt2_lester_bisect {
- public:
+public:
 
   static const int MT2_ERROR=-1;
 
   static double get_mT2( // returns asymmetric mT2 (which is >=0), or returns a negative number (such as MT2_ERROR) in the case of an error.
-    const double mVis1, const double pxVis1, const double pyVis1,
-    const double mVis2, const double pxVis2, const double pyVis2,
-    const double pxMiss, const double pyMiss,
-    const double mInvis1, const double mInvis2,
-    const double desiredPrecisionOnMT2=0, // This must be non-negative.  If set to zero (default) MT2 will be calculated to the highest precision available on the machine (or as close to that as the algorithm permits).  If set to a positive value, MT2 (note that is MT2, not its square) will be calculated to within +- desiredPrecisionOnMT2. Note that by requesting precision of +- 0.01 GeV on an MT2 value of 100 GeV can result in speedups of a factor of ...
-    const bool useDeciSectionsInitially=true // If true, interval is cut at the 10% point until first acceptance, which gives factor 3 increase in speed calculating kinematic min, but 3% slowdown for events in the bulk.  Is on (true) by default, but can be turned off by setting to false.
-  ) {
+			const double mVis1, const double pxVis1, const double pyVis1,
+			const double mVis2, const double pxVis2, const double pyVis2,
+			const double pxMiss, const double pyMiss,
+			const double mInvis1, const double mInvis2,
+			const double desiredPrecisionOnMT2=0, // This must be non-negative.  If set to zero (default) MT2 will be calculated to the highest precision available on the machine (or as close to that as the algorithm permits).  If set to a positive value, MT2 (note that is MT2, not its square) will be calculated to within +- desiredPrecisionOnMT2. Note that by requesting precision of +- 0.01 GeV on an MT2 value of 100 GeV can result in speedups of a factor of ...
+			const bool useDeciSectionsInitially=true // If true, interval is cut at the 10% point until first acceptance, which gives factor 3 increase in speed calculating kinematic min, but 3% slowdown for events in the bulk.  Is on (true) by default, but can be turned off by setting to false.
+			 ) {
 
     const double mT2_Sq = get_mT2_Sq(
-                            mVis1, pxVis1, pyVis1,
-                            mVis2, pxVis2, pyVis2,
-                            pxMiss,pyMiss,
-                            mInvis1, mInvis2,
-                            desiredPrecisionOnMT2,
-                            useDeciSectionsInitially);
+				     mVis1, pxVis1, pyVis1,
+				     mVis2, pxVis2, pyVis2,
+				     pxMiss,pyMiss,
+				     mInvis1, mInvis2,
+				     desiredPrecisionOnMT2,
+				     useDeciSectionsInitially);
     if (mT2_Sq==MT2_ERROR) {
       return MT2_ERROR;
     }
@@ -322,39 +322,39 @@ class asymm_mt2_lester_bisect {
   static void disableCopyrightMessage(const bool printIfFirst=false) {
     static bool first = true;
     if (first && printIfFirst) {
-    std::cout 
-      << "\n\n"
-      << "#=========================================================\n"
-      << "# To disable this message, place a call to \n"
-      << "# \n"
-      << "#     asymm_mt2_lester_bisect::disableCopyrightMessage();\n"
-      << "# \n"
-      << "# somewhere before you begin to calculate your MT2 values.\n"
-      << "#=========================================================\n"
-      << "# You are calculating symmetric or asymmetric MT2 using\n"
-      << "# the implementation defined in:\n"
-      << "# \n"
-      << "#     http://arxiv.org/abs/1411.4312\n"
-      << "# \n"
-      << "# Please cite the paper above if you use the MT2 values\n"
-      << "# for a scholarly purpose. For the variable MT2 itself,\n"
-      << "# please also cite:\n"
-      << "# \n"
-      << "#     http://arxiv.org/abs/hep-ph/9906349\n"
-      << "#=========================================================\n"
-      << "\n\n" << std::flush;
+      std::cout 
+	<< "\n\n"
+	<< "#=========================================================\n"
+	<< "# To disable this message, place a call to \n"
+	<< "# \n"
+	<< "#     asymm_mt2_lester_bisect::disableCopyrightMessage();\n"
+	<< "# \n"
+	<< "# somewhere before you begin to calculate your MT2 values.\n"
+	<< "#=========================================================\n"
+	<< "# You are calculating symmetric or asymmetric MT2 using\n"
+	<< "# the implementation defined in:\n"
+	<< "# \n"
+	<< "#     http://arxiv.org/abs/1411.4312\n"
+	<< "# \n"
+	<< "# Please cite the paper above if you use the MT2 values\n"
+	<< "# for a scholarly purpose. For the variable MT2 itself,\n"
+	<< "# please also cite:\n"
+	<< "# \n"
+	<< "#     http://arxiv.org/abs/hep-ph/9906349\n"
+	<< "#=========================================================\n"
+	<< "\n\n" << std::flush;
     }
     first = false;
   }
 
   static double get_mT2_Sq( // returns square of asymmetric mT2 (which is >=0), or returns a negative number (such as MT2_ERROR) in the case of an error.
-    const double mVis1, const double pxVis1, const double pyVis1,
-    const double mVis2, const double pxVis2, const double pyVis2,
-    const double pxMiss, const double pyMiss,
-    const double mInvis1, const double mInvis2,
-    const double desiredPrecisionOnMT2=0, // This must be non-negative.  If set to zero (default) MT2 will be calculated to the highest precision available on the machine (or as close to that as the algorithm permits).  If set to a positive value, MT2 (note that is MT2, not its square) will be calculated to within +- desiredPrecisionOnMT2. Note that by requesting precision of +- 0.01 GeV on an MT2 value of 100 GeV can resJult in speedups of a factor of ..
-    const bool useDeciSectionsInitially=true // If true, interval is cut at the 10% point until first acceptance, which gives factor 3 increase in speed calculating kinematic min, but 3% slowdown for events in the bulk.  Is on (true) by default, but can be turned off by setting to false.
-      ) {
+			   const double mVis1, const double pxVis1, const double pyVis1,
+			   const double mVis2, const double pxVis2, const double pyVis2,
+			   const double pxMiss, const double pyMiss,
+			   const double mInvis1, const double mInvis2,
+			   const double desiredPrecisionOnMT2=0, // This must be non-negative.  If set to zero (default) MT2 will be calculated to the highest precision available on the machine (or as close to that as the algorithm permits).  If set to a positive value, MT2 (note that is MT2, not its square) will be calculated to within +- desiredPrecisionOnMT2. Note that by requesting precision of +- 0.01 GeV on an MT2 value of 100 GeV can resJult in speedups of a factor of ..
+			   const bool useDeciSectionsInitially=true // If true, interval is cut at the 10% point until first acceptance, which gives factor 3 increase in speed calculating kinematic min, but 3% slowdown for events in the bulk.  Is on (true) by default, but can be turned off by setting to false.
+			    ) {
 
 
     disableCopyrightMessage(true); // By supplying an argument to disable, we actually ask for the message to be printed, if printing is not already disabled.   This counterintuitive function naming is to avoid the need to introduce static variable initialisations ....
@@ -365,12 +365,12 @@ class asymm_mt2_lester_bisect {
     if (m1Min>m2Min) {
       // swap 1 and 2
       return asymm_mt2_lester_bisect::get_mT2_Sq(
-               mVis2, pxVis2, pyVis2,
-               mVis1, pxVis1, pyVis1,
-               pxMiss, pyMiss,
-               mInvis2, mInvis1,
-               desiredPrecisionOnMT2
-             );
+						 mVis2, pxVis2, pyVis2,
+						 mVis1, pxVis1, pyVis1,
+						 pxMiss, pyMiss,
+						 mInvis2, mInvis1,
+						 desiredPrecisionOnMT2
+						 );
     }
 
     // By now, we can be sure that m1Min <= m2Min
@@ -396,7 +396,7 @@ class asymm_mt2_lester_bisect {
     const double massSqSum = msSq + mtSq + mpSq + mqSq;
     const double scaleSq = (massSqSum + sSq + tSq + pMissSq)/8.0;
 
-// #define LESTER_DBG 1
+    // #define LESTER_DBG 1
 
 #ifdef LESTER_DBG
     std::cout <<"\nMOO ";
@@ -451,7 +451,7 @@ class asymm_mt2_lester_bisect {
                               (mLower*15+mUpper)/16  // bias low until evidence this is not a special case
                               :
                               (mUpper + mLower)/2.0 // bisect
-                            ); // worry about this not being between mUpperSq and mLowerSq! TODO
+			      ); // worry about this not being between mUpperSq and mLowerSq! TODO
 
       if (trialM<=mLower || trialM>=mUpper) {
         // We reached a numerical precision limit:  the interval can no longer be bisected!
@@ -494,15 +494,15 @@ class asymm_mt2_lester_bisect {
 #endif
     return mAns*mAns;
   };
- private:
+private:
   static double lestermax(const double x, const double y) {
     return (x>y)?x:y;
   }
   static const Lester::EllipseParams helper(const double mSq, // The test parent-mass value (squared)
-       const double mtSq, const double tx, const double ty, // The visible particle transverse momentum
-       const double mqSq, // The mass of the invisible particle
-       const double pxmiss, const double pymiss
-             ) {
+					    const double mtSq, const double tx, const double ty, // The visible particle transverse momentum
+					    const double mqSq, // The mass of the invisible particle
+					    const double pxmiss, const double pymiss
+					    ) {
     const double txSq = tx*tx;
     const double tySq = ty*ty;
     const double pxmissSq = pxmiss*pxmiss;
@@ -516,17 +516,17 @@ class asymm_mt2_lester_bisect {
     const double c_xy = -4.0* tx*ty;
 
     const double c_x  = -4.0* mtSq*pxmiss - 2.0* mqSq*tx + 2.0* mSq*tx - 2.0* mtSq*tx  +
-               4.0* pymiss*tx*ty - 4.0* pxmiss*tySq;
+      4.0* pymiss*tx*ty - 4.0* pxmiss*tySq;
 
     const double c_y  = -4.0* mtSq*pymiss - 4.0* pymiss*txSq - 2.0* mqSq*ty + 2.0* mSq*ty - 2.0* mtSq*ty +
-               4.0* pxmiss*tx*ty;
+      4.0* pxmiss*tx*ty;
 
     const double c =   - mqSq*mqSq + 2*mqSq*mSq - mSq*mSq + 2*mqSq*mtSq + 2*mSq*mtSq - mtSq*mtSq +
-                4.0* mtSq*pxmissSq + 4.0* mtSq*pymissSq + 4.0* mqSq*pxmiss*tx -
-                4.0* mSq*pxmiss*tx + 4.0* mtSq*pxmiss*tx + 4.0* mqSq*txSq +
-                4.0* pymissSq*txSq + 4.0* mqSq*pymiss*ty - 4.0* mSq*pymiss*ty +
-                4.0* mtSq*pymiss*ty - 8.0* pxmiss*pymiss*tx*ty + 4.0* mqSq*tySq +
-                4.0* pxmissSq*tySq;
+      4.0* mtSq*pxmissSq + 4.0* mtSq*pymissSq + 4.0* mqSq*pxmiss*tx -
+      4.0* mSq*pxmiss*tx + 4.0* mtSq*pxmiss*tx + 4.0* mqSq*txSq +
+      4.0* pymissSq*txSq + 4.0* mqSq*pymiss*ty - 4.0* mSq*pymiss*ty +
+      4.0* mtSq*pymiss*ty - 8.0* pxmiss*pymiss*tx*ty + 4.0* mqSq*tySq +
+      4.0* pxmissSq*tySq;
 
     return Lester::EllipseParams(c_xx, c_yy, c_xy, c_x, c_y, c);
   }

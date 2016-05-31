@@ -1,4 +1,4 @@
-#include "Haamm/HaNaMiniAnalyzer/interface/JetReader.h"
+#include "tHqAnalyzer/HaNaMiniAnalyzer/interface/JetReader.h"
 
 
 JetReader::JetReader( edm::ParameterSet const& iConfig, edm::ConsumesCollector && iC , bool isData , string SetupDir) :

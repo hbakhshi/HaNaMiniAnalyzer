@@ -1,9 +1,9 @@
 // -*- C++ -*-
 //
-// Package:    Haamm/HaNaMiniAnalyzer
+// Package:    tHqAnalyzer/HaNaMiniAnalyzer
 // Class:      HaNaMiniAnalyzer
 // 
-/**\class HaNaMiniAnalyzer HaNaMiniAnalyzer.cc Haamm/HaNaMiniAnalyzer/plugins/HaNaMiniAnalyzer.cc
+/**\class HaNaMiniAnalyzer HaNaMiniAnalyzer.cc tHqAnalyzer/HaNaMiniAnalyzer/plugins/HaNaMiniAnalyzer.cc
 
    Description: [one line class summary]
 
@@ -16,7 +16,7 @@
 //
 //
 
-#include "Haamm/HaNaMiniAnalyzer/interface/HaNaBaseMiniAnalyzer.h"
+#include "tHqAnalyzer/HaNaMiniAnalyzer/interface/HaNaBaseMiniAnalyzer.h"
 
 HaNaBaseMiniAnalyzer::HaNaBaseMiniAnalyzer(const edm::ParameterSet& iConfig):
   SetupDir( iConfig.getParameter<string>("SetupDir") ),

@@ -1,4 +1,4 @@
-#include "Haamm/HaNaMiniAnalyzer/interface/VertexReader.h"
+#include "tHqAnalyzer/HaNaMiniAnalyzer/interface/VertexReader.h"
 
 VertexReader::VertexReader( edm::ParameterSet const& iPS, edm::ConsumesCollector && iC , bool isData , string SetupDir) :
     BaseEventReader< VertexCollection >( iPS , &iC ),

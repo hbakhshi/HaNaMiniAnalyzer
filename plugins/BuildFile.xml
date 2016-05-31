@@ -13,5 +13,6 @@
 <use name="SimDataFormats/PileupSummaryInfo" />
 <use name="CondFormats/BTauObjects"/>
 <use name="DataFormats/MuonReco"/>
-<use name="Haamm/HaNaMiniAnalyzer"/>
+<use name="tHqAnalyzer/HaNaMiniAnalyzer"/>
+<flags CXXFLAGS="-O0 -g -DDEBUG"/>
 <flags EDM_PLUGIN="1"/>

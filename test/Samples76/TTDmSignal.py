@@ -1,4 +1,4 @@
-from Haamm.HaNaMiniAnalyzer.Sample import *
+from tHqAnalyzer.HaNaMiniAnalyzer.Sample import *
 from ROOT import kGray, kGreen, kOrange, kRed, kBlack, kCyan
 
 import os

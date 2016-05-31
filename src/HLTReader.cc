@@ -1,4 +1,4 @@
-#include "Haamm/HaNaMiniAnalyzer/interface/HLTReader.h"
+#include "tHqAnalyzer/HaNaMiniAnalyzer/interface/HLTReader.h"
 
 using namespace edm;
 using namespace std;

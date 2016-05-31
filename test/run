@@ -1,0 +1,4 @@
+cmsRun TTH_cfg.py sample=TTDM_scalar__1_500 job=0 nFilesPerJob=1
+cmsRun TTH_cfg.py sync=1
+cmsRun TTH_cfg.py sample=TTDM_pseudoscalar__1_20 job=0 nFilesPerJob=1
+cmsRun TTH_cfg.py sample=TTDM_scalar__1_100 job=0 nFilesPerJob=1

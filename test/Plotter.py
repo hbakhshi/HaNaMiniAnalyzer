@@ -20,7 +20,7 @@ for sample in samples:
 
 f = TFile.Open(samples[0].Jobs[0].Output)
 
-from Haamm.HaNaMiniAnalyzer.Plotter import *
+from tHqAnalyzer.HaNaMiniAnalyzer.Plotter import *
 hcft = Histogram( samples , f.GetDirectory("HaNaAnalyzer/CutFlowTable/") )
 
 f.cd("HaNaAnalyzer")

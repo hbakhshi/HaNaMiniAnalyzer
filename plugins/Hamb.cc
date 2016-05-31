@@ -1,4 +1,4 @@
-#include "Haamm/HaNaMiniAnalyzer/interface/HaNaBaseMiniAnalyzer.h"
+#include "tHqAnalyzer/HaNaMiniAnalyzer/interface/HaNaBaseMiniAnalyzer.h"
 
 #include <iostream>
 

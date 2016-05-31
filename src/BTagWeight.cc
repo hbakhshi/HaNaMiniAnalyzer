@@ -1,4 +1,4 @@
-#include "Haamm/HaNaMiniAnalyzer/interface/BTagWeight.h"
+#include "tHqAnalyzer/HaNaMiniAnalyzer/interface/BTagWeight.h"
 
 float BTagWeight::weight(pat::JetCollection jets){
     float pMC = 1;

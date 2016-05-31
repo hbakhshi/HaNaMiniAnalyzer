@@ -4,8 +4,8 @@ export SCRAM_ARCH=$2
 scramv1 project CMSSW $3
 cd $3/src/
 eval `scramv1 runtime -sh`
-mkdir Haamm/
-cd Haamm
+mkdir tHqAnalyzer/
+cd tHqAnalyzer
 git clone https://github.com/nadjieh/HaNaMiniAnalyzer/
 cd HaNaMiniAnalyzer/
 git checkout $4
