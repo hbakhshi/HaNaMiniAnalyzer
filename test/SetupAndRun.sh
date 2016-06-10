@@ -4,9 +4,26 @@ export SCRAM_ARCH=$2
 scramv1 project CMSSW $3
 cd $3/src/
 eval `scramv1 runtime -sh`
+
+
+###flashgg preparation ######
+
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/CommonTools/ 	.
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/DataFormats/ .
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/EgammaAnalysis/ .
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/PhysicsTools/ .
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/RecoEgamma/ .
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/ .
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/lib/slc6_amd64_gcc530/ ../lib/
+
+scram b
+
+#############################
+
+
 mkdir tHqAnalyzer/
 cd tHqAnalyzer
-git clone https://github.com/nadjieh/HaNaMiniAnalyzer/
+git clone https://github.com/hbakhshi/HaNaMiniAnalyzer/
 cd HaNaMiniAnalyzer/
 git checkout $4
 scram b
@@ -26,8 +43,8 @@ else
 fi
 
 
-echo cmsRun ConfFile_cfg.py sample=$5 job=$FILEID output=$6 maxEvents=-1 nFilesPerJob=$8
-cmsRun ConfFile_cfg.py sample=$5 job=$FILEID output=$6 maxEvents=-1 nFilesPerJob=$8
+echo cmsRun tHq_cfg.py sample=$5 job=$FILEID output=$6 maxEvents=-1 nFilesPerJob=$8
+cmsRun tHq_cfg.py sample=$5 job=$FILEID output=$6 maxEvents=-1 nFilesPerJob=$8
 
 if [[ $7 == eos* ]] ;
 then

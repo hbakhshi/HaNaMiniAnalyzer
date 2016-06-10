@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 nFilesPerJob=40
-CheckFailedJobs=True
-hname = "HaNaAnalyzer/CutFlowTable/CutFlowTable"
+CheckFailedJobs=False
+hname = "tHq/CutFlowTable/CutFlowTable"
 prefix = "out"
 
 from ROOT import TFile, TH1
@@ -15,7 +15,7 @@ if not len(sys.argv) == 3 :
     exit()
 
 OutPath = "eos/cms/store/user/%s/%s/" % (user, sys.argv[2] )
-from Samples76.Samples import MiniAOD76Samples as samples
+from Samples76tHq.Samples import MicroAOD76Samples as samples
 for sample in samples:
     sample.MakeJobs( nFilesPerJob , "%s/%s" % (OutPath , prefix) )
 
