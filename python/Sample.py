@@ -70,7 +70,7 @@ class Sample :
 
     def AddDASFiles( self , sample , prefix = "" ):
         jsondict = get_data( "https://cmsweb.cern.ch" , 
-                             "file dataset=%(sample)s instance=prod/global"  %  {'sample':sample} ,
+                             "file dataset=%(sample)s instance=prod/phys03"  %  {'sample':sample} ,
                              0 , #idx
                              0 , #limit
                              0 , #verbose

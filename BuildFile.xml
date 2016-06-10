@@ -13,6 +13,8 @@
 <use name="SimDataFormats/PileupSummaryInfo" />
 <use name="CondFormats/BTauObjects"/>
 <use name="DataFormats/MuonReco"/>
+<use   name="flashgg/DataFormats"/>
+<!--flags CXXFLAGS="-O0 -g -DDEBUG"/!-->
 <export>
   <lib   name="1"/>
 </export>

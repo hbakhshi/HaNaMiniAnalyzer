@@ -32,7 +32,7 @@ public:
     iEvent.getByToken(token, handle);
     return 0.0;
   }
-protected :
+public :
   edm::Handle<T>  handle; 
   edm::EDGetTokenT< T > token ;
 };

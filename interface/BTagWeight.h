@@ -11,6 +11,8 @@
 #include "CondFormats/BTauObjects/interface/BTagCalibration.h"
 #include "CondFormats/BTauObjects/interface/BTagCalibrationReader.h"
 #include "DataFormats/PatCandidates/interface/Jet.h"
+
+#include "flashgg/DataFormats/interface/Jet.h"
 using namespace std;
 
 
@@ -81,10 +83,11 @@ class BTagWeight
 	 * End Sanity Checks
 	 */
     };
+    float weight(std::vector< flashgg::Jet > jets);
     float weight(pat::JetCollection jets);
     float weightExclusive(pat::JetCollection jetsTags);
-    float TagScaleFactor(pat::Jet jet, bool LooseWP = false);
-    float MCTagEfficiency(pat::Jet jet, int WP);
+    float TagScaleFactor(pat::Jet* jet, bool LooseWP = false);
+    float MCTagEfficiency(pat::Jet* jet, int WP);
     std::map<int, string> Systs;
     BTagCalibration * calib;
     BTagCalibrationReader * reader;
