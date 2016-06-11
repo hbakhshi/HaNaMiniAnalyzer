@@ -8,15 +8,27 @@ eval `scramv1 runtime -sh`
 
 ###flashgg preparation ######
 
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/CommonTools/ 	.
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/DataFormats/ .
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/EgammaAnalysis/ .
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/PhysicsTools/ .
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/RecoEgamma/ .
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/ .
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/lib/slc6_amd64_gcc530/ ../lib/
+mkdir flashgg/
+cd flashgg
 
-scram b
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/DataFormats/ .
+
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/MicroAOD/ .
+#rm -rf MicroAOD/plugins/
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/Taggers/ .
+
+cd ../
+mkdir RecoEgamma/
+cd RecoEgamma/
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/RecoEgamma/EgammaTools/ .
+rm -rf EgammaTools/plugins/
+
+cd ../
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/DataFormats/ .
+
+
+#cd ../
+scram b -j 2
 
 #############################
 

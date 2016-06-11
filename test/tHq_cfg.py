@@ -102,9 +102,15 @@ process.flashggSeq = cms.Sequence( process.flashggUpdatedIdMVADiPhotons
 
 
 if theSample.IsData :
+    if os.environ["CMSSW_VERSION"].count("CMSSW_7_6"):
+        process.GlobalTag = GlobalTag(process.GlobalTag, '76X_dataRun2_v15')
+    elif os.environ["CMSSW_VERSION"].count("CMSSW_8_0"):
+        process.GlobalTag = GlobalTag(process.GlobalTag,'80X_mcRun2_asymptotic_v11')
+    else:
+        raise Exception,"The default setup for microAODstd.py does not support releases other than 76X and 80X"
+
     import FWCore.PythonUtilities.LumiList as LumiList
     process.source.lumisToProcess = LumiList.LumiList(filename = (process.tHq.SetupDir.value() + '/JSON.txt')).getVLuminosityBlockRange()
-    process.GlobalTag.globaltag = '76X_dataRun2_v15'
     process.p = cms.Path( process.flashggSeq* process.tHq )
     for v in range(0 , 10 ):
         process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30_18_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass95_v%d' % (v) )
