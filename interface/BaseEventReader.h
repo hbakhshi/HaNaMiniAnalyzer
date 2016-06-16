@@ -28,6 +28,14 @@ public:
     token = iC->consumes<T>( iPS.getParameter<edm::InputTag>("Input") );
   }
 
+  BaseEventReader( edm::InputTag iIT , edm::ConsumesCollector*  iC){
+    token = iC->consumes<T>( iIT );
+  }
+
+  BaseEventReader( std::string tag , edm::ConsumesCollector*  iC){
+    token = iC->consumes<T>( edm::InputTag( tag ) );
+  }
+
   virtual double Read( const edm::Event& iEvent ){
     iEvent.getByToken(token, handle);
     return 0.0;

@@ -1,7 +1,7 @@
 #ifndef LHEEventReader_H
 #define LHEEventReader_H
 
-
+#include <valarray>     // std::valarray
 #include "BaseEventReader.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
 
@@ -14,6 +14,7 @@ public:
   double Read( const edm::Event& iEvent ) override;
   double WeightSign;
 
+  std::valarray<double> ExtractWeightsInRange( int from , int to );
 private :
 
 };

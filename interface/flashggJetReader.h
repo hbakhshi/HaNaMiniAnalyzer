@@ -18,7 +18,6 @@ using namespace edm;
 using namespace pat;
 using namespace flashgg;
 
-typedef vector< flashgg::Jet > flashggJetCollection;
 
 class flashggJetReader : public BaseEventReader< flashggJetCollection > {
 public:

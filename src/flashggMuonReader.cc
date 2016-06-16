@@ -124,6 +124,10 @@ flashggMuonReader::SelectionStep flashggMuonReader::Read( const edm::Event& iEve
   case 0 :
     return flashggMuonReader::ZeroMuons ;
   case 1:
+    double pt = goodMus[0].pt();
+    double eta = goodMus[0].eta();
+    W *=  hMuSFID->GetBinContent( hMuSFID->FindBin( pt , eta ) ) ;
+    W *= hMuSFIso->GetBinContent( hMuSFIso->FindBin(pt , eta ) ) ;
     return flashggMuonReader::ExactlyOne ;
   }
 

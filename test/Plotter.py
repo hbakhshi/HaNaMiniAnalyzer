@@ -14,20 +14,20 @@ OutPath = "eos/cms/store/user/%s/%s/" % (user, sys.argv[1] )
 from ROOT import TFile, TDirectory, gDirectory, gROOT
 gROOT.SetBatch(True)
 
-from Samples76.Samples import MiniAOD76Samples as samples
+from Samples76tHq.Samples import MicroAOD76Samples as samples
 for sample in samples:
     sample.MakeJobs( nFilesPerJob , "%s/%s" % (OutPath , prefix) )
 
-f = TFile.Open(samples[0].Jobs[0].Output)
+f = TFile.Open(samples[1].Jobs[0].Output)
 
 from tHqAnalyzer.HaNaMiniAnalyzer.Plotter import *
-hcft = Histogram( samples , f.GetDirectory("HaNaAnalyzer/CutFlowTable/") )
+hcft = Histogram( samples , f.GetDirectory("tHq/CutFlowTable/") )
 
-f.cd("HaNaAnalyzer")
+f.cd("tHq")
 AllProps = {}
 for dir in gDirectory.GetListOfKeys() :
     if dir.IsFolder():
-        AllProps[ dir.GetName() ] = Histogram( samples , f.GetDirectory("HaNaAnalyzer/%s/" % (dir.GetName() )) )
+        AllProps[ dir.GetName() ] = Histogram( samples , f.GetDirectory("tHq/%s/" % (dir.GetName() )) )
 
 f.Close()
 
@@ -42,7 +42,7 @@ for sample in samples:
         else:
             print "File %d of sample %s doesn't exist, skip it" % (Job.Index , sample.Name)
             continue
-        dir = ff.GetDirectory("HaNaAnalyzer/")
+        dir = ff.GetDirectory("tHq/")
         hcft.AddFile( dir )
         for prop in AllProps:
             AllProps[prop].AddFile(dir) 
@@ -53,7 +53,11 @@ for sample in samples:
 
 
 for prop in AllProps:
-    AllProps[prop].Draw( 2200 , hcft )
+    if prop.PropName == "CutFlowTable" :
+        CFTLbls = ["All" , "HLT" , "Vertex" , "#gamma pair" , "p_{T}^{#gamma_{0}}" , "p_{T}^{#gamma_{1}}" , "#gamma ID" , "MVA" , "2jets" , "1bjets" , "#mu selection" , "extra #mu veto" , "MET" ]
+        AllProps[prop].Draw( 2200 , hcft , CFTLbls )
+    else:
+        AllProps[prop].Draw( 2200 , hcft )
 
 fout = TFile.Open("out.root", "recreate")
 

@@ -39,7 +39,7 @@ flashggJetReader::flashggJetReader( edm::ParameterSet const& iConfig, edm::Consu
     BTagCuts.push_back(-1);
   
   if( !IsData ){
-    btw = new BTagWeight("CSVv2", BTagCuts[0], SetupDir, BTagWPL, BTagWPM, BTagWPT,BTagCuts[1]);
+    btw = new BTagWeight("CSVv2", BTagCuts[0], SetupDir, MinNBJets , 1000 , BTagWPL, BTagWPM, BTagWPT,BTagCuts[1]);
 
     if(ApplyJER){
       t_Rho_ = (iC.consumes<double>( edm::InputTag( "fixedGridRhoFastjetAll" ) ) );

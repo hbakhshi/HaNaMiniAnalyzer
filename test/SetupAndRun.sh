@@ -79,6 +79,7 @@ ls -l $outfilename
 
 if [ -f  $7/$outfilename ]; then
     echo "the file exists, is being renamed"
+    rm -f $7/${outfilename}_
     mv $7/$outfilename $7/${outfilename}_
 fi
 

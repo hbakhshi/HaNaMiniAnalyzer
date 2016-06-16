@@ -10,12 +10,11 @@
 
 #include "CondFormats/BTauObjects/interface/BTagCalibration.h"
 #include "CondFormats/BTauObjects/interface/BTagCalibrationReader.h"
-#include "DataFormats/PatCandidates/interface/Jet.h"
 
 #include "flashgg/DataFormats/interface/Jet.h"
 using namespace std;
 
-
+typedef vector< flashgg::Jet > flashggJetCollection;
 
 /*
  *
@@ -39,13 +38,13 @@ class BTagWeight
   {
   private:
     string algo;
-    int WPT, WPL;
+    int WPT, WPL, minTag, maxTag;
     int syst;
     float bTagMapCSVv2[3];
   public:
-    BTagWeight(string algorithm, int WPt, string setupDir, double BLCut = 0.460, double BMCut = 0.800, 
+    BTagWeight(string algorithm, int WPt, string setupDir, int mintag, int maxtag, double BLCut = 0.460, double BMCut = 0.800, 
 	       double BTCut = 0.935, int WPl = -1, int systematics = 0): 
-      algo(algorithm), WPT(WPt), WPL(WPl), syst(systematics),readerExc(0),readerCentExc(0)
+      algo(algorithm), WPT(WPt), WPL(WPl), minTag(mintag), maxTag(maxtag), syst(systematics),readerExc(0),readerCentExc(0)
     {
 	bTagMapCSVv2[0] = BLCut;
 	bTagMapCSVv2[1] = BMCut;
@@ -83,11 +82,14 @@ class BTagWeight
 	 * End Sanity Checks
 	 */
     };
-    float weight(std::vector< flashgg::Jet > jets);
-    float weight(pat::JetCollection jets);
-    float weightExclusive(pat::JetCollection jetsTags);
-    float TagScaleFactor(pat::Jet* jet, bool LooseWP = false);
-    float MCTagEfficiency(pat::Jet* jet, int WP);
+    inline bool filter(int t){
+	 return (t >= minTag && t <= maxTag);
+    }
+    float weight(flashggJetCollection jets);
+    float weight(flashggJetCollection jets, int);
+    float weightExclusive(flashggJetCollection jetsTags);
+    float TagScaleFactor(flashgg::Jet jet, bool LooseWP = false);
+    float MCTagEfficiency(flashgg::Jet jet, int WP);
     std::map<int, string> Systs;
     BTagCalibration * calib;
     BTagCalibrationReader * reader;

@@ -56,5 +56,6 @@ tHq = cms.EDAnalyzer('tHqAnalyzer',
                                           ),
                      sample = cms.string("WJetsMG"),
                      isData = cms.bool( False ),
-                     SetupDir = cms.string("Setup76")
+                     SetupDir = cms.string("Setup76"),
+                     StoreEventNumbers = cms.bool( True )
                      )
