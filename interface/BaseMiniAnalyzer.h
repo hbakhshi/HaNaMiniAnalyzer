@@ -6,7 +6,7 @@
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/one/EDAnalyzer.h"
+#include "FWCore/Framework/interface/EDAnalyzer.h"
 
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
@@ -31,7 +31,8 @@ using namespace edm;
 using namespace std;
 //using namespace pat;
 
-class BaseMiniAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
+class BaseMiniAnalyzer : public edm::EDAnalyzer {
+//<edm::one::SharedResources>  {
 public:
   explicit BaseMiniAnalyzer(const edm::ParameterSet&);
   ~BaseMiniAnalyzer();

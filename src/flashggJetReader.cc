@@ -73,6 +73,7 @@ flashggJetReader::SelectionStatus flashggJetReader::Read(const edm::Event& iEven
 
   selectedJets.clear();
   selectedBJets.clear();
+  selectedJetsEtaLT24.clear();
 
   for ( flashgg::Jet j : *handle) {
     if( !IsData && ApplyJER ){
@@ -93,6 +94,8 @@ flashggJetReader::SelectionStatus flashggJetReader::Read(const edm::Event& iEven
     selectedJets.push_back(j);
  
     if ( fabs(j.eta() ) < 2.4 ){
+      selectedJetsEtaLT24.push_back(j);
+
       float btagval = j.bDiscriminator( BTagAlgo );
     
       if(BTagCuts[0] == 0) {
@@ -112,7 +115,7 @@ flashggJetReader::SelectionStatus flashggJetReader::Read(const edm::Event& iEven
   if( selectedJets.size()  < MinNJets ) return flashggJetReader::NotEnoughJets ;
   if( selectedBJets.size() < MinNBJets ) return flashggJetReader::NotEnoughBJets;
   if(!IsData)
-    W = btw->weight(*handle);
+    W = btw->weight(selectedJetsEtaLT24);
   return flashggJetReader::Pass;
 }
 

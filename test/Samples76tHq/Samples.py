@@ -58,7 +58,7 @@ MicroAOD76Samples.append(TGJ76)
 ttH76GG = Sample("ttH" , "Top" , 0.5085*1.525639529*2.28e-3 , True , kBlue , "/ttHJetToGG_M125_13TeV_amcatnloFXFX_madspin_pythia8/ferrif-RunIIFall15DR76-1_3_0-25ns_ext1-1_3_1-v0-RunIIFall15MiniAODv2-PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1-a7cbec612cb152a63062cf78d7a8471c/USER") 
 MicroAOD76Samples.append( ttH76GG )
 
-Signal76  = Sample("Signal" , "Signal" , 0.01561  , False , kCyan , "/THQ_HToGG_13TeV-madgraph-pythia8_TuneCUETP8M1/hbakhshi-thggqProduction-Moriond16WSFinal-0305d2bd17670bc0d20b0c34c43ed269/USER")
+Signal76  = Sample("Signal" , "Signal" , 0.01561  , True , kCyan , "/THQ_HToGG_13TeV-madgraph-pythia8_TuneCUETP8M1/hbakhshi-thggqProduction-Moriond16WSFinal-0305d2bd17670bc0d20b0c34c43ed269/USER")
 MicroAOD76Samples.append(Signal76)
 
 

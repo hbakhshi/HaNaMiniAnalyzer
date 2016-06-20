@@ -34,6 +34,7 @@ public:
 
   SelectionStatus Read( const edm::Event& iEvent , const DiPhotonCandidate* diPhoton);
 
+  flashggJetCollection selectedJetsEtaLT24;
   flashggJetCollection selectedJets;
   flashggJetCollection selectedBJets;
   double W;
