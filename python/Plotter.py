@@ -47,7 +47,7 @@ class Histogram:
     def AddFile(self , directory):
         ##find all relevant histograms in the file and add them to your histos
         for sample in self.AllSampleHistos:
-            h_in_dir = directory.Get( "%s/%s_%s" % ( self.PropName , self.PropName , sample ) )
+            h_in_dir = directory.Get( "%s/%s_%s_0" % ( self.PropName , self.PropName , sample ) )
             if h_in_dir :
                 self.AllSampleHistos[sample].Add( h_in_dir )
                 

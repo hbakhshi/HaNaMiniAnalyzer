@@ -1,5 +1,4 @@
 from tHqAnalyzer.HaNaMiniAnalyzer.Sample import *
-from ROOT import kGray, kGreen, kOrange, kRed, kBlack, kCyan, kBlue
 
 import os
 Sample.WD = os.path.dirname(os.path.abspath(__file__))

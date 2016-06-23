@@ -5,6 +5,16 @@ from subprocess import call
 import os, ntpath
 import os.path
 
+####NEVER TRY TO IMPORT ROOT MODULES IN THE PYTHON CONFIGURATION, Oherwise CMSSW fails in initiating the tree
+kGray = 920
+kGreen = 416
+kOrange = 800
+kRed = 632
+kBlack = 1
+kCyan = 432
+kBlue = 600
+######################################################################
+
 ##recommended code to group a list : https://docs.python.org/2/library/itertools.html#recipes
 from itertools import izip_longest
 def grouper(iterable, n, fillvalue=None):
@@ -20,7 +30,7 @@ class JobInformation:
         self.Index = index
         self.Inputs = inputs
         self.Output = output
-
+        self.Output2 = output.replace(".root" , "_edm_output.root" )
 
 class Sample :
     WD = './'

@@ -1,4 +1,5 @@
 import FWCore.ParameterSet.Config as cms
+import FWCore.Utilities.FileUtils as FileUtils
 
 process = cms.Process("tHq")
 
@@ -14,13 +15,13 @@ from Configuration.AlCa.GlobalTag import GlobalTag
 process.TFileService = cms.Service("TFileService", fileName = cms.string("histo.root") )
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
                             fileNames = cms.untracked.vstring()
 )
 
 process.load("tHqAnalyzer.HaNaMiniAnalyzer.tHq_cfi")
-#process.TTH 
 
 import FWCore.ParameterSet.VarParsing as opts
 options = opts.VarParsing ('analysis')
@@ -91,6 +92,7 @@ process.TFileService.fileName = job.Output
 process.maxEvents.input = options.maxEvents
 
 
+
 process.load("flashgg.Taggers.flashggDiPhotonMVA_cfi")
 process.load("flashgg.Taggers.flashggPreselectedDiPhotons_cfi")
 process.load("flashgg.Taggers.flashggTags_cff")
@@ -100,6 +102,8 @@ process.flashggSeq = cms.Sequence( process.flashggUpdatedIdMVADiPhotons
                                    * process.flashggDiPhotonMVA
                                    * process.flashggUnpackedJets )
 
+
+#
 
 if theSample.IsData :
     if os.environ["CMSSW_VERSION"].count("CMSSW_7_6"):
@@ -111,7 +115,7 @@ if theSample.IsData :
 
     import FWCore.PythonUtilities.LumiList as LumiList
     process.source.lumisToProcess = LumiList.LumiList(filename = (process.tHq.SetupDir.value() + '/JSON.txt')).getVLuminosityBlockRange()
-    process.p = cms.Path( process.flashggSeq* process.tHq )
+    process.p = cms.Path( process.flashggSeq * process.tHq )
     for v in range(0 , 10 ):
         process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30_18_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass95_v%d' % (v) )
         process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30PV_18PV_R9Id_AND_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
@@ -126,7 +130,7 @@ else :
         raise Exception,"The default setup for microAODstd.py does not support releases other than 76X and 80X"
 
     #process.GlobalTag.globaltag = '76X_dataRun2_16Dec2015_v0'
-    from PhysicsTools.PatAlgos.producersLayer1.jetUpdater_cff import *
+    #from PhysicsTools.PatAlgos.producersLayer1.jetUpdater_cff import *
     # process.patJetCorrFactorsReapplyJEC = updatedPatJetCorrFactors.clone(
     #     src = cms.InputTag("slimmedJets"),
     #     levels = ['L1FastJet', 
@@ -139,10 +143,17 @@ else :
     #     jetCorrFactorsSource = cms.VInputTag(cms.InputTag("patJetCorrFactorsReapplyJEC"))
     #     )
     #process.p = cms.Path( process.patJetCorrFactorsReapplyJEC + process.patJetsReapplyJEC + process.TTH + process.Hamb)
-    process.p = cms.Path( process.flashggSeq* process.tHq )
+    process.p = cms.Path(process.flashggSeq *  process.tHq )
     if options.sync == 0 :
         for v in range(0 , 10 ):
             process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30_18_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass95_v%d' % (v) )
             process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30PV_18PV_R9Id_AND_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
             process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30EB_18EB_R9Id_OR_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
+
+
+process.outp1=cms.OutputModule("PoolOutputModule",
+                               fileName = cms.untracked.string(job.Output2),
+                               SelectEvents = cms.untracked.PSet(  SelectEvents = cms.vstring('p')  )
+                               )
+process.ep = cms.EndPath( process.outp1 )
 

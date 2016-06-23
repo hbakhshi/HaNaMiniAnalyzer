@@ -1,5 +1,5 @@
 import FWCore.ParameterSet.Config as cms
-tHq = cms.EDAnalyzer('tHqAnalyzer',
+tHq = cms.EDFilter('tHqAnalyzer',
                      LHE = cms.PSet ( useLHEW = cms.bool( False ),
                                       Input = cms.InputTag("source")
                                       ),
@@ -57,5 +57,5 @@ tHq = cms.EDAnalyzer('tHqAnalyzer',
                      sample = cms.string("WJetsMG"),
                      isData = cms.bool( False ),
                      SetupDir = cms.string("Setup76"),
-                     StoreEventNumbers = cms.bool( False )
+                     StoreEventNumbers = cms.bool( True )
                      )

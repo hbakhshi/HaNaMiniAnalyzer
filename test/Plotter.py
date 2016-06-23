@@ -53,7 +53,7 @@ for sample in samples:
 
 
 for prop in AllProps:
-    if prop.PropName == "CutFlowTable" :
+    if prop == "CutFlowTable" :
         CFTLbls = ["All" , "HLT" , "Vertex" , "#gamma pair" , "p_{T}^{#gamma_{0}}" , "p_{T}^{#gamma_{1}}" , "#gamma ID" , "MVA" , "2jets" , "1bjets" , "#mu selection" , "extra #mu veto" , "MET" ]
         AllProps[prop].Draw( 2200 , hcft , CFTLbls )
     else:

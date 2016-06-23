@@ -125,13 +125,15 @@ flashggMuonReader::SelectionStep flashggMuonReader::Read( const edm::Event& iEve
     return flashggMuonReader::ZeroMuons ;
   case 1:
     double pt = goodMus[0].pt();
-    if( pt > 120 )
-      pt = 115;
-    if( pt < 20 )
-      pt = 21;
-    double eta = goodMus[0].eta();
-    W *=  hMuSFID->GetBinContent( hMuSFID->FindBin( pt , eta ) ) ;
-    W *= hMuSFIso->GetBinContent( hMuSFIso->FindBin(pt , eta ) ) ;
+    if( !IsData ){
+      if( pt > 120 )
+	pt = 115;
+      if( pt < 20 )
+	pt = 21;
+      double eta = goodMus[0].eta();
+      W *=  hMuSFID->GetBinContent( hMuSFID->FindBin( pt , eta ) ) ;
+      W *= hMuSFIso->GetBinContent( hMuSFIso->FindBin(pt , eta ) ) ;
+    }
     return flashggMuonReader::ExactlyOne ;
   }
 

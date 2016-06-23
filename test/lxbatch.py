@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 nFilesPerJob=40
-CheckFailedJobs=False
+CheckFailedJobs=True
 hname = "tHq/CutFlowTable/CutFlowTable"
 prefix = "out"
 
@@ -45,7 +45,7 @@ if CheckFailedJobs:
             job = job_.Index + 1
             if isfile( outfile ) :
                 ff = TFile.Open(outfile)
-                h = ff.Get("%s_%s"% ( hname , sample.Name) )
+                h = ff.Get("%s_%s_0"% ( hname , sample.Name) )
                 if not h == None :
                     ntotal = h.GetBinContent(1)
                     if ntotal == 0:
@@ -54,11 +54,11 @@ if CheckFailedJobs:
                 else :
                     ListOfFailedJobs.append(str( job ))
                     print job
-                    #print outfile + " : Exists, without histogram"
+                    print outfile + " : Exists, without histogram"
 
             else :
                 ListOfFailedJobs.append( str(job))
-                #print outfile + " : file doesn't exist  %d"  % (counter)
+                print outfile + " : file doesn't exist"
 
         FailedJobs[ sample.Name ] = ListOfFailedJobs
     print FailedJobs

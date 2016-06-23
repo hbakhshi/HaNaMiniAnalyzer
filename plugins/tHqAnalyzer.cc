@@ -41,7 +41,7 @@ public:
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions){ BaseMiniAnalyzer::fillDescriptions( descriptions ); }
 protected:
   virtual void beginJob() override;
-  virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
+  virtual bool filter(edm::Event&, const edm::EventSetup&) override;
 
   unsigned int RunN;
   unsigned long long EventN;
@@ -63,6 +63,7 @@ tHqAnalyzer::tHqAnalyzer( const edm::ParameterSet& ps ) :
   nHistos(1),
   MakeTree( ps.getParameter<bool>( "StoreEventNumbers" ) )
 {
+  usesResource("TFileService");
 }
 // ------------ method called once each job just before starting event loop  ------------
 void tHqAnalyzer::beginJob()
@@ -101,7 +102,7 @@ void tHqAnalyzer::beginJob()
 }
 
 //
-void tHqAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   EventN = iEvent.eventAuxiliary().event() ;
   RunN = iEvent.eventAuxiliary().run() ;
@@ -119,11 +120,11 @@ void tHqAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   hCutFlowTable->Fill( ++SelectionStep , W );
 
   if( hltReader->Read( iEvent ) < 0 )
-    return;
+    return false;
   hCutFlowTable->Fill( ++SelectionStep , W );
 
   if( vertexReader->Read( iEvent ) < 0 )
-    return;
+    return false;
   W *= vertexReader->puWeight;
   hCutFlowTable->Fill( ++SelectionStep , W );
 
@@ -147,7 +148,7 @@ void tHqAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     hCutFlowTable->Fill( ++SelectionStep , W );
   case DiPhotonReader::ZeroPairs:
     if(MakeTree) theSelectionResultTree->Fill();
-    return;
+    return false;
   }
 
   M_GG->Fill( diPhoton->diPhoton->mass() , W );
@@ -162,7 +163,7 @@ void tHqAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     hCutFlowTable->Fill( ++SelectionStep , W );
   case flashggJetReader::NotEnoughJets:
     if(MakeTree) theSelectionResultTree->Fill();
-    return;
+    return true;
   }
 
   
@@ -197,7 +198,7 @@ void tHqAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     hCutFlowTable->Fill( ++SelectionStep , W );
   case flashggMuonReader::ZeroMuons :
     if(MakeTree) theSelectionResultTree->Fill();
-    return;
+    return true;
   }
 
   Eta_Mu->Fill( fabs( flashggmuonreader->goodMus[0].eta() ) , W );
@@ -208,7 +209,8 @@ void tHqAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 		      /*, jetReader->GetAllJets()*/) < 0 ){
     //uncomment the inner part if JES changes wrt the oldjets collection wants to be applied on met , it should be called after reading jets
     if(MakeTree) theSelectionResultTree->Fill();
-    return;
+    return true;
   }
   hCutFlowTable->Fill( ++SelectionStep , W );
+  return true;
 }

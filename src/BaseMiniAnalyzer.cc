@@ -62,8 +62,9 @@ BaseMiniAnalyzer::BaseMiniAnalyzer(const edm::ParameterSet& iConfig):
 }
 
 //
-void BaseMiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+bool BaseMiniAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
+  return true;
 }
 
 
