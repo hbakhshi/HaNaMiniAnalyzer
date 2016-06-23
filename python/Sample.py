@@ -6,13 +6,13 @@ import os, ntpath
 import os.path
 
 ####NEVER TRY TO IMPORT ROOT MODULES IN THE PYTHON CONFIGURATION, Oherwise CMSSW fails in initiating the tree
-kGray = 920
-kGreen = 416
-kOrange = 800
-kRed = 632
-kBlack = 1
-kCyan = 432
-kBlue = 600
+#kGray = 920
+#kGreen = 416
+#kOrange = 800
+#kRed = 632
+#kBlack = 1
+#kCyan = 432
+#kBlue = 600
 ######################################################################
 
 ##recommended code to group a list : https://docs.python.org/2/library/itertools.html#recipes
@@ -30,20 +30,17 @@ class JobInformation:
         self.Index = index
         self.Inputs = inputs
         self.Output = output
-        self.Output2 = output.replace(".root" , "_edm_output.root" )
+        self.Output2 = ("edm_output_" + output)
 
 class Sample :
     WD = './'
 
-    def __init__(self , name , histocat , xsection , lheW , color , datasetname , appendix = "" ):
+    def __init__(self , name , xsection , lheW , datasetname , appendix = "" ):
         self.Name = name
-        self.HistoCat = histocat
         self.XSection = xsection
         self.IsData = (self.XSection <= 0)
         self.LHEWeight = lheW
         
-        self.Color = color
-
         self.Files = []
 
         if not datasetname == "" :
