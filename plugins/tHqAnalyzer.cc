@@ -138,6 +138,8 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     hCutFlowTable->Fill( ++SelectionStep , W );
     hCutFlowTable->Fill( ++SelectionStep , W );
     break;
+  case DiPhotonReader::InvMassFailed:
+    hCutFlowTable->Fill( ++SelectionStep , W );
   case DiPhotonReader::MVAFailed:
     hCutFlowTable->Fill( ++SelectionStep , W );
   case DiPhotonReader::PhotonID:
@@ -152,6 +154,23 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   }
 
   M_GG->Fill( diPhoton->diPhoton->mass() , W );
+
+  switch( flashggmuonreader->Read( iEvent , diPhoton->diPhoton ) ){
+  case flashggMuonReader::ExactlyOne :
+    W *= (flashggmuonreader->W);
+    hCutFlowTable->Fill( ++SelectionStep , W );
+    hCutFlowTable->Fill( ++SelectionStep , W );
+    break;
+  case flashggMuonReader::MoreThanOne :
+    hCutFlowTable->Fill( ++SelectionStep , W );
+  case flashggMuonReader::ZeroMuons :
+    if(MakeTree) theSelectionResultTree->Fill();
+    return true;
+  }
+
+  Eta_Mu->Fill( fabs( flashggmuonreader->goodMus[0].eta() ) , W );
+  Pt_Mu->Fill( flashggmuonreader->goodMus[0].pt() , W );
+
 
   switch( flashggjetreader->Read( iEvent , diPhoton->diPhoton ) ){
   case flashggJetReader::Pass:
@@ -188,21 +207,7 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   Eta_J->Fill( firstJet.eta() , W );
   DEta_Jb->Fill( fabs( flashggjetreader->selectedBJets[0].eta()-firstJet.eta() ) , W );
 
-  switch( flashggmuonreader->Read( iEvent , diPhoton->diPhoton ) ){
-  case flashggMuonReader::ExactlyOne :
-    W *= (flashggmuonreader->W);
-    hCutFlowTable->Fill( ++SelectionStep , W );
-    hCutFlowTable->Fill( ++SelectionStep , W );
-    break;
-  case flashggMuonReader::MoreThanOne :
-    hCutFlowTable->Fill( ++SelectionStep , W );
-  case flashggMuonReader::ZeroMuons :
-    if(MakeTree) theSelectionResultTree->Fill();
-    return true;
-  }
 
-  Eta_Mu->Fill( fabs( flashggmuonreader->goodMus[0].eta() ) , W );
-  Pt_Mu->Fill( flashggmuonreader->goodMus[0].pt() , W );
   DEta_bMu->Fill( fabs( flashggmuonreader->goodMus[0].eta() -  flashggjetreader->selectedBJets[0].eta() ) , W );
 
   if( metReader->Read(iEvent 

@@ -18,7 +18,7 @@ std::valarray<double> LHEEventReader::ExtractWeightsInRange( int from , int to )
   double orig_w = handle->originalXWGTUP(); 
   ret.push_back( orig_w/fabs(orig_w) );
   for(int i=from ; i <= to ; i++){
-    std::cout << i << endl;
+    //std::cout << i << endl;
     ret.push_back( handle->weights()[i].wgt / orig_w ) ;
   }
 

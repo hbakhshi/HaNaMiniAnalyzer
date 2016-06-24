@@ -43,6 +43,9 @@ class Sample :
         
         self.Files = []
 
+        self.DSName = datasetname
+        self.Prefix = appendix
+
         if not datasetname == "" :
             self.InitiateFilesFromListOrDAS( datasetname , appendix )
 

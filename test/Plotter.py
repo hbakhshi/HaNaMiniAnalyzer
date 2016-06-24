@@ -14,54 +14,35 @@ OutPath = "eos/cms/store/user/%s/%s/" % (user, sys.argv[1] )
 from ROOT import TFile, TDirectory, gDirectory, gROOT
 gROOT.SetBatch(True)
 
-from Samples76tHq.Samples import MicroAOD76Samples as samples
-for sample in samples:
+from Samples76tHq.Samples import *
+for sample in MicroAOD76Samples:
     sample.MakeJobs( nFilesPerJob , "%s/%s" % (OutPath , prefix) )
 
-f = TFile.Open(samples[1].Jobs[0].Output)
+GJet7640M80.XSection = GJet7640M80.XSection*1.5
+GJet76M80_2040.XSection = GJet76M80_2040.XSection*0.7
+GJet76M80_40.XSection = GJet76M80_40.XSection*0.6
 
 from tHqAnalyzer.HaNaMiniAnalyzer.Plotter import *
-hcft = Histogram( samples , f.GetDirectory("tHq/CutFlowTable/") )
+from ROOT import kGray, kGreen, kOrange, kRed, kBlack, kCyan, kBlue
+dataSamples = SampleType("Data" , kBlack , [ DoubleEG76D , DoubleEG76C ] ) # the first item must be data
+higgsSamples = SampleType("Higgs" , kRed , [ GluGluH76GG , VBFH76GG , VH76GG ] )
+multigSamples = SampleType("multi-#gamma" , kOrange , [ DiGG76 , GJet7640M80 , GJet76M80_2040 , GJet76M80_40 , ZG2LG76 ] )
+QCDSamples = SampleType("QCD" , kGreen+2 , [QCDDoubleEM76_m4080_pt30 , QCDDoubleEM76_m80_pt3040 , QCDDoubleEM76_m80_pt40 ] )
+topSamples = SampleType("TOP" , kBlue , [TTGG76 , TTGJ76 , TGJ76 , ttH76GG ] )
+#signalSample= SampleType( "Signal" , kCyan , [ Signal76 ] , True )
 
-f.cd("tHq")
-AllProps = {}
-for dir in gDirectory.GetListOfKeys() :
-    if dir.IsFolder():
-        AllProps[ dir.GetName() ] = Histogram( samples , f.GetDirectory("tHq/%s/" % (dir.GetName() )) )
-
-f.Close()
-
-for sample in samples:
-    for Job in sample.Jobs :
-        finame = Job.Output
-        sys.stdout.write("\r%s : %d of %d" % (sample.Name , Job.Index , len(sample.Jobs)))
-        sys.stdout.flush()
-        ff = None
-        if os.path.isfile( finame ):
-            ff = TFile.Open(finame)
-        else:
-            print "File %d of sample %s doesn't exist, skip it" % (Job.Index , sample.Name)
-            continue
-        dir = ff.GetDirectory("tHq/")
-        hcft.AddFile( dir )
-        for prop in AllProps:
-            AllProps[prop].AddFile(dir) 
-        ff.Close()
-    print " "
+plotter = Plotter()
+for st in [dataSamples , higgsSamples , multigSamples , QCDSamples , topSamples  ]:
+    plotter.AddSampleType( st )
 
 
+plotter.LoadHistos( 2200 )
 
+plotter.AddLabels( "CutFlowTable" , ["All" , "HLT" , "Vertex" , "#gamma pair" , "p_{T}^{#gamma_{0}}" , "p_{T}^{#gamma_{1}}" , "#gamma ID" , "MVA" , "2jets" , "1bjets" , "#mu selection" , "extra #mu veto" , "MET" ] )
 
-for prop in AllProps:
-    if prop == "CutFlowTable" :
-        CFTLbls = ["All" , "HLT" , "Vertex" , "#gamma pair" , "p_{T}^{#gamma_{0}}" , "p_{T}^{#gamma_{1}}" , "#gamma ID" , "MVA" , "2jets" , "1bjets" , "#mu selection" , "extra #mu veto" , "MET" ]
-        AllProps[prop].Draw( 2200 , hcft , CFTLbls )
-    else:
-        AllProps[prop].Draw( 2200 , hcft )
+plotter.DrawAll()
 
 fout = TFile.Open("out.root", "recreate")
-
-for prop in AllProps:
-    AllProps[prop].Write(fout)
-
+plotter.Write(fout)
 fout.Close()
+

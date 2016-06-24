@@ -10,6 +10,7 @@ DiPhotonReader::DiPhotonReader( edm::ParameterSet const& iConfig, edm::ConsumesC
   subleadPhoOverMassThreshold_ ( iConfig.getParameter<double>( "subleadPhoOverMassThreshold") ),
   MVAThreshold_ ( iConfig.getParameter<double>( "MVAThreshold") ),
   PhoMVAThreshold_ ( iConfig.getParameter<double>( "PhoMVAThreshold") ),
+  InvMassCut(  iConfig.getParameter<double>( "InvMassCut") ),
   IsData(isData)
 {
 }
@@ -36,7 +37,7 @@ DiPhotonReader::SelectionStatus DiPhotonReader::read( const edm::Event& iEvent )
     double idmva2 = dipho->subLeadingPhoton()->phoIdMvaDWrtVtx( dipho->vtx() );
     if( idmva1 < PhoMVAThreshold_ || idmva2 < PhoMVAThreshold_ ) { if(ret<PhotonID) ret = PhotonID ;continue; }
     if( mvares->result < MVAThreshold_ ) { if(ret<MVAFailed) ret = MVAFailed ;continue; }
-    
+    if( dipho->mass() < InvMassCut ) { if( ret < InvMassFailed ) ret = InvMassFailed ; continue ; }
     nDiPhos ++;
     if( mvares->result > MVA ){
       diPhoton = dipho.get();

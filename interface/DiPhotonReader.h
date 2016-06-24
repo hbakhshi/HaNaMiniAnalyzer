@@ -26,6 +26,7 @@ public:
     SubLeadingPt,
     PhotonID,
     MVAFailed,
+    InvMassFailed,
     Pass,
     PassMoreThanOne
   };
@@ -42,7 +43,7 @@ private :
   double subleadPhoOverMassThreshold_;
   double MVAThreshold_;
   double PhoMVAThreshold_;
-
+  double InvMassCut;
   bool IsData;
 };
 #endif
