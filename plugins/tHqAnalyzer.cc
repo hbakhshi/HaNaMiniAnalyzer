@@ -137,6 +137,7 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     hCutFlowTable->Fill( ++SelectionStep , W );
     hCutFlowTable->Fill( ++SelectionStep , W );
     hCutFlowTable->Fill( ++SelectionStep , W );
+    hCutFlowTable->Fill( ++SelectionStep , W );
     break;
   case DiPhotonReader::InvMassFailed:
     hCutFlowTable->Fill( ++SelectionStep , W );

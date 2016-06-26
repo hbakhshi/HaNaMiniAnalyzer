@@ -61,3 +61,11 @@ Signal76  = Sample("Signal" , 0.01561  , True , "/THQ_HToGG_13TeV-madgraph-pythi
 MicroAOD76Samples.append(Signal76)
 
 
+def MakeAllChildSamples( nFilesPerJob , outputName , storageDir ):
+    ret = []
+    for s in MicroAOD76Samples :
+        s.MakeJobs( nFilesPerJob , outputName )
+        ret.append( s.MakeSampleFromOutputs(storageDir) )
+    return ret
+        
+samples24june = MakeAllChildSamples( 20 , "out" , "/store/user/%s/%s" % ("hbakhshi", "thq24june" ) )

@@ -78,6 +78,12 @@ class Sample :
             self.AddDASFiles( sample , prefix )
             self.WriteFileListToFile()
 
+    def MakeSampleFromOutputs(self , dir ):
+        ret = Sample( self.Name , self.XSection , self.LHEWeight , "" , dir )
+        for j in self.Jobs:
+            ret.Files.append( "%s/%s" % (dir , j.Output2 ) )
+        return ret
+
     def AddDASFiles( self , sample , prefix = "" ):
         jsondict = get_data( "https://cmsweb.cern.ch" , 
                              "file dataset=%(sample)s instance=prod/phys03"  %  {'sample':sample} ,

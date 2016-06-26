@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-nFilesPerJob=40
+nFilesPerJob=20
 prefix = "out"
 import sys
 import os
@@ -22,6 +22,9 @@ GJet7640M80.XSection = GJet7640M80.XSection*1.5
 GJet76M80_2040.XSection = GJet76M80_2040.XSection*0.7
 GJet76M80_40.XSection = GJet76M80_40.XSection*0.6
 
+QCDDoubleEM76_m80_pt3040.XSection = QCDDoubleEM76_m80_pt3040.XSection*0.8
+QCDDoubleEM76_m80_pt40.XSection = QCDDoubleEM76_m80_pt40.XSection*0.8
+
 from tHqAnalyzer.HaNaMiniAnalyzer.Plotter import *
 from ROOT import kGray, kGreen, kOrange, kRed, kBlack, kCyan, kBlue
 dataSamples = SampleType("Data" , kBlack , [ DoubleEG76D , DoubleEG76C ] ) # the first item must be data
@@ -38,7 +41,7 @@ for st in [dataSamples , higgsSamples , multigSamples , QCDSamples , topSamples 
 
 plotter.LoadHistos( 2200 )
 
-plotter.AddLabels( "CutFlowTable" , ["All" , "HLT" , "Vertex" , "#gamma pair" , "p_{T}^{#gamma_{0}}" , "p_{T}^{#gamma_{1}}" , "#gamma ID" , "MVA" , "2jets" , "1bjets" , "#mu selection" , "extra #mu veto" , "MET" ] )
+plotter.AddLabels( "CutFlowTable" , ["All" , "HLT" , "Vertex" , "#gamma pair" , "p_{T}^{#gamma_{0}}" , "p_{T}^{#gamma_{1}}" , "#gamma ID" , "MVA", "inv mass" ,"#mu selection" , "extra #mu veto", "2jets" , "1bjets" , "MET" ] )
 
 plotter.DrawAll()
 

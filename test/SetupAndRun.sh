@@ -17,18 +17,18 @@ cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/fla
 #rm -rf MicroAOD/plugins/
 cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/Taggers/ .
 
-cd ../
-mkdir RecoEgamma/
-cd RecoEgamma/
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/RecoEgamma/EgammaTools/ .
-rm -rf EgammaTools/plugins/
+cd ../  #just for flashgg case is needed
+mkdir RecoEgamma/ #just for flashgg case is needed
+cd RecoEgamma/ #just for flashgg case is needed
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/RecoEgamma/EgammaTools/ . #just for flashgg case is needed
+rm -rf EgammaTools/plugins/ #just for flashgg case is needed
 
-cd ../
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/DataFormats/ .
+cd ../ #just for flashgg case is needed
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/DataFormats/ . #just for flashgg case is needed
 
 
 #cd ../
-scram b -j 2
+scram b -j 2 #just for flashgg case is needed
 
 #############################
 

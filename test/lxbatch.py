@@ -1,6 +1,9 @@
 #!/usr/bin/env python
-nFilesPerJob=40
-CheckFailedJobs=True
+
+runOnOutsOfAnotherJob = True
+
+nFilesPerJob=3
+CheckFailedJobs=False
 hname = "tHq/CutFlowTable/CutFlowTable"
 prefix = "out"
 
@@ -15,7 +18,13 @@ if not len(sys.argv) == 3 :
     exit()
 
 OutPath = "eos/cms/store/user/%s/%s/" % (user, sys.argv[2] )
-from Samples76tHq.Samples import MicroAOD76Samples as samples
+from Samples76tHq.Samples import *
+sample = None
+if runOnOutsOfAnotherJob :
+    samples = samples24june
+else :
+    samples = MicroAOD76Samples
+
 for sample in samples:
     sample.MakeJobs( nFilesPerJob , "%s/%s" % (OutPath , prefix) )
 
@@ -29,7 +38,15 @@ while os.path.isdir( "./%s" % (workingdir) ):
     workingdir += "_"
 os.mkdir( workingdir )
 
-copy( "SetupAndRun.sh" , "./%s/" % (workingdir) )
+
+if runOnOutsOfAnotherJob :
+    with open( "./%s/SetupAndRun.sh" % (workingdir), "wt") as fout:
+        with open("SetupAndRun.sh", "rt") as fin:
+            for line in fin:
+                if not "flashgg" in line :
+                    fout.write( line.replace('tHq_cfg', 'tHq_onTaggFiles_cfg') )
+else :
+    copy( "SetupAndRun.sh" , "./%s/" % (workingdir) )
 
 from subprocess import call
 call(["voms-proxy-init" , "--out" , "./%s/.x509up_u%d" % ( workingdir , os.getuid()) , "--voms" , "cms" , "--valid" , "1000:0"])
