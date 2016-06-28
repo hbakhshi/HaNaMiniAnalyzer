@@ -16,14 +16,34 @@ class ExtendedSample: #extend the sample object to store histograms
         self.Files = sample.Files
         self.Jobs = sample.Jobs
 
+        if sample.ParentSample :
+            self.ParentSample = ExtendedSample( sample.ParentSample )
+        else :
+            self.ParentSample = None
+
     def GetCFT(self):
-        #print self.AllHists
+        if not hasattr( self, "CutFlowTableName" ):
+            return None
+        if not self.CutFlowTableName in self.AllHists:
+            return None
         return self.AllHists[self.CutFlowTableName] 
+    
+    def GetNTotal(self) :
+        if self.ParentSample :
+            if not self.ParentSample.GetCFT() :
+                print "Loading parent sample"
+                self.ParentSample.LoadHistos( self.DirName , self.CutFlowTableName , [self.CutFlowTableName] )
+                print "Loaded"
+            return self.ParentSample.GetNTotal()
+        else :
+            if not self.GetCFT() :
+                return -1
+            return self.GetCFT().GetBinContent( 1 )
 
     def NormalizeHistos(self, lumi):
         if self.IsData :
             return
-        self.nTotal = self.GetCFT().GetBinContent( 1 )
+        self.nTotal = self.GetNTotal()
         if self.nTotal == 0:
             print "Sample %s has no entries" % (self.Name)
             return
@@ -32,12 +52,13 @@ class ExtendedSample: #extend the sample object to store histograms
         for h in self.AllHists:
             self.AllHists[h].Scale(self.XSFactor)
 
-    def LoadHistos(self , dirName = "tHq" , cftName = "CutFlowTable"):
+    def LoadHistos(self , dirName = "tHq" , cftName = "CutFlowTable" , loadonly = []):
         self.CutFlowTableName = cftName
+        self.DirName = dirName
         self.AllHists = {}
         for Job in self.Jobs :
             finame = Job.Output
-            sys.stdout.write("\r%s : %d of %d" % (self.Name , Job.Index , len(self.Jobs)))
+            sys.stdout.write("\r%s : %d of %d" % (self.Name , Job.Index+1 , len(self.Jobs)))
             sys.stdout.flush()
             ff = None
             if os.path.isfile( finame ):
@@ -46,10 +67,15 @@ class ExtendedSample: #extend the sample object to store histograms
                 print "File %d of sample %s doesn't exist, skip it" % (Job.Index , self.Name)
                 continue
             dir = ff.GetDirectory(dirName)
+            if not dir :
+                print "File %d of sample %s is not valid, skip it" % (Job.Index , self.Name)
+                continue
             for dir__ in dir.GetListOfKeys() :
                 if not dir__.IsFolder():
                     continue
                 propname = dir__.GetName()
+                if len(loadonly) > 0 and not propname in loadonly :
+                    continue
                 dir_ = dir.GetDirectory( propname )
                 if propname in self.AllHists.keys() :
                     dircontents = dir_.GetListOfKeys()

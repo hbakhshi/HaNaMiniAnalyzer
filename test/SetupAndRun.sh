@@ -8,27 +8,32 @@ eval `scramv1 runtime -sh`
 
 ###flashgg preparation ######
 
-mkdir flashgg/
-cd flashgg
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/ .
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/RecoEgamma/ .
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/CommonTools .
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/DataFormats/ .
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/PhysicsTools/ .
+cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/EgammaAnalysis/ .
+scram b -j 2
 
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/DataFormats/ .
+# mkdir flashgg/ #FORBOTH
+# cd flashgg  #FORBOTH
+# cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/DataFormats/ .   #FORBOTH
 
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/MicroAOD/ .
-#rm -rf MicroAOD/plugins/
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/Taggers/ .
+# cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/MicroAOD/ .
+# cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/Taggers/ .
 
-cd ../  #just for flashgg case is needed
-mkdir RecoEgamma/ #just for flashgg case is needed
-cd RecoEgamma/ #just for flashgg case is needed
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/RecoEgamma/EgammaTools/ . #just for flashgg case is needed
-rm -rf EgammaTools/plugins/ #just for flashgg case is needed
+# cd ../  
 
-cd ../ #just for flashgg case is needed
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/DataFormats/ . #just for flashgg case is needed
+# mkdir RecoEgamma/ #just for flashgg case is needed
+# cd RecoEgamma/ #just for flashgg case is needed
+# cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/RecoEgamma/EgammaTools/ . #just for flashgg case is needed
+# rm -rf EgammaTools/plugins/ #just for flashgg case is needed
+# cd ../ #just for flashgg case is needed
 
+# cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/DataFormats/ .
 
-#cd ../
-scram b -j 2 #just for flashgg case is needed
+# scram b -j 2 #FORBOTH
 
 #############################
 

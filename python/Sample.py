@@ -29,13 +29,21 @@ class JobInformation:
         self.Sample = sample 
         self.Index = index
         self.Inputs = inputs
-        self.Output = output
-        self.Output2 = ("edm_output_" + output)
+        bn = os.path.basename( output )
+        dn = os.path.dirname( output )
+        if dn == "":
+            self.Output2 = ("edm_output_" + output)
+        else :
+            self.Output2 = dn +  "/edm_output_" + bn
 
+        if dn.startswith( "/store/user/" ) :
+            output = "eos/cms" + output
+
+        self.Output = output
 class Sample :
     WD = './'
 
-    def __init__(self , name , xsection , lheW , datasetname , appendix = "" ):
+    def __init__(self , name , xsection , lheW , datasetname , appendix = "" , dbsInstance = "phys03"  ):
         self.Name = name
         self.XSection = xsection
         self.IsData = (self.XSection <= 0)
@@ -45,6 +53,11 @@ class Sample :
 
         self.DSName = datasetname
         self.Prefix = appendix
+
+        self.DBSInstance = dbsInstance
+        #for the samples created from the outputs of another sample, the histo files are needed to 
+        #count the total number of events without cuts
+        self.ParentSample = None
 
         if not datasetname == "" :
             self.InitiateFilesFromListOrDAS( datasetname , appendix )
@@ -78,15 +91,16 @@ class Sample :
             self.AddDASFiles( sample , prefix )
             self.WriteFileListToFile()
 
-    def MakeSampleFromOutputs(self , dir ):
+    def MakeSampleFromOutputs(self):
         ret = Sample( self.Name , self.XSection , self.LHEWeight , "" , dir )
         for j in self.Jobs:
-            ret.Files.append( "%s/%s" % (dir , j.Output2 ) )
+            ret.Files.append( "%s" % ( j.Output2 ) )
+        ret.ParentSample = self
         return ret
 
     def AddDASFiles( self , sample , prefix = "" ):
         jsondict = get_data( "https://cmsweb.cern.ch" , 
-                             "file dataset=%(sample)s instance=prod/phys03"  %  {'sample':sample} ,
+                             "file dataset=%(sample)s instance=prod/%(dbs)s"  %  {'sample':sample , 'dbs':self.DBSInstance} ,
                              0 , #idx
                              0 , #limit
                              0 , #verbose

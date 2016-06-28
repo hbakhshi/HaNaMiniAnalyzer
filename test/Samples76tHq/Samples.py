@@ -21,7 +21,11 @@ MicroAOD76Samples.append(VBFH76GG)
 VH76GG = Sample("VHGG" , 2.355*2.28e-3 , True  , "/VHToGG_M125_13TeV_amcatnloFXFX_madspin_pythia8/ferrif-RunIIFall15DR76-1_3_0-25ns_ext1-1_3_1-v0-RunIIFall15MiniAODv2-PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v4-61ec12b3e335d5103b9c71fb98a2868d/USER")
 MicroAOD76Samples.append(VH76GG)
 
-DiGG76  = Sample("DiPhoton" ,  84.0 , False  , "/DiPhotonJetsBox_MGG-80toInf_13TeV-Sherpa/ferrif-RunIIFall15DR76-1_3_0-25ns_ext1-1_3_1-v0-RunIIFall15MiniAODv2-PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1-7c7ed1c7bfe704638af8ca4418b6fb3d/USER")
+
+DiGG_76  = Sample("DiPhoton_" ,  135.1 , False  , "/DiPhotonJetsBox_MGG-80toInf_13TeV-Sherpa/ferrif-RunIIFall15DR76-1_3_0-25ns_ext1-1_3_1-v0-RunIIFall15MiniAODv2-PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1-7c7ed1c7bfe704638af8ca4418b6fb3d/USER")
+MicroAOD76Samples.append(DiGG_76)
+
+DiGG76  = Sample("DiPhoton" ,  84.4 , False  , "/DiPhotonJetsBox_MGG-80toInf_13TeV-Sherpa/ferrif-RunIIFall15DR76-1_3_0-25ns_ext1-1_3_1-v0-RunIIFall15MiniAODv2-PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1-7c7ed1c7bfe704638af8ca4418b6fb3d/USER")
 MicroAOD76Samples.append(DiGG76)
 
 GJet7640M80  = Sample("GJet7640M80" , 3216.0 , False , "/GJet_Pt-20toInf_DoubleEMEnriched_MGG-40to80_TuneCUETP8M1_13TeV_Pythia8/ferrif-RunIIFall15DR76-1_3_0-25ns_ext1-1_3_1-v0-RunIIFall15MiniAODv2-PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1-7c7ed1c7bfe704638af8ca4418b6fb3d/USER")
@@ -57,15 +61,18 @@ MicroAOD76Samples.append(TGJ76)
 ttH76GG = Sample("ttH" , 0.5085*1.525639529*2.28e-3 , True  , "/ttHJetToGG_M125_13TeV_amcatnloFXFX_madspin_pythia8/ferrif-RunIIFall15DR76-1_3_0-25ns_ext1-1_3_1-v0-RunIIFall15MiniAODv2-PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1-a7cbec612cb152a63062cf78d7a8471c/USER") 
 MicroAOD76Samples.append( ttH76GG )
 
+DYee = Sample("dyEE" ,2008.333333 , False , "/DYToEE_NNPDF30_13TeV-powheg-pythia8/ferrif-RunIIFall15DR76-1_3_0-25ns_ext1-1_3_1-v0-RunIIFall15MiniAODv2-PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1-9dd966127498bcac8c2a422833c3836e/USER" )
+MicroAOD76Samples.append( DYee )
+
 Signal76  = Sample("Signal" , 0.01561  , True , "/THQ_HToGG_13TeV-madgraph-pythia8_TuneCUETP8M1/hbakhshi-thggqProduction-Moriond16WSFinal-0305d2bd17670bc0d20b0c34c43ed269/USER")
 MicroAOD76Samples.append(Signal76)
 
 
-def MakeAllChildSamples( nFilesPerJob , outputName , storageDir ):
+def MakeAllChildSamples( nFilesPerJob , outputName  ):
     ret = []
     for s in MicroAOD76Samples :
         s.MakeJobs( nFilesPerJob , outputName )
-        ret.append( s.MakeSampleFromOutputs(storageDir) )
+        ret.append( s.MakeSampleFromOutputs() )
     return ret
         
-samples24june = MakeAllChildSamples( 20 , "out" , "/store/user/%s/%s" % ("hbakhshi", "thq24june" ) )
+samples24june = MakeAllChildSamples( 20 , "/store/user/%s/%s/%s" % ("hbakhshi", "thq24june" , "out" )  )

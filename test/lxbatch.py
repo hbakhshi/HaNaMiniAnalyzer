@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-runOnOutsOfAnotherJob = True
+runOnOutsOfAnotherJob = False
 
-nFilesPerJob=3
+nFilesPerJob=20
 CheckFailedJobs=False
 hname = "tHq/CutFlowTable/CutFlowTable"
 prefix = "out"
@@ -18,17 +18,20 @@ if not len(sys.argv) == 3 :
     exit()
 
 OutPath = "eos/cms/store/user/%s/%s/" % (user, sys.argv[2] )
-from Samples76tHq.Samples import *
-sample = None
+#from Samples76tHq.Samples import *
+from Samples76tHq.MiniAODSamples import *
+samples = None
 if runOnOutsOfAnotherJob :
     samples = samples24june
 else :
-    samples = MicroAOD76Samples
+    #samples = MicroAOD76Samples
+    samples = MiniAOD76Samples
 
 for sample in samples:
     sample.MakeJobs( nFilesPerJob , "%s/%s" % (OutPath , prefix) )
 
 import os
+import stat
 from shutil import copy
 from os import listdir
 from os.path import isfile, join, splitext, basename
@@ -40,11 +43,17 @@ os.mkdir( workingdir )
 
 
 if runOnOutsOfAnotherJob :
-    with open( "./%s/SetupAndRun.sh" % (workingdir), "wt") as fout:
+    outfile = "./%s/SetupAndRun.sh" % (workingdir)
+    with open( outfile, "wt") as fout:
         with open("SetupAndRun.sh", "rt") as fin:
             for line in fin:
                 if not "flashgg" in line :
                     fout.write( line.replace('tHq_cfg', 'tHq_onTaggFiles_cfg') )
+                elif "FORBOTH" in line :
+                    fout.write( line.replace('tHq_cfg', 'tHq_onTaggFiles_cfg') )
+                                        
+    st = os.stat(outfile)
+    os.chmod(outfile, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH )
 else :
     copy( "SetupAndRun.sh" , "./%s/" % (workingdir) )
 
