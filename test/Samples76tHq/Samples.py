@@ -73,7 +73,7 @@ WJetsMG76_FGG = Sample( "WJetsMG_FGG" , 61526.7 , False , "/WJetsToLNu_TuneCUETP
 MicroAOD76Samples.append( WJetsMG76_FGG )
 
 TTBar76_FGG = Sample( "TTbar_FGG" ,  831.76 , False , "/TT_TuneCUETP8M1_13TeV-powheg-pythia8/hbakhshi-thqSM-Moriond16WSFinal-57-g2d12144-v0_2-dda6ada328391ea2517e775b7551afcb/USER" )
-#MicroAOD76Samples.append( TTBar76_FGG )
+MicroAOD76Samples.append( TTBar76_FGG )
 
 ZZ76_FGG = Sample( "ZZ_FGG" , 15.4*2*0.071 , True  , "/ZZTo2L2Q_13TeV_amcatnloFXFX_madspin_pythia8/hbakhshi-thqSM-Moriond16WSFinal-57-g2d12144-v0_2-dda6ada328391ea2517e775b7551afcb/USER"  )
 MicroAOD76Samples.append(ZZ76_FGG)
@@ -87,11 +87,15 @@ MicroAOD76Samples.append(WW76_FGG)
 
 
 
+sampleswith24juneonly = [DiGG_76, DYee , WJetsMG76_FGG, TTBar76_FGG, ZZ76_FGG, WZ76_FGG , WW76_FGG]
 def MakeAllChildSamples( nFilesPerJob , outputName  ):
     ret = []
     for s in MicroAOD76Samples :
         s.MakeJobs( nFilesPerJob , outputName )
-        ret.append( s.MakeSampleFromOutputs() )
+        if s in sampleswith24juneonly :
+            ret.append( s )
+        else:
+            ret.append( s.MakeSampleFromOutputs() )
     return ret
         
 samples24june = MakeAllChildSamples( 20 , "/store/user/%s/%s/%s" % ("hbakhshi", "thq24june" , "out" )  )
