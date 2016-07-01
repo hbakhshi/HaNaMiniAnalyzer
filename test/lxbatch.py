@@ -3,7 +3,7 @@
 runOnOutsOfAnotherJob = False
 
 nFilesPerJob=20
-CheckFailedJobs=False
+CheckFailedJobs=True
 hname = "tHq/CutFlowTable/CutFlowTable"
 prefix = "out"
 
@@ -18,14 +18,12 @@ if not len(sys.argv) == 3 :
     exit()
 
 OutPath = "eos/cms/store/user/%s/%s/" % (user, sys.argv[2] )
-#from Samples76tHq.Samples import *
-from Samples76tHq.MiniAODSamples import *
+from Samples76tHq.Samples import *
 samples = None
 if runOnOutsOfAnotherJob :
     samples = samples24june
 else :
-    #samples = MicroAOD76Samples
-    samples = MiniAOD76Samples
+    samples = MicroAOD76Samples
 
 for sample in samples:
     sample.MakeJobs( nFilesPerJob , "%s/%s" % (OutPath , prefix) )

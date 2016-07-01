@@ -68,6 +68,25 @@ Signal76  = Sample("Signal" , 0.01561  , True , "/THQ_HToGG_13TeV-madgraph-pythi
 MicroAOD76Samples.append(Signal76)
 
 
+###import SM samples
+WJetsMG76_FGG = Sample( "WJetsMG_FGG" , 61526.7 , False , "/WJetsToLNu_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/hbakhshi-thqSM-Moriond16WSFinal-57-g2d12144-v0_2-dda6ada328391ea2517e775b7551afcb/USER" )
+MicroAOD76Samples.append( WJetsMG76_FGG )
+
+TTBar76_FGG = Sample( "TTbar_FGG" ,  831.76 , False , "/TT_TuneCUETP8M1_13TeV-powheg-pythia8/hbakhshi-thqSM-Moriond16WSFinal-57-g2d12144-v0_2-dda6ada328391ea2517e775b7551afcb/USER" )
+#MicroAOD76Samples.append( TTBar76_FGG )
+
+ZZ76_FGG = Sample( "ZZ_FGG" , 15.4*2*0.071 , True  , "/ZZTo2L2Q_13TeV_amcatnloFXFX_madspin_pythia8/hbakhshi-thqSM-Moriond16WSFinal-57-g2d12144-v0_2-dda6ada328391ea2517e775b7551afcb/USER"  )
+MicroAOD76Samples.append(ZZ76_FGG)
+
+WZ76_FGG = Sample( "WZ_FGG" ,  44.9*0.068 , True  , "/WZTo2L2Q_13TeV_amcatnloFXFX_madspin_pythia8/hbakhshi-thqSM-Moriond16WSFinal-57-g2d12144-v0_2-dda6ada328391ea2517e775b7551afcb/USER" )
+MicroAOD76Samples.append(WZ76_FGG)
+
+WW76_FGG = Sample( "WW_FGG" ,  118.7 , False  , "/WW_TuneCUETP8M1_13TeV-pythia8/hbakhshi-thqSM-Moriond16WSFinal-57-g2d12144-v0_2-dda6ada328391ea2517e775b7551afcb/USER" )
+MicroAOD76Samples.append(WW76_FGG)
+
+
+
+
 def MakeAllChildSamples( nFilesPerJob , outputName  ):
     ret = []
     for s in MicroAOD76Samples :
