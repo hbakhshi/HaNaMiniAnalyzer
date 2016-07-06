@@ -18,7 +18,7 @@ public:
   double Read( const edm::Event& iEvent ) override ;
 
   double puWeight;
-  int vtxMult;
+  unsigned int vtxMult;
   int nGoodVtx;
   const reco::Vertex * PV();
 private :

@@ -8,6 +8,7 @@ class ExtendedSample: #extend the sample object to store histograms
     def __init__( self , sample ):
         self.Name = sample.Name 
         self.XSection = sample.XSection 
+        self.XSections = {0:self.XSection}
         self.LHEWeight = sample.LHEWeight 
         self.DSName = sample.DSName 
         self.Prefix = sample.Prefix
@@ -21,22 +22,27 @@ class ExtendedSample: #extend the sample object to store histograms
         else :
             self.ParentSample = None
 
-    def GetCFT(self):
+    def GetCFT(self , index = 0):
         if not hasattr( self, "CutFlowTableName" ):
             return None
         if not self.CutFlowTableName in self.AllHists:
             return None
-        return self.AllHists[self.CutFlowTableName] 
+        return self.AllHists[self.CutFlowTableName][index]
+
+    def SetNTotal(self, n):
+        self.NTotal = n
     
-    def GetNTotal(self) :
+    def GetNTotal(self , index = 0) :
+        if hasattr(self, "NTotal") :
+            return self.NTotal
         if self.ParentSample :
-            if not self.ParentSample.GetCFT() :
+            if not self.ParentSample.GetCFT(index) :
                 print "Loading parent sample"
-                self.ParentSample.LoadHistos( self.DirName , self.CutFlowTableName , [self.CutFlowTableName] )
+                self.ParentSample.LoadHistos( self.DirName , self.CutFlowTableName , [self.CutFlowTableName] , self.LoadedIndices )
                 print "Loaded"
-            return self.ParentSample.GetNTotal()
+            return self.ParentSample.GetNTotal(index)
         else :
-            if not self.GetCFT() :
+            if not self.GetCFT(index) :
                 return -1
             return self.GetCFT().GetBinContent( 1 )
 
@@ -47,12 +53,16 @@ class ExtendedSample: #extend the sample object to store histograms
         if self.nTotal == 0:
             print "Sample %s has no entries" % (self.Name)
             return
-        self.XSFactor = lumi*self.XSection/self.nTotal
-        #print "%s factor : (%.2f*%.2f)/%.0f = %.3f" % (sample , lumi , self.XSections[sample] , ntotal  , factor)
-        for h in self.AllHists:
-            self.AllHists[h].Scale(self.XSFactor)
 
-    def LoadHistos(self , dirName = "tHq" , cftName = "CutFlowTable" , loadonly = []):
+        for index in self.LoadedIndices:
+            self.XSFactor = lumi*self.XSections[index]/self.nTotal
+            #print "%s factor : (%.2f*%.2f)/%.0f = %.3f" % (sample , lumi , self.XSections[sample] , ntotal  , factor)
+            for h in self.AllHists :
+                if len(self.AllHists[h]):
+                    self.AllHists[h][index].Scale(self.XSFactor)
+
+    def LoadHistos(self , dirName = "tHq" , cftName = "CutFlowTable" , loadonly = [] , indices = [0]):
+        self.LoadedIndices = indices
         self.CutFlowTableName = cftName
         self.DirName = dirName
         self.AllHists = {}
@@ -64,11 +74,11 @@ class ExtendedSample: #extend the sample object to store histograms
             if os.path.isfile( finame ):
                 ff = TFile.Open(finame)
             else:
-                print "File %d of sample %s doesn't exist, skip it" % (Job.Index , self.Name)
+                print "File %d of sample %s doesn't exist, skip it , %s" % (Job.Index , self.Name , finame)
                 continue
             dir = ff.GetDirectory(dirName)
             if not dir :
-                print "File %d of sample %s is not valid, skip it" % (Job.Index , self.Name)
+                print "File %d of sample %s is not valid, skip it , %s" % (Job.Index , self.Name , finame)
                 continue
             for dir__ in dir.GetListOfKeys() :
                 if not dir__.IsFolder():
@@ -77,42 +87,55 @@ class ExtendedSample: #extend the sample object to store histograms
                 if len(loadonly) > 0 and not propname in loadonly :
                     continue
                 dir_ = dir.GetDirectory( propname )
-                if propname in self.AllHists.keys() :
-                    dircontents = dir_.GetListOfKeys()
-                    firsthisto = dir_.Get( dircontents.At(0).GetName() )
-                    self.AllHists[propname].Add( firsthisto )
-                else :
-                    dircontents = dir_.GetListOfKeys()
-                    firsthisto = dir_.Get( dircontents.At(0).GetName() )
-                    if not firsthisto.ClassName().startswith("TH"):
-                        continue
-                    gROOT.cd()
-                    hnew = firsthisto.Clone("%s_%s" % ( propname , self.Name ) )
-                    hnew.SetBit(TH1.kNoTitle)
-                    #hnew.Reset()
-                    setattr( self , propname , hnew )
-                    hhh = getattr( self , propname )
-                    hhh.SetLineColor( 1 )
-                    hhh.SetLineWidth( 2 )
-                    if not self.IsData :
-                        #hhh.SetFillColor( self.Color )
-                        hhh.SetFillStyle( 1001 )
-                    else:
-                        hhh.SetStats(0)
+                dircontents = dir_.GetListOfKeys()
+                selectedHistos = {}
+                for index in indices:
+                    thehisto = dir_.Get( dircontents.At(index).GetName() )
+                    if thehisto.ClassName().startswith("TH"):
+                        selectedHistos[index] = thehisto 
 
-                    self.AllHists[propname] = hhh    
+                if propname in self.AllHists.keys() :
+                    for index in selectedHistos:
+                        firsthisto = selectedHistos[index]
+                        self.AllHists[propname][index].Add( firsthisto )
+                else :
+                    gROOT.cd()
+                    self.AllHists[propname] = {}
+                    for index in selectedHistos:
+                        firsthisto = selectedHistos[index]
+                        hnew = firsthisto.Clone("%s_%s_%d" % ( propname , self.Name , index ) )
+                        hnew.SetBit(TH1.kNoTitle)
+                        #hnew.Reset()
+                        setattr( self , "%s_%d" % (propname, index) , hnew )
+                        hhh = getattr( self , "%s_%d" % (propname, index) )
+                        hhh.SetLineColor( 1 )
+                        hhh.SetLineWidth( 2 )
+                        if not self.IsData :
+                            hhh.SetFillStyle( 1001 )
+                        else:
+                            hhh.SetStats(0)
+
+                        self.AllHists[propname][index] = hhh    
                     
             ff.Close()
+
         if len(self.AllHists)==0 :
             return False
         else:
             return True
 
+
 class SampleType:
     def __init__(self , name , color , samples = [] , signal = False ):
         self.Name = name 
-        self.Color = color
+        if type(color) is int:
+            self.Color = color
+            self.MultiPlot = False
+            
         self.Samples = [ExtendedSample(s) for s in samples]
+        if type(color) is dict:
+            self.Colors = color
+            
         self.IsSignal = signal
 
     def IsData(self):
@@ -128,10 +151,14 @@ class SampleType:
             print ""
             for propname in s.AllHists:
                 if propname in self.AllHists.keys() :
-                    self.AllHists[propname].Add(s.AllHists[propname])
+                    print propname
+                    self.AllHists[propname].Add(s.AllHists[propname][0])
                 else :
                     gROOT.cd()
-                    hnew = s.AllHists[propname].Clone("%s_%s" % ( propname , self.Name ) )
+                    if len(s.AllHists[propname]) == 0:
+                        print "%s skipped" % propname
+                        continue
+                    hnew = s.AllHists[propname][0].Clone("%s_%s" % ( propname , self.Name ) )
                     hnew.SetTitle( self.Name )
                     hnew.SetBit(TH1.kNoTitle) 
                     setattr( self , propname , hnew )
@@ -166,7 +193,8 @@ class Plotter:
             for st in self.Samples:
                 Plotter.addLabels( st.AllHists[hist] , labels )
                 for s in st.Samples :
-                    Plotter.addLabels( s.AllHists[hist] , labels )
+                    for index in s.AllHists[hist]:
+                        Plotter.addLabels( s.AllHists[hist][index] , labels )
 
  
     def GetStack(self, propname):
@@ -318,7 +346,7 @@ class Plotter:
                 self.GetStack(propname).GetStack().Last().Write("SumMC")
                 sampledir.cd()
                 for ss in sample.Samples:
-                    ss.AllHists[propname].Write()
+                    ss.AllHists[propname][0].Write()
                 propdir.cd()
                 self.GetCanvas(propname , 0).Write()
             fout.cd()

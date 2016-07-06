@@ -34,6 +34,8 @@ public:
 
   const DiPhotonCandidate* diPhoton;
   double MVA ;
+  int nDiPhos;
+  double lPt , lEta, lPhi , slPt , slEta , slPhi , lMVA, slMVA , diGMVA , diGMass ;
   int JetsIndex(){return diPhoton->jetCollectionIndex();};
   double W(){return diPhoton->centralWeight();};
 private :

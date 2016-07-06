@@ -21,10 +21,13 @@ public:
   enum SelectionStep{
     ZeroMuons,
     MoreThanOne,
+    ExactlyOneNonIso,
     ExactlyOne
   };
   SelectionStep Read( const edm::Event& iEvent , const DiPhotonCandidate* dipho );
 
+  short nMuons;
+  double Iso;
   std::vector<flashgg::Muon> goodMus;
   double W;
 private :

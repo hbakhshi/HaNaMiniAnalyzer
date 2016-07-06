@@ -20,6 +20,21 @@ public:
   }
 };
 
+template <class G>
+class ptSortPtr{
+public:
+  bool operator()(G* o1 ,G* o2 ){
+    return (o1->pt()>o2->pt());
+  }
+};
+template <class G>
+class etaSortPtr{
+public:
+  bool operator()(G* o1 ,G* o2 ){
+    return ( fabs(o1->eta()) > fabs(o2->pt()) );
+  }
+};
+
 
 template<typename T >
 class BaseEventReader {

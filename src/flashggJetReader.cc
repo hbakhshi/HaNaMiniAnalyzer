@@ -37,6 +37,14 @@ flashggJetReader::flashggJetReader( edm::ParameterSet const& iConfig, edm::Consu
     return;
   } else if(BTagCuts.size() < 2) 
     BTagCuts.push_back(-1);
+
+  if(BTagCuts[0] == 0) {
+    BTagCut = BTagWPL;
+  } else if (BTagCuts[0] == 1) {
+    BTagCut = BTagWPM ;
+  } else if (BTagCuts[0] == 2) {
+    BTagCut = BTagWPT ;
+  }
   
   if( !IsData ){
     btw = new BTagWeight("CSVv2", BTagCuts[0], SetupDir, MinNBJets , 1000 , BTagWPL, BTagWPM, BTagWPT,BTagCuts[1]);
@@ -49,12 +57,50 @@ flashggJetReader::flashggJetReader( edm::ParameterSet const& iConfig, edm::Consu
   }
 }
 
+#include <stdexcept>
+#include <algorithm> 
+//exactly one b-jet is requeste, so only the selectedJet collection should be searched for
+const flashgg::Jet* flashggJetReader::Get3rdJet(){
+  thirdJet = NULL;
+  int fjIndex = -2;
+  GetForwardJet(fjIndex);
+  if( fjIndex < 0 )
+    throw std::logic_error( "forward jet is not set" );
+
+  if(selectedJets.size() == 1)
+    return NULL;
+  else if( selectedJets.size() > 1 ){
+    if( fjIndex == 0 )
+      thirdJet = &(selectedJets[1]);
+    else
+      thirdJet = &(selectedJets[0]);
+  }
+
+  return thirdJet;
+}
+const flashgg::Jet* flashggJetReader::GetForwardJet(int& index){
+  forwardJet = NULL;
+  index = -1;
+  if(selectedJets.size() == 0)
+    return NULL;
+
+  double eta = -1.0;
+  for(unsigned int i = 0 ; i < selectedJets.size() ; i++)
+    if( fabs(selectedJets[i].eta()) > eta ){
+      eta = fabs(selectedJets[i].eta());
+      index = i;
+    }
+
+  forwardJet = &(selectedJets[index]);
+  return forwardJet;
+}
+
 const flashggJetCollection* flashggJetReader::GetAllJets(){
   return handle.product() ;
 }
 
 
-flashggJetReader::SelectionStatus flashggJetReader::Read(const edm::Event& iEvent , const DiPhotonCandidate* diPhoton ){
+flashggJetReader::SelectionStatus flashggJetReader::Read(const edm::Event& iEvent , const DiPhotonCandidate* diPhoton , const flashgg::Muon* mu ){
 
   // cout << diPhoton->jetCollectionIndex() << "Jet Reader " << all_tokens.size() ;
   // for(auto tkn : all_tokens )
@@ -89,31 +135,29 @@ flashggJetReader::SelectionStatus flashggJetReader::Read(const edm::Event& iEven
     
     double dr0 = reco::deltaR( j.p4() , diPhoton->leadingPhoton()->p4() );
     double dr1 = reco::deltaR( j.p4() , diPhoton->subLeadingPhoton()->p4() );
-    if( dr0 < 0.4 || dr1 < 0.4 ) continue ;
+    double dr2 = reco::deltaR( j.p4() , mu->p4() );
+    if( dr0 < 0.4 || dr1 < 0.4 || dr2 < 0.4 ) continue ;
     
-    selectedJets.push_back(j);
+    bool isB = false;
  
     if ( fabs(j.eta() ) < 2.4 ){
       selectedJetsEtaLT24.push_back(j);
-
       float btagval = j.bDiscriminator( BTagAlgo );
-    
-      if(BTagCuts[0] == 0) {
-	if(btagval > BTagWPL) selectedBJets.push_back(j);
-      } else if (BTagCuts[0] == 1) {
-	if(btagval > BTagWPM) selectedBJets.push_back(j);
-      } else if (BTagCuts[0] == 2) {
-	if(btagval > BTagWPT) selectedBJets.push_back(j);
-      }
+      isB = ( btagval > BTagCut );
+      if( isB )
+	selectedBJets.push_back( j );
     }
+
+    if( !isB )
+      selectedJets.push_back(j);
   }
   
   ptSort<flashgg::Jet> mySort; 
   std::sort(selectedJets.begin(),selectedJets.end(),mySort);
   std::sort(selectedBJets.begin(),selectedBJets.end(),mySort);
     
-  if( selectedJets.size()  < MinNJets ) return flashggJetReader::NotEnoughJets ;
-  if( selectedBJets.size() < MinNBJets ) return flashggJetReader::NotEnoughBJets;
+  if( (selectedJets.size()+selectedBJets.size())  < MinNJets ) return flashggJetReader::NotEnoughJets ;
+  if( selectedBJets.size() != MinNBJets ) return flashggJetReader::NotEnoughBJets;
   if(!IsData)
     W = btw->weight(selectedJetsEtaLT24);
   return flashggJetReader::Pass;

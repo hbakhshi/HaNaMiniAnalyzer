@@ -21,23 +21,35 @@ DiPhotonReader::SelectionStatus DiPhotonReader::read( const edm::Event& iEvent )
 
   assert( handle->size() == mvaResult.handle->size() );
 
-  int nDiPhos = 0;
+  nDiPhos = 0;
   DiPhotonReader::SelectionStatus ret = ZeroPairs;
 
   diPhoton = NULL;
-  MVA = -1000;
+  MVA = lPt = lEta = lPhi = slPt = slEta = slPhi = lMVA = slMVA = diGMVA = diGMass = -1000.0;
   for(  unsigned int diphoIndex = 0; diphoIndex < handle->size(); diphoIndex++ ) {
     edm::Ptr<flashgg::DiPhotonCandidate> dipho = handle->ptrAt( diphoIndex );
     edm::Ptr<flashgg::DiPhotonMVAResult> mvares = mvaResult.handle->ptrAt( diphoIndex );
 
-    if( dipho->leadingPhoton()->pt() < ( dipho->mass() )*leadPhoOverMassThreshold_ ) {if(ret<LeadingPt) ret = LeadingPt ; continue; }
-    if( dipho->subLeadingPhoton()->pt() < ( dipho->mass() )*subleadPhoOverMassThreshold_ ) { if(ret<SubLeadingPt) ret = SubLeadingPt ;continue; }
+    lPt  = dipho->leadingPhoton()->pt();
+    lEta = dipho->leadingPhoton()->eta();
+    lPhi = dipho->leadingPhoton()->phi();
+
+    slPt = dipho->subLeadingPhoton()->pt();
+    slEta= dipho->subLeadingPhoton()->eta();
+    slPhi= dipho->subLeadingPhoton()->phi();
+
+    lMVA = dipho->leadingPhoton()->phoIdMvaDWrtVtx( dipho->vtx() );
+    slMVA = dipho->subLeadingPhoton()->phoIdMvaDWrtVtx( dipho->vtx() );
+
+    diGMVA = mvares->result;
+    diGMass = dipho->mass();
+
+    if( ( lPt / diGMass ) < leadPhoOverMassThreshold_ ) {if(ret<LeadingPt) ret = LeadingPt ; continue; }
+    if( ( slPt / diGMass ) < subleadPhoOverMassThreshold_ ) { if(ret<SubLeadingPt) ret = SubLeadingPt ;continue; }
     
-    double idmva1 = dipho->leadingPhoton()->phoIdMvaDWrtVtx( dipho->vtx() );
-    double idmva2 = dipho->subLeadingPhoton()->phoIdMvaDWrtVtx( dipho->vtx() );
-    if( idmva1 < PhoMVAThreshold_ || idmva2 < PhoMVAThreshold_ ) { if(ret<PhotonID) ret = PhotonID ;continue; }
-    if( mvares->result < MVAThreshold_ ) { if(ret<MVAFailed) ret = MVAFailed ;continue; }
-    if( dipho->mass() < InvMassCut ) { if( ret < InvMassFailed ) ret = InvMassFailed ; continue ; }
+    if( lMVA < PhoMVAThreshold_ || lMVA < PhoMVAThreshold_ ) { if(ret<PhotonID) ret = PhotonID ;continue; }
+    if( diGMVA < MVAThreshold_ ) { if(ret<MVAFailed) ret = MVAFailed ;continue; }
+    if( diGMass < InvMassCut ) { if( ret < InvMassFailed ) ret = InvMassFailed ; continue ; }
     nDiPhos ++;
     if( mvares->result > MVA ){
       diPhoton = dipho.get();
@@ -46,10 +58,12 @@ DiPhotonReader::SelectionStatus DiPhotonReader::read( const edm::Event& iEvent )
     }
   }
 
-  if( nDiPhos == 0 )
+  if( nDiPhos == 0 ){
     return ret;
-  else if( nDiPhos == 1 )
+  }
+  else if( nDiPhos == 1 ){
     return Pass;
+  }
   else 
     return PassMoreThanOne;
 }

@@ -18,7 +18,8 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
-                            fileNames = cms.untracked.vstring()
+                            fileNames = cms.untracked.vstring(),
+                            skipEvents=cms.untracked.uint32(10000)
 )
 
 process.load("tHqAnalyzer.HaNaMiniAnalyzer.tHq_cfi")

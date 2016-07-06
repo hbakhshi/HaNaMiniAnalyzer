@@ -4,6 +4,7 @@
 #include "BTagWeight.h"
 #include "BaseEventReader.h"
 #include "flashgg/DataFormats/interface/Jet.h"
+#include "flashgg/DataFormats/interface/Muon.h"
 #include "JetMETCorrections/Modules/interface/JetResolution.h"
 #include "DataFormats/Math/interface/deltaR.h"
 
@@ -25,18 +26,23 @@ public:
 
   flashggJetReader( edm::ParameterSet const& iConfig, edm::ConsumesCollector && iC , bool isData , string SetupDir) ;
   const flashggJetCollection* GetAllJets();
+  const flashgg::Jet* GetForwardJet(int& index);
 
+  flashgg::Jet* thirdJet;
+  flashgg::Jet* forwardJet;
+  const flashgg::Jet* Get3rdJet();
   enum SelectionStatus {
     NotEnoughJets,
     NotEnoughBJets,
     Pass
   };
 
-  SelectionStatus Read( const edm::Event& iEvent , const DiPhotonCandidate* diPhoton);
+  SelectionStatus Read( const edm::Event& iEvent , const DiPhotonCandidate* diPhoton , const flashgg::Muon* mu);
 
   flashggJetCollection selectedJetsEtaLT24;
   flashggJetCollection selectedJets;
   flashggJetCollection selectedBJets;
+
   double W;
 private :
   BTagWeight* btw; 
@@ -50,9 +56,8 @@ private :
 
 
   /* b-JET SELECTION PARAMS */
-  double BTagWPL , BTagWPM , BTagWPT ;
+  double BTagWPL , BTagWPM , BTagWPT , BTagCut ;
   std::vector<int> BTagCuts; // atm only 2 are accepted, first for selection, second for veto
-
 public:
   string BTagAlgo ;
 private:

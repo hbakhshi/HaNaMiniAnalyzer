@@ -109,34 +109,84 @@ flashggMuonReader::SelectionStep flashggMuonReader::Read( const edm::Event& iEve
     else if(MuonID == 4){
       if (!muon::isSoftMuon( mu , *(dipho->vtx()) ) ) continue;
     }
-    reco::MuonPFIsolation iso = mu.pfIsolationR04();
-    double reliso = (iso.sumChargedHadronPt+TMath::Max(0.,iso.sumNeutralHadronEt+iso.sumPhotonEt-0.5*iso.sumPUPt))/mu.pt();
-    if( reliso > MuonIsoCut) continue;
-
     double dr0 = reco::deltaR( mu.p4() , dipho->leadingPhoton()->p4() );
     double dr1 = reco::deltaR( mu.p4() , dipho->subLeadingPhoton()->p4() );
     if( dr0 < DeltaRMuonPho || dr1 < DeltaRMuonPho ) continue ;
 
     goodMus.push_back( mu );
   }
-    
+
   switch( goodMus.size() ){
   case 0 :
+    nMuons = 0;
     return flashggMuonReader::ZeroMuons ;
-  case 1:
+  case 1:{
+    
+    double wId = 1.0; 
+    double wIso = 1.0;
+
     double pt = goodMus[0].pt();
     if( !IsData ){
       if( pt > 120 )
 	pt = 115;
       if( pt < 20 )
 	pt = 21;
-      double eta = goodMus[0].eta();
-      W *=  hMuSFID->GetBinContent( hMuSFID->FindBin( pt , eta ) ) ;
-      W *= hMuSFIso->GetBinContent( hMuSFIso->FindBin(pt , eta ) ) ;
+      double eta = fabs( goodMus[0].eta() );
+      wId =  hMuSFID->GetBinContent( hMuSFID->FindBin( pt , eta ) ) ;
+      wIso = hMuSFIso->GetBinContent( hMuSFIso->FindBin(pt , eta ) ) ;
     }
-    return flashggMuonReader::ExactlyOne ;
-  }
 
-  return flashggMuonReader::MoreThanOne;
+    reco::MuonPFIsolation iso = goodMus[0].pfIsolationR04();
+    Iso = (iso.sumChargedHadronPt+TMath::Max(0.,iso.sumNeutralHadronEt+iso.sumPhotonEt-0.5*iso.sumPUPt))/goodMus[0].pt();
+    if( Iso <= MuonIsoCut) {
+      W *= ( wId * wIso );
+      nMuons = 1;
+      return flashggMuonReader::ExactlyOne ;
+    }else{
+      W *= wId ;
+      nMuons = 100;
+      return flashggMuonReader::ExactlyOneNonIso;
+    }
+  }
+  default:{
+    vector< std::vector<flashgg::Muon>::const_iterator > toRemove;
+    for( std::vector<flashgg::Muon>::const_iterator mu = goodMus.begin() ; mu != goodMus.end() ; mu++){
+      reco::MuonPFIsolation iso = mu->pfIsolationR04();
+      double reliso = (iso.sumChargedHadronPt+TMath::Max(0.,iso.sumNeutralHadronEt+iso.sumPhotonEt-0.5*iso.sumPUPt))/mu->pt();
+      if( reliso > MuonIsoCut){
+	toRemove.push_back( mu );
+      }
+    }
+    for( vector< std::vector<flashgg::Muon>::const_iterator >::reverse_iterator toR = toRemove.rbegin() ; toR != toRemove.rend() ; toR++ ){
+      goodMus.erase( * toR );
+    }
+
+    if( goodMus.size() == 1 ){
+      reco::MuonPFIsolation iso = goodMus[0].pfIsolationR04();
+      Iso = (iso.sumChargedHadronPt+TMath::Max(0.,iso.sumNeutralHadronEt+iso.sumPhotonEt-0.5*iso.sumPUPt))/goodMus[0].pt();
+
+      double wId = 1.0; 
+      double wIso = 1.0;
+      
+      double pt = goodMus[0].pt();
+      
+      if( !IsData ){
+	if( pt > 120 )
+	  pt = 115;
+	if( pt < 20 )
+	  pt = 21;
+	double eta = fabs( goodMus[0].eta() );
+	wId =  hMuSFID->GetBinContent( hMuSFID->FindBin( pt , eta ) ) ;
+	wIso = hMuSFIso->GetBinContent( hMuSFIso->FindBin(pt , eta ) ) ;
+      }
+      W *= (wId * wIso);
+      nMuons = 1;
+      return flashggMuonReader::ExactlyOne ;
+    }
+    else
+      nMuons = goodMus.size() ;
+      return flashggMuonReader::MoreThanOne;
+  }
+  }
 }
 
