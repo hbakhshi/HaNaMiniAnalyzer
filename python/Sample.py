@@ -1,3 +1,4 @@
+import sys
 from os import listdir
 from os.path import isfile, join
 from das_client import *
@@ -14,6 +15,16 @@ import os.path
 #kCyan = 432
 #kBlue = 600
 ######################################################################
+
+def GetUserName(arg=2):
+    user=""
+    if len(sys.argv) > arg :
+        user = sys.argv[arg]
+    else:
+        import getpass
+        user = getpass.getuser()
+    return user
+
 
 ##recommended code to group a list : https://docs.python.org/2/library/itertools.html#recipes
 from itertools import izip_longest

@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-runOnOutsOfAnotherJob = False
+runOnOutsOfAnotherJob = True
 
-nFilesPerJob=20
+nFilesPerJob=3
 CheckFailedJobs=True
 hname = "tHq/CutFlowTable/CutFlowTable"
-prefix = "out"
+prefix = "tree"
 
 from ROOT import TFile, TH1
 import sys
