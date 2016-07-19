@@ -2,6 +2,9 @@
 
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
+#include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
+
+
 
 #include "TTree.h"
 #include <iostream>
@@ -42,6 +45,22 @@ public:
 protected:
   virtual void beginJob() override;
   virtual bool filter(edm::Event&, const edm::EventSetup&) override;
+
+  // void endRun(edm::Run const& iRun, edm::EventSetup const&) override {
+  //   edm::Handle<LHERunInfoProduct> run; 
+  //   typedef std::vector<LHERunInfoProduct::Header>::const_iterator headers_const_iterator;
+ 
+  //   iRun.getByToken( LHERunInfoProduct_Token , run );
+  //   LHERunInfoProduct myLHERunInfoProduct = *(run.product());
+ 
+  //   for (headers_const_iterator iter=myLHERunInfoProduct.headers_begin(); iter!=myLHERunInfoProduct.headers_end(); iter++){
+  //     std::cout << iter->tag() << std::endl;
+  //     std::vector<std::string> lines = iter->lines();
+  //     for (unsigned int iLine = 0; iLine<lines.size(); iLine++) {
+  // 	std::cout << lines.at(iLine);
+  //     }
+  //   }
+  // };
 
   unsigned int RunN;
   unsigned long long EventN;
@@ -96,6 +115,8 @@ protected:
 
 
   Histograms* M_GG; //Histograms*  Eta_J; Histograms*  Pt_J ; Histograms*  Pt_Mu ; Histograms*  Eta_Mu; Histograms*  Pt_b ; Histograms*  Eta_b ; Histograms*  DEta_Jb ; Histograms*  DEta_bMu ;
+
+  //edm::EDGetTokenT<LHERunInfoProduct> LHERunInfoProduct_Token;
 };
 
 DEFINE_FWK_MODULE(tHqAnalyzer);
@@ -108,6 +129,7 @@ tHqAnalyzer::tHqAnalyzer( const edm::ParameterSet& ps ) :
   MakeTree( ps.getParameter<bool>( "StoreEventNumbers" ) )
 {
   usesResource("TFileService");
+  //LHERunInfoProduct_Token = consumes<LHERunInfoProduct,edm::InRun>(edm::InputTag("source","","LHEFile"));
 }
 // ------------ method called once each job just before starting event loop  ------------
 void tHqAnalyzer::beginJob()
