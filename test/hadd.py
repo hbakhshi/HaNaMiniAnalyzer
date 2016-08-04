@@ -18,7 +18,7 @@ for sample in samples:
     else:
         sample.MakeJobs( 3 , "eos/cms/store/user/%s/%s/%s" % (GetUserName(), "thqTree6july" , "tree" ) ) 
 
-from tHqAnalyzer.HaNaMiniAnalyzer.Plotter import ExtendedSample
+from tHqAnalyzer.HaNaMiniAnalyzer.ExtendedSample import *
 for sample in samples:
     ss = ExtendedSample(sample)
     ss.fhadd()

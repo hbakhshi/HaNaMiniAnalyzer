@@ -61,7 +61,7 @@ MicroAOD76Samples.append(TGJ76)
 ttH76GG = Sample("ttH" , 0.5085*1.525639529*2.28e-3 , True  , "/ttHJetToGG_M125_13TeV_amcatnloFXFX_madspin_pythia8/ferrif-RunIIFall15DR76-1_3_0-25ns_ext1-1_3_1-v0-RunIIFall15MiniAODv2-PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1-a7cbec612cb152a63062cf78d7a8471c/USER") 
 MicroAOD76Samples.append( ttH76GG )
 
-DYee = Sample("dyEE" ,2008.333333 , False , "/DYToEE_NNPDF30_13TeV-powheg-pythia8/ferrif-RunIIFall15DR76-1_3_0-25ns_ext1-1_3_1-v0-RunIIFall15MiniAODv2-PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1-9dd966127498bcac8c2a422833c3836e/USER" )
+DYee = Sample("dyEE" ,2008.333333 , False , "/DYToEE_NNPDF30_13TeV-powheg-pythia8/ferrif-RunIIFall15DR76-1_3_0-25ns_ext1-1_3_1-v0-RunIIFall15MiniAODv2-PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1-9dd966127498bcac8c2a422833c3836e/USERd" )
 MicroAOD76Samples.append( DYee )
 
 Signal76  = Sample("Signal" , 0.01561  , True , "/THQ_HToGG_13TeV-madgraph-pythia8_TuneCUETP8M1/hbakhshi-thggqProduction-Moriond16WSFinal-0305d2bd17670bc0d20b0c34c43ed269/USER")

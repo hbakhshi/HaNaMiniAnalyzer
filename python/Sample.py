@@ -55,6 +55,7 @@ class Sample :
     WD = './'
 
     def __init__(self , name , xsection , lheW , datasetname , appendix = "" , dbsInstance = "phys03"  ):
+        self.Jobs = []
         self.Name = name
         self.XSection = xsection
         self.IsData = (self.XSection <= 0)
