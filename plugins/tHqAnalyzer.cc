@@ -66,20 +66,22 @@ protected:
   unsigned long long EventN;
   unsigned char SelectionStep;
 
-  unsigned char nVertices, nJets, nbJets, nMuons, nGPairs , nSelGPairs ;
+  unsigned char nVertices, nJets, nLbJets , nMbJets , nTbJets, nMuons, nGPairs , nSelGPairs ;
   struct particleinfo{
-    float pt, eta, phi , other ; //other : for photon id, for diphoton mass, for jets btagging vals
-    particleinfo( double pt_=-999, double eta_ =-999, double phi_=-999 , double other_ = -999 ){
+    float pt, eta, phi , other , w ; //other : for photon id, for diphoton mass, for jets btagging vals
+    particleinfo( double pt_=-999, double eta_ =-999, double phi_=-999 , double other_ = -999 , double W = 1.0 ){
       pt = pt_;
       eta= eta_;
       phi = phi_;
       other = other_;
+      w = W;
     };
-    void set(double pt_=-999, double eta_ =-999, double phi_=-999 , double other_ = -999 ){
+    void set(double pt_=-999, double eta_ =-999, double phi_=-999 , double other_ = -999 , double W = 1.0 ){
       pt = pt_;
       eta= eta_;
       phi = phi_;
       other = other_;
+      w = W;
     };
   };
   void FillTree(){
@@ -94,19 +96,55 @@ protected:
   std::valarray<double> W;
   float* Weight;
   float puWeight , diGMVA , met , metPhi ;
-  particleinfo G1 , G2 , DiG , mu , forwardJ , bJ , J3 ;
+  float* bSelWeights;
+  particleinfo G1 , G2 , DiG , mu ;
+
+  char  closest_jet_index ;
+  float closest_jet_dr    ;
+
+  std::vector<float> jetsPt;
+  std::vector<float> jetsEta;
+  std::vector<float> jetsPhi;
+
+  struct Nb_scenario{
+    char index_forward, index_highpt , index_secondpt ;
+    void set( int f , int leading , int subleading ){
+      index_forward = f ;
+      index_highpt = leading ;
+      index_secondpt = subleading ;
+    };
+
+    void Print(std::string name){
+      cout << name << " : f," << int(index_forward) << " ; pt," << int(index_highpt) << " ; pt2," << int(index_secondpt) << endl;
+    };
+  };
+  Nb_scenario zeroB , oneB , twoB ;
   void resetTreeVals(){
     RunN = 0;
     EventN = 0;
-    SelectionStep = nVertices = nJets = nbJets = nMuons = nGPairs = nSelGPairs = 250;
+    SelectionStep = nVertices = nJets = nLbJets = nMbJets = nTbJets = nMuons = nGPairs = nSelGPairs = 250;
 
     W = 1.0;
     for(unsigned int i=0 ; i < nHistos ; i++)
       Weight[i] = 1.0 ;
 
+    for(unsigned int i=0 ; i < 12 ; i++)
+      bSelWeights[i] = 0.0;
+
     puWeight = met = metPhi = -999;
     particleinfo tmp;
-    G1 = G2 = DiG = mu = forwardJ = bJ = J3 =  tmp ;
+    G1 = G2 = DiG = mu = tmp ;
+
+    jetsPhi.clear();
+    jetsPt.clear();
+    jetsEta.clear();
+
+    zeroB.set( 255 , 255 , 255 );
+    oneB.set( 255 , 255 , 255 );
+    twoB.set( 255 , 255 , 255 );
+
+    closest_jet_index = 255;
+    closest_jet_dr = 1000. ;
   }
 
   TTree* theSelectionResultTree;
@@ -138,7 +176,9 @@ void tHqAnalyzer::beginJob()
     nHistos = 51;
   W = std::valarray<double>( 1.0 , nHistos);
   Weight = new float[nHistos];
-  
+
+  bSelWeights = new float[12];
+
   if( MakeTree ){
     edm::Service<TFileService> fs;
     //fs->cd();
@@ -157,7 +197,9 @@ void tHqAnalyzer::beginJob()
     theSelectionResultTree->Branch("SelectionStep", &SelectionStep );
     theSelectionResultTree->Branch("nVertices" , &nVertices);
     theSelectionResultTree->Branch("nJets" , &nJets);
-    theSelectionResultTree->Branch("nbJets", &nbJets);
+    theSelectionResultTree->Branch("nLbJets", &nLbJets);
+    theSelectionResultTree->Branch("nMbJets", &nMbJets);
+    theSelectionResultTree->Branch("nTbJets", &nTbJets);
     theSelectionResultTree->Branch("nMuons", &nMuons);
     theSelectionResultTree->Branch("nGPairs", &nGPairs);
     theSelectionResultTree->Branch("nSelGPairs", &nSelGPairs);
@@ -168,16 +210,25 @@ void tHqAnalyzer::beginJob()
 
     theSelectionResultTree->Branch("Weight", Weight , weightLeafList.c_str() );
     theSelectionResultTree->Branch("puWeight", &puWeight);
+    theSelectionResultTree->Branch("bWs", bSelWeights , "W0L:W0M:W0T:W1L:W1M:W1M0L:W1T:W1T0L:W1T0M:W2L:W2M:W2T");
     theSelectionResultTree->Branch("diGMVA", &diGMVA);
     theSelectionResultTree->Branch("met", &met);
     theSelectionResultTree->Branch("metPhi", &metPhi);
-    theSelectionResultTree->Branch("G1" , &G1 , "pt:eta:phi:other" );
-    theSelectionResultTree->Branch("G2" , &G2 , "pt:eta:phi:other"  );
-    theSelectionResultTree->Branch("DiG", &DiG , "pt:eta:phi:other"  );
-    theSelectionResultTree->Branch("mu", &mu , "pt:eta:phi:other"  );
-    theSelectionResultTree->Branch("forwardJ", &forwardJ , "pt:eta:phi:other" );
-    theSelectionResultTree->Branch("bJ", &bJ, "pt:eta:phi:other" );
-    theSelectionResultTree->Branch("J3", &J3 , "pt:eta:phi:other" );
+    theSelectionResultTree->Branch("G1" , &G1 , "pt:eta:phi:other:w" );
+    theSelectionResultTree->Branch("G2" , &G2 , "pt:eta:phi:other:w"  );
+    theSelectionResultTree->Branch("DiG", &DiG , "pt:eta:phi:other:w"  );
+    theSelectionResultTree->Branch("mu", &mu , "pt:eta:phi:other:w"  );
+
+    theSelectionResultTree->Branch("jMuIndex", &closest_jet_index );
+    theSelectionResultTree->Branch("jMuDr", &closest_jet_dr );
+
+    theSelectionResultTree->Branch("jetsPt", (&jetsPt) );
+    theSelectionResultTree->Branch("jetsPhi", (&jetsPhi) );
+    theSelectionResultTree->Branch("jetsEta", (&jetsEta) );
+
+    theSelectionResultTree->Branch("zeroB" , &zeroB , "forward/C:leading:subleading" );
+    theSelectionResultTree->Branch("oneB" , &oneB , "forward/C:leading:subleading" );
+    theSelectionResultTree->Branch("twoB" , &twoB , "forward/C:leading:subleading" );
 
     resetTreeVals();
   }
@@ -224,7 +275,8 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   nVertices = vertexReader->vtxMult;
   hCutFlowTable->Fill( ++SelectionStep , W );
 
-  switch( diPhoton->read( iEvent ) ){
+  DiPhotonReader::SelectionStatus diPhoSelStatus = diPhoton->read(iEvent);
+  switch( diPhoSelStatus ){
     case DiPhotonReader::Pass:
     case DiPhotonReader::PassMoreThanOne:
       W *= diPhoton->W();
@@ -238,15 +290,18 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       G1.set( diPhoton->diPhoton->leadingPhoton()->pt(),
 	      diPhoton->diPhoton->leadingPhoton()->eta(),
 	      diPhoton->diPhoton->leadingPhoton()->phi(),
-	      diPhoton->diPhoton->leadingPhoton()->phoIdMvaDWrtVtx( diPhoton->diPhoton->vtx() ) );
+	      diPhoton->diPhoton->leadingPhoton()->phoIdMvaDWrtVtx( diPhoton->diPhoton->vtx() ),
+	      diPhoton->diPhoton->leadingPhoton()->centralWeight() );
       G2.set( diPhoton->diPhoton->subLeadingPhoton()->pt(),
 	      diPhoton->diPhoton->subLeadingPhoton()->eta(),
 	      diPhoton->diPhoton->subLeadingPhoton()->phi(),
-	      diPhoton->diPhoton->subLeadingPhoton()->phoIdMvaDWrtVtx( diPhoton->diPhoton->vtx() ) );
+	      diPhoton->diPhoton->subLeadingPhoton()->phoIdMvaDWrtVtx( diPhoton->diPhoton->vtx() ) ,
+	      diPhoton->diPhoton->subLeadingPhoton()->centralWeight() );
       DiG.set( diPhoton->diPhoton->pt() ,
 	       diPhoton->diPhoton->eta() ,
 	       diPhoton->diPhoton->phi() ,
-	       diPhoton->diPhoton->mass() );
+	       diPhoton->diPhoton->mass() ,
+	       diPhoton->W() );
       diGMVA = diPhoton->diGMVA;
       nGPairs = diPhoton->handle->size();
       nSelGPairs = diPhoton->nDiPhos ;
@@ -275,6 +330,112 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     
   M_GG->Fill( diPhoton->diPhoton->mass() , W );
 
+  metReader->Read(iEvent);
+  hCutFlowTable->Fill( ++SelectionStep , W );
+  met = metReader->met.pt();
+  metPhi = metReader->met.phi();
+
+
+  flashggjetreader->Read( iEvent , diPhoton->diPhoton ); // , &(flashggmuonreader->goodMus[0]) ) )
+  //W *= flashggjetreader->W ;
+  hCutFlowTable->Fill( ++SelectionStep , W );
+  hCutFlowTable->Fill( ++SelectionStep , W );
+
+  nJets = flashggjetreader->selectedJets.size();
+  nLbJets = flashggjetreader->nLB;
+  nMbJets = flashggjetreader->nMB;
+  nTbJets = flashggjetreader->nTB;
+
+
+  if(nJets > 0){
+    flashggjetreader->getAllWs(bSelWeights);
+    // cout << "from thq : " ;
+    // for(int ii = 0 ; ii < 12 ; ii++)
+    //   cout <<  bSelWeights[ii] << " " ;
+    // cout << endl;
+
+    map<int,int> etaSortedJetIndices;
+    map<int,int> ptSortedJetIndices;
+    for(unsigned int ij = 0 ; ij < flashggjetreader->selectedJets.size() ; ij++){
+      int index = flashggjetreader->GetJetbSorted( ij );
+      const flashgg::Jet* theJet = &(flashggjetreader->selectedJets[index]) ;
+      
+      jetsPhi.push_back( theJet->phi() );
+      jetsEta.push_back( theJet->eta() );
+      jetsPt.push_back( theJet->pt() );
+
+      int eta_index = flashggjetreader->GetJetEtaSortedIndex( index );
+      etaSortedJetIndices[eta_index]  = ij ;
+
+      int pt_index = flashggjetreader->GetJetPtSortedIndex( index );
+      ptSortedJetIndices[pt_index] = ij ;
+    }
+
+    // cout << "eta indices" ;
+    // for(auto iii : etaSortedJetIndices)
+    //   cout << iii.first << "," << iii.second << " - " ;
+    // cout << endl;
+
+    // cout << "pt indices" ;
+    // for(auto iii : ptSortedJetIndices)
+    //   cout << iii.first << "," << iii.second << " - " ;
+    // cout << endl;
+
+    if( nJets > 3 ){
+      zeroB.set( etaSortedJetIndices[0] ,
+		 ptSortedJetIndices[0] , 
+		 ptSortedJetIndices[1] );
+
+      oneB.set(etaSortedJetIndices[0]==0 ? etaSortedJetIndices[1] : etaSortedJetIndices[0] ,
+	       ptSortedJetIndices[0] , 
+	       ptSortedJetIndices[1] );
+
+      int index_f = 2;
+      for(int ij = 0 ; ij < nJets ; ij++)
+	if( etaSortedJetIndices[ij] > 1 ){
+	  index_f = etaSortedJetIndices[ij] ;
+	  break;
+	}
+      twoB.set( index_f ,
+		ptSortedJetIndices[0] ,
+		ptSortedJetIndices[1] );
+    }
+    else if( nJets == 3 ){
+      zeroB.set( etaSortedJetIndices[0] ,
+		 ptSortedJetIndices[0] , 
+		 ptSortedJetIndices[1] );
+
+      oneB.set(etaSortedJetIndices[0]==0 ? etaSortedJetIndices[1] : etaSortedJetIndices[0] ,
+	       ptSortedJetIndices[0] , 
+	       ptSortedJetIndices[1] );
+
+      twoB.set(2 , ptSortedJetIndices[0] , ptSortedJetIndices[1] );
+    }
+    else if( nJets == 2 ){
+      zeroB.set( etaSortedJetIndices[0] ,
+		 ptSortedJetIndices[0] , 
+		 ptSortedJetIndices[1] );
+
+      oneB.set( 1 , ptSortedJetIndices[0] , ptSortedJetIndices[1] );
+      twoB.set( etaSortedJetIndices[0] , ptSortedJetIndices[0] , ptSortedJetIndices[1] );
+    }
+    else if( nJets == 1 ){
+      zeroB.set( 0 , 
+		 0 ,
+		 255 );
+      oneB.set( 0 , 
+		0 ,
+		255 );
+      twoB.set( 0 , 
+		0 ,
+		255 );
+    }
+
+    // zeroB.Print("zero");
+    // oneB.Print("one");
+    // twoB.Print("two");
+  }
+
   switch( flashggmuonreader->Read( iEvent , diPhoton->diPhoton ) ){
   case flashggMuonReader::ExactlyOne :
     W *= (flashggmuonreader->W);
@@ -284,7 +445,8 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     mu.set( flashggmuonreader->goodMus[0].pt() ,
 	    flashggmuonreader->goodMus[0].eta() ,
 	    flashggmuonreader->goodMus[0].phi() ,
-	    flashggmuonreader->Iso );
+	    flashggmuonreader->Iso ,
+	    flashggmuonreader->W );
     nMuons = 1;
     break;
   case flashggMuonReader::MoreThanOne :
@@ -294,47 +456,22 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     mu.set( flashggmuonreader->goodMus[0].pt() ,
 	    flashggmuonreader->goodMus[0].eta() ,
 	    flashggmuonreader->goodMus[0].phi() ,
-	    flashggmuonreader->Iso );
+	    flashggmuonreader->Iso ,
+	    flashggmuonreader->W );
   case flashggMuonReader::ZeroMuons :
     nMuons = flashggmuonreader->nMuons ;
     FillTree();
     return true;
   }
 
-  // Eta_Mu->Fill( fabs( flashggmuonreader->goodMus[0].eta() ) , W );
-  // Pt_Mu->Fill( flashggmuonreader->goodMus[0].pt() , W );
 
-
-  switch( flashggjetreader->Read( iEvent , diPhoton->diPhoton , &(flashggmuonreader->goodMus[0]) ) ){
-  case flashggJetReader::Pass:
-    W *= flashggjetreader->W ;
-    hCutFlowTable->Fill( ++SelectionStep , W );
-    hCutFlowTable->Fill( ++SelectionStep , W );
-
-    nJets = flashggjetreader->selectedJets.size();
-    nbJets = flashggjetreader->selectedBJets.size();
-
-    break;
-  case flashggJetReader::NotEnoughBJets:
-    hCutFlowTable->Fill( ++SelectionStep , W );
-  case flashggJetReader::NotEnoughJets:
-    nJets = flashggjetreader->selectedJets.size();
-    nbJets = flashggjetreader->selectedBJets.size();
-    FillTree();
-    return true;
+  for(int i=0 ; i < nJets ; i++){
+    float dri = reco::deltaR( jetsEta[i] , jetsPhi[i] , mu.eta , mu.phi );
+    if( dri < closest_jet_dr ){
+      closest_jet_index = i;
+      closest_jet_dr = dri ;
+    }
   }
-
-
-  const flashgg::Jet* bJet = &(flashggjetreader->selectedBJets[0]) ;
-  bJ.set( bJet->pt() , bJet->eta() , bJet->phi() , bJet->bDiscriminator( flashggjetreader->BTagAlgo ) );
-
-  //forward jet is set when Get3rdJet method is called
-  const flashgg::Jet* Jet3 = flashggjetreader->Get3rdJet() ;
-  if( Jet3 )
-    J3.set( Jet3->pt() , Jet3->eta() , Jet3->phi() , Jet3->bDiscriminator( flashggjetreader->BTagAlgo ) );
-
-  const flashgg::Jet* forwardJet = flashggjetreader->forwardJet;
-  forwardJ.set( forwardJet->pt() , forwardJet->eta() , forwardJet->phi() , forwardJet->bDiscriminator( flashggjetreader->BTagAlgo ) );
 
   // Pt_b->Fill( flashggjetreader->selectedBJets[0].pt()  , W );
   // Eta_b->Fill( fabs( flashggjetreader->selectedBJets[0].eta() )  , W );
@@ -344,18 +481,6 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // DEta_bMu->Fill( fabs( flashggmuonreader->goodMus[0].eta() -  flashggjetreader->selectedBJets[0].eta() ) , W );
 
-  if( metReader->Read(iEvent) < 0 ){
-    met = metReader->met.pt();
-    metPhi = metReader->met.phi();
-
-    FillTree();
-    return true;
-  }
-  hCutFlowTable->Fill( ++SelectionStep , W );
-
-  met = metReader->met.pt();
-  metPhi = metReader->met.phi();
   FillTree();
-
   return true;
 }

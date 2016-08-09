@@ -19,7 +19,7 @@ tHq = cms.EDFilter('tHqAnalyzer',
                                        ),
 
                      MET = cms.PSet( Input = cms.InputTag("slimmedMETs"),
-                                     Cut = cms.double( 40. )
+                                     Cut = cms.double( -1. )
                                      ),
                      Jets = cms.PSet( Input = cms.InputTag("flashggUnpackedJets","0"),
                                       flashgg = cms.bool( True ),
@@ -52,7 +52,7 @@ tHq = cms.EDFilter('tHqAnalyzer',
                                           subleadPhoOverMassThreshold = cms.double( 0.25 ),
                                           MVAThreshold = cms.double( -0.4 ),
                                           PhoMVAThreshold = cms.double( -0.9 ),
-                                          InvMassCut = cms.double( 40. )
+                                          InvMassCut = cms.double( 90. )
 
                                           ),
                      sample = cms.string("WJetsMG"),
