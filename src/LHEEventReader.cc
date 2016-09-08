@@ -16,11 +16,11 @@ double LHEEventReader::Read( const edm::Event& iEvent ){
 std::valarray<double> LHEEventReader::ExtractWeightsInRange( int from , int to ){
   std::vector<double> ret;
   double orig_w = handle->originalXWGTUP();
-  orig_w /= fabs( orig_w );
-  ret.push_back( orig_w );
+  
+  ret.push_back( orig_w/fabs( orig_w ) );
   for(int i=from ; i <= to ; i++){
     //std::cout << i << endl;
-    ret.push_back( handle->weights()[i].wgt / orig_w ) ;
+    ret.push_back( handle->weights()[i].wgt / fabs(orig_w) ) ;
   }
 
   std::valarray<double> ret_( ret.data() , ret.size() );

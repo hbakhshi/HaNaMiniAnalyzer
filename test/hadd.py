@@ -16,9 +16,12 @@ for sample in samples:
         #job is already created : sample.MakeJobs( 20 , "%s/%s" % (OutPath24June , prefix) )
         print sample.Name 
     else:
-        sample.MakeJobs( 3 , "eos/cms/store/user/%s/%s/%s" % (GetUserName(), "thqTree6july" , "tree" ) ) 
+        sample.MakeJobs( 3 , "eos/cms/store/user/%s/%s/%s" % (GetUserName(), "thqTree9Aug" , "tree" ) ) 
 
 from tHqAnalyzer.HaNaMiniAnalyzer.ExtendedSample import *
 for sample in samples:
-    ss = ExtendedSample(sample)
-    ss.fhadd()
+    if sample.Name in ["QCDDoubleEM76_m4080_pt30"] : #["TTbar_FGG"]
+        print "skipping " + sample.Name
+        #continue
+        ss = ExtendedSample(sample)
+        ss.fhadd()
