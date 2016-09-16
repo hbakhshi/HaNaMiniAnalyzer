@@ -117,8 +117,8 @@ class Sample :
                              0 , #limit
                              0 , #verbose
                              300 , #waiting time
-                             "" ,  #ckey
-                             "" , #cert
+                             "~/.globus/userkey.pem"  ,   #ckey
+                             "~/.globus/usercert.pem" , #cert
                              )
         
         cli_msg  = jsondict.get('client_message', None)
