@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-runOnOutsOfAnotherJob = True
+runOnOutsOfAnotherJob = False
 
 nFilesPerJob=3
 CheckFailedJobs=True
@@ -18,12 +18,12 @@ if not len(sys.argv) == 3 :
     exit()
 
 OutPath = "eos/cms/store/user/%s/%s/" % (user, sys.argv[2] )
-from Samples76tHq.Samples import *
+from Samples80tHq.Samples import *
 samples = None
 if runOnOutsOfAnotherJob :
     samples = samples24june
 else :
-    samples = MicroAOD76Samples
+    samples = MicroAOD80Samples
 
 for sample in samples:
     sample.MakeJobs( nFilesPerJob , "%s/%s" % (OutPath , prefix) )

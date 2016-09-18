@@ -4,7 +4,7 @@ tHq = cms.EDFilter('tHqAnalyzer',
                                       Input = cms.InputTag("source")
                                       ),
 
-                     HLT = cms.PSet( Input = cms.InputTag( "TriggerResults","","HLT2" ), 
+                     HLT = cms.PSet( Input = cms.InputTag( "TriggerResults","","HLT" ), 
                                      HLT_To_Or = cms.vstring()
                                      ),
                      Vertex = cms.PSet( Input = cms.InputTag( "offlineSlimmedPrimaryVertices" ),

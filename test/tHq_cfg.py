@@ -117,9 +117,10 @@ if theSample.IsData :
     process.source.lumisToProcess = LumiList.LumiList(filename = (process.tHq.SetupDir.value() + '/JSON.txt')).getVLuminosityBlockRange()
     process.p = cms.Path( process.flashggSeq * process.tHq )
     for v in range(0 , 10 ):
-        process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30_18_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass95_v%d' % (v) )
-        process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30PV_18PV_R9Id_AND_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
-        process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30EB_18EB_R9Id_OR_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
+        process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30_18_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90_v%d' % (v) )
+        #process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30_18_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass95_v%d' % (v) )
+        #process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30PV_18PV_R9Id_AND_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
+        #process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30EB_18EB_R9Id_OR_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
 
 else :
     if os.environ["CMSSW_VERSION"].count("CMSSW_7_6"):
@@ -129,6 +130,8 @@ else :
     else:
         raise Exception,"The default setup for microAODstd.py does not support releases other than 76X and 80X"
 
+    if theSample.DSName.count( "_reHLT_" ):
+        process.tHq.HLT.Input = cms.InputTag( "TriggerResults","","HLT2" )
     #process.GlobalTag.globaltag = '76X_dataRun2_16Dec2015_v0'
     #from PhysicsTools.PatAlgos.producersLayer1.jetUpdater_cff import *
     # process.patJetCorrFactorsReapplyJEC = updatedPatJetCorrFactors.clone(
@@ -146,9 +149,10 @@ else :
     process.p = cms.Path(process.flashggSeq *  process.tHq )
     if options.sync == 0 :
         for v in range(0 , 10 ):
-            process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30_18_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass95_v%d' % (v) )
-            process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30PV_18PV_R9Id_AND_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
-            process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30EB_18EB_R9Id_OR_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
+            continue
+            #process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30_18_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass95_v%d' % (v) )
+            #process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30PV_18PV_R9Id_AND_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
+            #process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30EB_18EB_R9Id_OR_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
 
 
 process.outp1=cms.OutputModule("PoolOutputModule",

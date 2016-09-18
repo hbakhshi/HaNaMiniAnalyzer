@@ -1,40 +1,13 @@
 export X509_USER_PROXY=$1
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 export SCRAM_ARCH=$2
-scramv1 project CMSSW $3
-cd $3/src/
+
+cp -r /afs/cern.ch/user/h/hbakhshi/work/tHq/2016/CMSSW_8_0_8_patch1/ .
+cd CMSSW_8_0_8_patch1/src
 eval `scramv1 runtime -sh`
+scramv1 b ProjectRename
 
-
-###flashgg preparation ######
-
-# cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/ .
-# cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/RecoEgamma/ .
-# cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/CommonTools .
-# cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/DataFormats/ .
-# cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/PhysicsTools/ .
-# cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/EgammaAnalysis/ .
-# scram b -j 2
-
-mkdir flashgg/ #FORBOTH
-cd flashgg  #FORBOTH
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/DataFormats/ .   #FORBOTH
-
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/MicroAOD/ .
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/flashgg/Taggers/ .
-
-cd ../  
-
-mkdir RecoEgamma/ #just for flashgg case is needed
-cd RecoEgamma/ #just for flashgg case is needed
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/RecoEgamma/EgammaTools/ . #just for flashgg case is needed
-rm -rf EgammaTools/plugins/ #just for flashgg case is needed
-cd ../ #just for flashgg case is needed
-
-cp -r --preserve=timestamps /afs/cern.ch/work/h/hbakhshi/tHq/CMSSW_8_0_8/src/DataFormats/ .
-
-scram b -j 2 #FORBOTH
-
+rm -rf tHqAnalyzer/
 #############################
 
 
