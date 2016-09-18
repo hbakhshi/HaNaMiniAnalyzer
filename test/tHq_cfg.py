@@ -58,7 +58,7 @@ theSample = None
 import os
 
 if options.sync == 0 :
-    from Samples76tHq.Samples import MicroAOD76Samples as samples
+    from Samples80tHq.Samples import MicroAOD80Samples as samples
 
 
     for sample in samples:
@@ -109,7 +109,7 @@ if theSample.IsData :
     if os.environ["CMSSW_VERSION"].count("CMSSW_7_6"):
         process.GlobalTag = GlobalTag(process.GlobalTag, '76X_dataRun2_v15')
     elif os.environ["CMSSW_VERSION"].count("CMSSW_8_0"):
-        process.GlobalTag = GlobalTag(process.GlobalTag,'80X_mcRun2_asymptotic_v11')
+        process.GlobalTag = GlobalTag(process.GlobalTag,'80X_dataRun2_Prompt_ICHEP16JEC_v0')
     else:
         raise Exception,"The default setup for microAODstd.py does not support releases other than 76X and 80X"
 
@@ -125,7 +125,7 @@ else :
     if os.environ["CMSSW_VERSION"].count("CMSSW_7_6"):
         process.GlobalTag = GlobalTag(process.GlobalTag, '76X_mcRun2_asymptotic_v13')
     elif os.environ["CMSSW_VERSION"].count("CMSSW_8_0"):
-        process.GlobalTag = GlobalTag(process.GlobalTag,'80X_mcRun2_asymptotic_v11')
+        process.GlobalTag = GlobalTag(process.GlobalTag,'80X_mcRun2_asymptotic_2016_miniAODv2_v1')
     else:
         raise Exception,"The default setup for microAODstd.py does not support releases other than 76X and 80X"
 

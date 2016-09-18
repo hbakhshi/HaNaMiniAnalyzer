@@ -4,7 +4,7 @@ tHq = cms.EDFilter('tHqAnalyzer',
                                       Input = cms.InputTag("source")
                                       ),
 
-                     HLT = cms.PSet( Input = cms.InputTag( "TriggerResults","","HLT" ), 
+                     HLT = cms.PSet( Input = cms.InputTag( "TriggerResults","","HLT2" ), 
                                      HLT_To_Or = cms.vstring()
                                      ),
                      Vertex = cms.PSet( Input = cms.InputTag( "offlineSlimmedPrimaryVertices" ),
@@ -31,7 +31,7 @@ tHq = cms.EDFilter('tHqAnalyzer',
                                                                   cms.InputTag("flashggUnpackedJets","6"),
                                                                   cms.InputTag("flashggUnpackedJets","7"),
                                                                   ),
-                                      ApplyJER = cms.bool( True ),
+                                      ApplyJER = cms.bool( False ),
                                       JetPtCut = cms.double( 30 ),
                                       JetEtaCut = cms.double( 4.7 ),
                                       BTagAlgo = cms.string("pfCombinedInclusiveSecondaryVertexV2BJetTags"),
@@ -57,6 +57,6 @@ tHq = cms.EDFilter('tHqAnalyzer',
                                           ),
                      sample = cms.string("WJetsMG"),
                      isData = cms.bool( False ),
-                     SetupDir = cms.string("Setup76"),
+                     SetupDir = cms.string("Setup80"),
                      StoreEventNumbers = cms.bool( True )
                      )
