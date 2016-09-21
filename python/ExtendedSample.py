@@ -48,14 +48,14 @@ class ExtendedSample: #extend the sample object to store histograms
             return self.NTotal
         if self.ParentSample :
             if not self.ParentSample.GetCFT(index) :
-                print "Loading parent sample"
+                print "\tLoading parent sample"
                 self.ParentSample.LoadHistos( self.DirName , self.CutFlowTableName , [self.CutFlowTableName] , self.LoadedIndices )
-                print "Loaded %s = %d" % ( self.Name , self.ParentSample.GetNTotal(index) )
+                print "\tLoaded %s = %d" % ( self.Name , self.ParentSample.GetNTotal(index) )
             return self.ParentSample.GetNTotal(index)
         else :
             if not self.GetCFT(index) :
                 return -1
-            print self.GetCFT(index).GetName()
+            print "\t%s is read for total number of events" % (self.GetCFT(index).GetName() )
             return self.GetCFT(index).GetBinContent( 1 )
 
     def NormalizeHistos(self, lumi):
@@ -63,18 +63,19 @@ class ExtendedSample: #extend the sample object to store histograms
             return
         self.nTotal = self.GetNTotal()
         if self.nTotal == 0:
-            print "Sample %s has no entries" % (self.Name)
+            print "\tSample %s has no entries" % (self.Name)
             return
 
         for index in self.LoadedIndices:
             self.XSFactor = lumi*self.XSections[index]/self.nTotal
+            print "\t\tXSFactor[%d] for lumi %d is : %.4f" % (index , lumi , self.XSFactor)
             #print "%s factor : (%.2f*%.2f)/%.0f = %.3f" % (sample , lumi , self.XSections[sample] , ntotal  , factor)
             for h in self.AllHists :
                 if len(self.AllHists[h]):
                     self.AllHists[h][index].Scale(self.XSFactor)
 
 
-    def DrawTreeHistos( self , histInfos ,  treeName = "tHq/Trees/Events" ):
+    def DrawTreeHistos( self , treeselections ,  treeName = "tHq/Trees/Events" ):
         self.Tree = TChain( treeName )
         for Job in self.Jobs:
             self.Tree.Add( Job.Output )
@@ -82,29 +83,13 @@ class ExtendedSample: #extend the sample object to store histograms
         if not hasattr( self, "LoadedIndices" ):
             print "call DrawTreeHistos after LoadHistos"
 
-
-        for hist in histInfos:
-            for n in self.LoadedIndices:
-                hname =  hist.MakeName(self.Name , n)
-                gROOT.cd()
-                self.Tree.Draw( "%s>>cloned_%s(%d,%f,%f)" % ( hist.VarName , hname , hist.nBins , hist.From , hist.To ) ,
-                                hist.MakeCut( n )
-                                )
-                setattr( self , hname , gDirectory.Get( "cloned_"+hname ).Clone( hname ) )
-                hhh = getattr( self , hname )
-                hhh.SetBit(TH1.kNoTitle)
-                hhh.SetLineColor( 1 )
-                hhh.SetLineWidth( 2 )
-                if not self.IsData :
-                    hhh.SetFillStyle( 1001 )
-                else:
-                    hhh.SetStats(0)
-
-                if not hist.Name in self.AllHists:
-                    self.AllHists[hist.Name] = {}
-                    
-                self.AllHists[hist.Name][n] = hhh
-                
+        for selection in treeselections:
+            treehists = selection.LoadHistos( self.Name , self.IsData , self.Tree , self.LoadedIndices )
+            for hist in treehists :
+                if not hist in self.AllHists:
+                    self.AllHists[hist] = {}
+                for n in treehists[hist]:
+                    self.AllHists[hist][n] = treehists[hist][n]
 
                     
     def LoadHistos(self , dirName = "tHq" , cftName = "CutFlowTable" , loadonly = [] , indices = [0]):
@@ -114,8 +99,8 @@ class ExtendedSample: #extend the sample object to store histograms
         self.AllHists = {}
         for Job in self.Jobs :
             finame = Job.Output
-            sys.stdout.write("\r%s : %d of %d" % (self.Name , Job.Index+1 , len(self.Jobs)))
-            sys.stdout.flush()
+            #sys.stdout.write("\r%s : %d of %d" % (self.Name , Job.Index+1 , len(self.Jobs)))
+            #sys.stdout.flush()
             ff = None
             if os.path.isfile( finame ):
                 ff = TFile.Open(finame)
@@ -132,6 +117,7 @@ class ExtendedSample: #extend the sample object to store histograms
                 propname = dir__.GetName()
                 if len(loadonly) > 0 and not propname in loadonly :
                     continue
+                print "\t\tloading %s (indices = %s)" % ( propname, str(indices) )
                 dir_ = dir.GetDirectory( propname )
                 dircontents = dir_.GetListOfKeys()
                 selectedHistos = {}

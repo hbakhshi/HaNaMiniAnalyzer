@@ -49,7 +49,7 @@ MicroAOD80Samples.append(DiG_40Box80)
 DiG_80Box  = Sample("DiPhoton_80Box" ,  84.4 , False  , "/DiPhotonJetsBox_MGG-80toInf_13TeV-Sherpa/ferrif-RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2-2_2_0-v0-RunIISpring16MiniAODv2-PUSpring16_80X_mcRun2_asymptotic_2016_miniAODv2_v0-v1-b4da767d058dfcf162795c45ef775a16/USER" )
 MicroAOD80Samples.append(DiG_80Box)
 
-DiG_Jets  = Sample("DiPhoton_Jets" ,  135.1 , False  , "/DiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8/ferrif-RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2-2_2_0-v0-RunIISpring16MiniAODv2-PUSpring16_80X_mcRun2_asymptotic_2016_miniAODv2_v0-v1-b4da767d058dfcf162795c45ef775a16/USER" )
+DiG_Jets  = Sample("DiPhoton_Jets" ,  135.1 , True  , "/DiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8/ferrif-RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2-2_2_0-v0-RunIISpring16MiniAODv2-PUSpring16_80X_mcRun2_asymptotic_2016_miniAODv2_v0-v1-b4da767d058dfcf162795c45ef775a16/USER" )
 MicroAOD80Samples.append(DiG_Jets)
 
 GJet8040M80  = Sample("GJet8040M80" , 3216.0 , False , "/GJet_Pt-20toInf_DoubleEMEnriched_MGG-40to80_TuneCUETP8M1_13TeV_Pythia8/ferrif-RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2-2_2_0-v0-RunIISpring16MiniAODv2-PUSpring16_80X_mcRun2_asymptotic_2016_miniAODv2_v0-v1-b4da767d058dfcf162795c45ef775a16/USER" )
@@ -84,3 +84,7 @@ MicroAOD80Samples.append(TGJ80)
 
 TGJ80_ext  = Sample("TGJ_ext" , 2.967 , True , "/TGJets_TuneCUETP8M1_13TeV_amcatnlo_madspin_pythia8/ferrif-RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2-2_2_0-v0-RunIISpring16MiniAODv2-PUSpring16_80X_mcRun2_asymptotic_2016_miniAODv2_v0_ext1-v1-b4da767d058dfcf162795c45ef775a16/USER" )
 MicroAOD80Samples.append(TGJ80_ext)
+
+
+Signal76  = Sample("Signal" , 0.01561  , True , "/THQ_HToGG_13TeV-madgraph-pythia8_TuneCUETP8M1/hbakhshi-thggqProduction-Moriond16WSFinal-0305d2bd17670bc0d20b0c34c43ed269/USER")
+MicroAOD80Samples.append(Signal76)

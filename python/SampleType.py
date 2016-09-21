@@ -40,19 +40,25 @@ class SampleType:
         Indices = [0]
         if self.MultiPlot:
             Indices = self.Colors.keys()
-        print self.Name
-        print Indices
+        #print self.Name
+        #print Indices
         for s in self.Samples :
+            print "\tSample %s is loading :" % (s.Name)
             if s.LoadHistos( dirName , cftName , [] , Indices ):
                 if len(treeHistos):
                     s.DrawTreeHistos( treeHistos )
                 s.NormalizeHistos( lumi )
-            print ""
+                print "\tAll Loaded and normalized, now they are being organized"
             for propname in s.AllHists:
                 if not propname in self.AllOtherHists.keys():
                     self.AllOtherHists[propname] = {}
                 if propname in self.AllHists.keys() :
                     #print propname
+                    if self.AllHists[propname].GetNbinsX() != s.AllHists[propname][0].GetNbinsX() :
+                        #self.AllHists[propname].Print("base")
+                        #s.AllHists[propname][0].Print("base")
+                        print "\tHisto %s from sub-sample %s(%d,%.2f,%.2f) has different bins from the sample type %s(%d,%.2f,%.2f)"%(propname, s.Name , s.AllHists[propname][0].GetNbinsX() , s.AllHists[propname][0].GetXaxis().GetXmin() , s.AllHists[propname][0].GetXaxis().GetXmax() , self.Name , self.AllHists[propname].GetNbinsX() , self.AllHists[propname].GetXaxis().GetXmin() , self.AllHists[propname].GetXaxis().GetXmax() )
+                        continue
                     self.AllHists[propname].Add(s.AllHists[propname][0])
                     for i in Indices:
                         if not i == 0:
@@ -60,7 +66,7 @@ class SampleType:
                 else :
                     gROOT.cd()
                     if len(s.AllHists[propname]) == 0:
-                        print "%s skipped" % propname
+                        print "\t%s skipped" % propname
                         continue
                     for i in Indices:
                         hnew = None
@@ -95,3 +101,4 @@ class SampleType:
                             self.AllHists[propname] = hhh
                         
                         self.AllOtherHists[propname][i] = hhh
+                        print "\t%s[%d] is created for %s : (%d, %.2f, %.2f)" % (propname , i , self.Name , hhh.GetNbinsX() , hhh.GetBinLowEdge(1) , hhh.GetBinLowEdge( hhh.GetNbinsX() ) + hhh.GetBinWidth( hhh.GetNbinsX() ) )

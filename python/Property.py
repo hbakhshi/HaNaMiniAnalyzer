@@ -169,12 +169,23 @@ class Property:
             ret.Add( self.Bkg[bkg] , -1 )
         return ret
         
-    def GetStack(self):
+    def GetStack(self, normtodata = False):
         if not hasattr(self , "Stack"):
             stackname = "%s_stack" % (self.Name)
-            #print stackname
+            scale = 1.0
+            if normtodata:
+                totalmc = 0.
+                for st in self.Bkg:
+                    totalmc += self.Bkg[st].Integral()
+                if totalmc > 0.000001 :
+                    scale = self.Data.Integral()/totalmc
+                else :
+                    print "\t%s was not normalized to data as the mc yield is %.2f" % (self.Name , totalmc)
+            #print "in getStack, normtodata = %s and scale is %f" % (str(normtodata) , scale)
             self.Stack = THStack( stackname , self.Name ) 
             for st in self.Bkg:
+                if normtodata:
+                    self.Bkg[st].Scale( scale )
                 self.Stack.Add( self.Bkg[st] )
 
         return self.Stack
@@ -303,12 +314,14 @@ class Property:
         return self.LineOne
 
 
-    def Draw(self, padOrCanvas = 0):
+    def Draw(self, normalizetodata = False , padOrCanvas = 0 ):
         gStyle.SetOptTitle(0)
-        self.AddOF_UF_Bins()
+        #self.AddOF_UF_Bins()
         self.GetCanvas(1, padOrCanvas)
         self.Data.Draw("E")
-        self.GetStack().Draw("HIST SAME")
+        #if normalizetodata:
+        #    print "Norm to data"
+        self.GetStack(normalizetodata).Draw("HIST SAME")
         self.Data.Draw("E SAME P")
         if self.Signal:
             for s in self.Signal:
@@ -321,7 +334,7 @@ class Property:
         self.GetRatioPlot().Draw("ep same")
         self.GetLineOne().Draw()
 
-    def Write(self , propdir , mkdir=False ):
+    def Write(self , propdir , normtodata , mkdir=False ):
         if mkdir:
             propdir = propdir.mkdir( self.Name )
         propdir.cd()
@@ -330,7 +343,7 @@ class Property:
         self.Data.Write()
         for bkg in self.Bkg :
             self.Bkg[bkg].Write()
-        self.GetStack().GetStack().Last().Write("SumMC")
+        self.GetStack(normtodata).GetStack().Last().Write("SumMC")
 
         if self.Signal :
             sigdir = propdir.mkdir( "signals" )
@@ -344,6 +357,6 @@ class Property:
             ss.Write()
 
         propdir.cd()
-        self.Draw()
+        self.Draw(normtodata)
         self.GetCanvas(0).Write()
 
