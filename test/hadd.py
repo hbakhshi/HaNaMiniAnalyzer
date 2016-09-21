@@ -24,4 +24,6 @@ for sample in samples:
     #    print "skipping " + sample.Name
     #    continue
     ss = ExtendedSample(sample)
-    ss.fhadd()
+    #export EOS_MGM_URL=root://eosuser.cern.ch
+    #eosmount eos_cb
+    ss.fhadd("eos_cb/user/h/hbakhshi/Personal/Projects/tHq/nTuples/")

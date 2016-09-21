@@ -196,7 +196,7 @@ class ExtendedSample: #extend the sample object to store histograms
 
         return contents
 
-    def fhadd(self, force=False, verbose=False, slow=True):
+    def fhadd(self, prefix = "" , force=False, verbose=False, slow=True):
         """ taken from https://root.cern.ch/phpBB3/viewtopic.php?t=14881
         This function will merge objects from a list of root files and write them    
         to a target root file. The target file is newly created and must not
@@ -214,7 +214,7 @@ class ExtendedSample: #extend the sample object to store histograms
         force -- overwrite target file if exists
         """
 
-        target = self.Name + ".root"
+        target = prefix + self.Name + ".root"
         sources = [j.Output for j in self.Jobs]
 
         TH1.AddDirectory(False)
