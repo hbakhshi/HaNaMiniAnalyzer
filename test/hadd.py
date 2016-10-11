@@ -20,10 +20,10 @@ for sample in samples:
 
 from tHqAnalyzer.HaNaMiniAnalyzer.ExtendedSample import *
 for sample in samples:
-    #if sample.Name in ["QCDDoubleEM76_m4080_pt30"] : #["TTbar_FGG"]
+    if sample.Name in ["DiPhoton_Jets"]:
     #    print "skipping " + sample.Name
     #    continue
-    ss = ExtendedSample(sample)
+        ss = ExtendedSample(sample)
     #export EOS_MGM_URL=root://eosuser.cern.ch
     #eosmount eos_cb
-    ss.fhadd("eos_cb/user/h/hbakhshi/Personal/Projects/tHq/nTuples/")
+        ss.fhadd("eos_cb/user/h/hbakhshi/Personal/Projects/tHq/nTuples/")

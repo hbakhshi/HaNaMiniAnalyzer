@@ -233,6 +233,8 @@ void tHqAnalyzer::beginJob()
     resetTreeVals();
   }
 
+  if( !IsData && nHistos==1 )
+    nHistos = 2;
   hCutFlowTable = new Histograms( SampleName , "CutFlowTable" , 15 , 0.5 , 15.5 , nHistos );
   M_GG = new Histograms( SampleName , "M_GG" , 100 , 50 , 250 , nHistos );
   // Eta_J = new Histograms( SampleName , "Eta_J" , 24 , -4.7 , 4.7 , nHistos );
@@ -261,16 +263,23 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   if( geninfoReader )
     W *= geninfoReader->Read( iEvent );
-
+  if( !IsData && nHistos==2 )
+    W[1] = 1.0;
   hCutFlowTable->Fill( ++SelectionStep , W );
 
   if( hltReader->Read( iEvent ) < 0 )
     return false;
+  if( !IsData && nHistos==2 )
+    W[1] = 1.0;
+
   hCutFlowTable->Fill( ++SelectionStep , W );
 
   if( vertexReader->Read( iEvent ) < 0 )
     return false;
   W *= vertexReader->puWeight;
+  if( !IsData && nHistos==1 )
+    W[1] = 1.0;
+
   puWeight = vertexReader->puWeight;
   nVertices = vertexReader->vtxMult;
   hCutFlowTable->Fill( ++SelectionStep , W );
@@ -280,68 +289,70 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     case DiPhotonReader::Pass:
     case DiPhotonReader::PassMoreThanOne:
       W *= diPhoton->W();
+      if( !IsData && nHistos==2 )
+	W[1] = 1.0;
+
       hCutFlowTable->Fill( ++SelectionStep , W );
-      hCutFlowTable->Fill( ++SelectionStep , W );
-      hCutFlowTable->Fill( ++SelectionStep , W );
-      hCutFlowTable->Fill( ++SelectionStep , W );
-      hCutFlowTable->Fill( ++SelectionStep , W );
-      hCutFlowTable->Fill( ++SelectionStep , W );
-      
-      G1.set( diPhoton->diPhoton->leadingPhoton()->pt(),
-	      diPhoton->diPhoton->leadingPhoton()->eta(),
-	      diPhoton->diPhoton->leadingPhoton()->phi(),
-	      diPhoton->diPhoton->leadingPhoton()->phoIdMvaDWrtVtx( diPhoton->diPhoton->vtx() ),
-	      diPhoton->diPhoton->leadingPhoton()->centralWeight() );
-      G2.set( diPhoton->diPhoton->subLeadingPhoton()->pt(),
-	      diPhoton->diPhoton->subLeadingPhoton()->eta(),
-	      diPhoton->diPhoton->subLeadingPhoton()->phi(),
-	      diPhoton->diPhoton->subLeadingPhoton()->phoIdMvaDWrtVtx( diPhoton->diPhoton->vtx() ) ,
-	      diPhoton->diPhoton->subLeadingPhoton()->centralWeight() );
       DiG.set( diPhoton->diPhoton->pt() ,
 	       diPhoton->diPhoton->eta() ,
 	       diPhoton->diPhoton->phi() ,
 	       diPhoton->diPhoton->mass() ,
 	       diPhoton->W() );
-      diGMVA = diPhoton->diGMVA;
-      nGPairs = diPhoton->handle->size();
-      nSelGPairs = diPhoton->nDiPhos ;
-      break;
-    case DiPhotonReader::InvMassFailed:
-      hCutFlowTable->Fill( ++SelectionStep , W );
-    case DiPhotonReader::MVAFailed:
-      hCutFlowTable->Fill( ++SelectionStep , W );
-    case DiPhotonReader::PhotonID:
-      hCutFlowTable->Fill( ++SelectionStep , W );
-    case DiPhotonReader::SubLeadingPt:
-      hCutFlowTable->Fill( ++SelectionStep , W );
-    case DiPhotonReader::LeadingPt:
-      hCutFlowTable->Fill( ++SelectionStep , W );
-      G1.set( diPhoton->lPt, diPhoton->lEta , diPhoton->lPhi , diPhoton->lMVA );
-      G2.set( diPhoton->slPt, diPhoton->slEta , diPhoton->slPhi , diPhoton->slMVA );
-      DiG.other = diPhoton->diGMass;
-      diGMVA = diPhoton->diGMVA;
-    case DiPhotonReader::ZeroPairs:
-      nGPairs = diPhoton->handle->size();
-      nSelGPairs = 0 ;
+      diGMVA = diPhoton->theSelected->diGMVA;
+  case DiPhotonReader::PairCuts:
+    W *= diPhoton->diPhoton->subLeadingPhoton()->centralWeight();
+    if( !IsData && nHistos==2 )
+      W[1] = 1.0;
 
-      FillTree();
-      return false;
+    hCutFlowTable->Fill( ++SelectionStep , W );
+    G2.set( diPhoton->diPhoton->subLeadingPhoton()->pt(),
+	    diPhoton->diPhoton->subLeadingPhoton()->eta(),
+	    diPhoton->diPhoton->subLeadingPhoton()->phi(),
+	    diPhoton->diPhoton->subLeadingPhoton()->phoIdMvaDWrtVtx( diPhoton->diPhoton->vtx() ) ,
+	    diPhoton->diPhoton->subLeadingPhoton()->centralWeight() );
+  case DiPhotonReader::SubLeadingCuts:
+    W *= diPhoton->diPhoton->leadingPhoton()->centralWeight();
+    if( !IsData && nHistos==2 )
+      W[1] = 1.0;
+
+    hCutFlowTable->Fill( ++SelectionStep , W );
+    G1.set( diPhoton->diPhoton->leadingPhoton()->pt(),
+	    diPhoton->diPhoton->leadingPhoton()->eta(),
+	    diPhoton->diPhoton->leadingPhoton()->phi(),
+	    diPhoton->diPhoton->leadingPhoton()->phoIdMvaDWrtVtx( diPhoton->diPhoton->vtx() ),
+	    diPhoton->diPhoton->leadingPhoton()->centralWeight() );
+  case DiPhotonReader::LeadingCuts:
+    hCutFlowTable->Fill( ++SelectionStep , W );
+  case DiPhotonReader::ZeroPairs:
+    nGPairs = diPhoton->handle->size();
+    nSelGPairs = diPhoton->nSelGPairs;
   }
-    
+
+  if(diPhoSelStatus < DiPhotonReader::Pass){
+    //FillTree();
+    return false;
+  }
+
   M_GG->Fill( diPhoton->diPhoton->mass() , W );
 
   metReader->Read(iEvent);
-  hCutFlowTable->Fill( ++SelectionStep , W );
   met = metReader->met.pt();
   metPhi = metReader->met.phi();
 
 
   flashggjetreader->Read( iEvent , diPhoton->diPhoton ); // , &(flashggmuonreader->goodMus[0]) ) )
   //W *= flashggjetreader->W ;
+
+  nJets = flashggjetreader->selectedJets.size();
+  if( nJets > 1 )
+    hCutFlowTable->Fill( ++SelectionStep , W );
+
+  SelectionStep++;
+  SelectionStep++;
   hCutFlowTable->Fill( ++SelectionStep , W );
   hCutFlowTable->Fill( ++SelectionStep , W );
 
-  nJets = flashggjetreader->selectedJets.size();
+
   nLbJets = flashggjetreader->nLB;
   nMbJets = flashggjetreader->nMB;
   nTbJets = flashggjetreader->nTB;

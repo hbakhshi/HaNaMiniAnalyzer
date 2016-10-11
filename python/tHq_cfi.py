@@ -52,7 +52,7 @@ tHq = cms.EDFilter('tHqAnalyzer',
                                           subleadPhoOverMassThreshold = cms.double( 0.25 ),
                                           MVAThreshold = cms.double( -0.4 ),
                                           PhoMVAThreshold = cms.double( -0.9 ),
-                                          InvMassCut = cms.double( 90. )
+                                          InvMassCut = cms.double( 100. )
 
                                           ),
                      sample = cms.string("WJetsMG"),

@@ -20,55 +20,25 @@ DiPhotonReader::SelectionStatus DiPhotonReader::read( const edm::Event& iEvent )
   mvaResult.Read( iEvent );
 
   assert( handle->size() == mvaResult.handle->size() );
+  diPhotons.clear();
+  assert( diPhotons.size() == 0 );
 
-  nDiPhos = 0;
-  DiPhotonReader::SelectionStatus ret = ZeroPairs;
-
-  double maxSumPt = 0;
-  double sumPt = 0;
-
-  diPhoton = NULL;
-  MVA = lPt = lEta = lPhi = slPt = slEta = slPhi = lMVA = slMVA = diGMVA = diGMass = -1000.0;
   for(  unsigned int diphoIndex = 0; diphoIndex < handle->size(); diphoIndex++ ) {
     edm::Ptr<flashgg::DiPhotonCandidate> dipho = handle->ptrAt( diphoIndex );
     edm::Ptr<flashgg::DiPhotonMVAResult> mvares = mvaResult.handle->ptrAt( diphoIndex );
 
-    lPt  = dipho->leadingPhoton()->pt();
-    lEta = dipho->leadingPhoton()->eta();
-    lPhi = dipho->leadingPhoton()->phi();
-
-    slPt = dipho->subLeadingPhoton()->pt();
-    slEta= dipho->subLeadingPhoton()->eta();
-    slPhi= dipho->subLeadingPhoton()->phi();
-
-    sumPt = lPt+slPt ;
-
-    lMVA = dipho->leadingPhoton()->phoIdMvaDWrtVtx( dipho->vtx() );
-    slMVA = dipho->subLeadingPhoton()->phoIdMvaDWrtVtx( dipho->vtx() );
-
-    diGMVA = mvares->result;
-    diGMass = dipho->mass();
-
-    if( ( lPt / diGMass ) < leadPhoOverMassThreshold_ ) {if(ret<LeadingPt) ret = LeadingPt ; continue; }
-    if( ( slPt / diGMass ) < subleadPhoOverMassThreshold_ ) { if(ret<SubLeadingPt) ret = SubLeadingPt ;continue; }
-    
-    if( lMVA < PhoMVAThreshold_ || lMVA < PhoMVAThreshold_ ) { if(ret<PhotonID) ret = PhotonID ;continue; }
-    if( diGMVA < MVAThreshold_ ) { if(ret<MVAFailed) ret = MVAFailed ;continue; }
-    if( diGMass < InvMassCut ) { if( ret < InvMassFailed ) ret = InvMassFailed ; continue ; }
-    nDiPhos ++;
-    if( sumPt > maxSumPt ){
-      diPhoton = dipho.get();
-      maxSumPt = sumPt ;
-      ret = Pass;
-    }
+    diPhotons.push_back( diPhotonInfo( dipho , mvares , leadPhoOverMassThreshold_ ,
+				       subleadPhoOverMassThreshold_ , MVAThreshold_ , PhoMVAThreshold_ , InvMassCut ) );
   }
 
-  if( nDiPhos == 0 ){
-    return ret;
+  diPhoton = NULL;
+  int selectedIndex = -1;
+  nSelGPairs = 0;
+  DiPhotonReader::SelectionStatus ret = diPhotons.status( selectedIndex , nSelGPairs ) ;
+  if( ret > DiPhotonReader::ZeroPairs ){
+    diPhoton = diPhotons.at( selectedIndex ).diPhoton ;
+    theSelected = &(diPhotons.at( selectedIndex ));
   }
-  else if( nDiPhos == 1 ){
-    return Pass;
-  }
-  else 
-    return PassMoreThanOne;
+
+  return ret;
 }

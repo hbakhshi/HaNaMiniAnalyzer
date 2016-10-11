@@ -72,8 +72,12 @@ if options.sync == 0 :
         raise NameError("The correct sample is not found %s !+ %s" % (sample.Name , options.sample) )
 else:
     from tHqAnalyzer.HaNaMiniAnalyzer.Sample import *
-    theSample = Sample( "Sync" , "Sync" , 100 , False , 0 , "" )
-    theSample.Files = ['/store/group/phys_higgs/cmshgg/ferriff/flashgg/RunIIFall15DR76-1_3_0-25ns_ext1/1_3_1/VBFHToGG_M125_13TeV_amcatnlo_pythia8/RunIIFall15DR76-1_3_0-25ns_ext1-1_3_1-v0-RunIIFall15MiniAODv2-PU25nsData2015v1_76X_mcRun2_asymptotic_v12_ext1-v1/160127_024400/0000/myMicroAODOutputFile_1.root']
+    if options.sample == "data" :
+        theSample = Sample( "SyncData" , 0 , False , "" )
+        theSample.Files = ['/store/group/phys_higgs/cmshgg/ferriff/flashgg/RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2/2_2_0/DoubleEG/RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2-2_2_0-v0-Run2016C-PromptReco-v2/160707_143223/0000/myMicroAODOutputFile_320.root']
+    else :
+        theSample = Sample( "SyncMC" , 100 , False , "")
+        theSample.Files = ['/store/group/phys_higgs/cmshgg/ferriff/flashgg/RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2/2_2_0/GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2-2_2_0-v0-RunIISpring16MiniAODv2-PUSpring16_80X_mcRun2_asymptotic_2016_miniAODv2_v0-v1/160707_143944/0000/myMicroAODOutputFile_316.root']
     options.nFilesPerJob = 1
     options.output = "out" 
     options.job = 0
