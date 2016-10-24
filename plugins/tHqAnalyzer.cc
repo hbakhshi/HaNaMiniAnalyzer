@@ -11,6 +11,10 @@
 #include "TROOT.h"
 #include "TDirectory.h"
 
+#include "PhysicsTools/CandUtils/interface/EventShapeVariables.h"
+#include "DataFormats/Math/interface/Vector3D.h"
+#include "SemiLepTopQuark.h"
+
 using namespace std;
 
 class UIntReader : public BaseEventReader< unsigned int  > {
@@ -68,20 +72,26 @@ protected:
 
   unsigned char nVertices, nJets, nLbJets , nMbJets , nTbJets, nMuons, nGPairs , nSelGPairs ;
   struct particleinfo{
-    float pt, eta, phi , other , w ; //other : for photon id, for diphoton mass, for jets btagging vals
+    float pt, eta, phi , other , w , another; //other : for photon id, for diphoton mass, for jets btagging vals
+    unsigned short number;
+    bool isSet;
     particleinfo( double pt_=-999, double eta_ =-999, double phi_=-999 , double other_ = -999 , double W = 1.0 ){
       pt = pt_;
       eta= eta_;
       phi = phi_;
       other = other_;
       w = W;
+      number = 255;
+      isSet = false;
     };
-    void set(double pt_=-999, double eta_ =-999, double phi_=-999 , double other_ = -999 , double W = 1.0 ){
+    void set(double pt_=-999, double eta_ =-999, double phi_=-999 , double other_ = -999 , double W = 1.0 , double Another = -999 ){
       pt = pt_;
       eta= eta_;
       phi = phi_;
       other = other_;
       w = W;
+      another = Another;
+      isSet = true;
     };
   };
   void FillTree(){
@@ -95,9 +105,9 @@ protected:
   }
   std::valarray<double> W;
   float* Weight;
-  float puWeight , diGMVA , met , metPhi ;
+  float puWeight , diGMVA ;
   float* bSelWeights;
-  particleinfo G1 , G2 , DiG , mu ;
+  particleinfo G1 , G2 , DiG , mu , eventshapes , met , THReco , Top ;
 
   char  closest_jet_index ;
   float closest_jet_dr    ;
@@ -105,6 +115,7 @@ protected:
   std::vector<float> jetsPt;
   std::vector<float> jetsEta;
   std::vector<float> jetsPhi;
+  std::vector<float> jetsE;
 
   struct Nb_scenario{
     char index_forward, index_highpt , index_secondpt ;
@@ -131,13 +142,14 @@ protected:
     for(unsigned int i=0 ; i < 12 ; i++)
       bSelWeights[i] = 0.0;
 
-    puWeight = met = metPhi = -999;
+    puWeight = -999;
     particleinfo tmp;
-    G1 = G2 = DiG = mu = tmp ;
+    Top = THReco = G1 = G2 = DiG = mu = met = tmp ;
 
     jetsPhi.clear();
     jetsPt.clear();
     jetsEta.clear();
+    jetsE.clear();
 
     zeroB.set( 255 , 255 , 255 );
     oneB.set( 255 , 255 , 255 );
@@ -211,13 +223,15 @@ void tHqAnalyzer::beginJob()
     theSelectionResultTree->Branch("Weight", Weight , weightLeafList.c_str() );
     theSelectionResultTree->Branch("puWeight", &puWeight);
     theSelectionResultTree->Branch("bWs", bSelWeights , "W0L:W0M:W0T:W1L:W1M:W1M0L:W1T:W1T0L:W1T0M:W2L:W2M:W2T");
-    theSelectionResultTree->Branch("diGMVA", &diGMVA);
-    theSelectionResultTree->Branch("met", &met);
-    theSelectionResultTree->Branch("metPhi", &metPhi);
-    theSelectionResultTree->Branch("G1" , &G1 , "pt:eta:phi:other:w" );
-    theSelectionResultTree->Branch("G2" , &G2 , "pt:eta:phi:other:w"  );
-    theSelectionResultTree->Branch("DiG", &DiG , "pt:eta:phi:other:w"  );
-    theSelectionResultTree->Branch("mu", &mu , "pt:eta:phi:other:w"  );
+    //theSelectionResultTree->Branch("diGMVA", &diGMVA);
+    theSelectionResultTree->Branch("met", &met , "pt,phi" );
+    theSelectionResultTree->Branch("G1" , &G1 , "pt:eta:phi:mva:w" );
+    theSelectionResultTree->Branch("G2" , &G2 , "pt:eta:phi:mva:w"  );
+    theSelectionResultTree->Branch("DiG", &DiG , "pt:eta:phi:mass:w:mva"  );
+    theSelectionResultTree->Branch("mu", &mu , "pt:eta:phi:iso:w:charge"  );
+    theSelectionResultTree->Branch("eventshapes", &eventshapes , "aplanarity:C:circularity:D:isotropy:sphericity"  );
+    theSelectionResultTree->Branch("THReco", &THReco , "THInvM:THDPhi:THDR" );
+    theSelectionResultTree->Branch("Top", &Top , "THDEta:CosTheta:JPrime:WM:topM:CosThetaStar:nLoops/s:goodEvent/O" );
 
     theSelectionResultTree->Branch("jMuIndex", &closest_jet_index );
     theSelectionResultTree->Branch("jMuDr", &closest_jet_dr );
@@ -297,8 +311,8 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	       diPhoton->diPhoton->eta() ,
 	       diPhoton->diPhoton->phi() ,
 	       diPhoton->diPhoton->mass() ,
-	       diPhoton->W() );
-      diGMVA = diPhoton->theSelected->diGMVA;
+	       diPhoton->W() ,
+	       diPhoton->theSelected->diGMVA );
   case DiPhotonReader::PairCuts:
     W *= diPhoton->diPhoton->subLeadingPhoton()->centralWeight();
     if( !IsData && nHistos==2 )
@@ -336,8 +350,7 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   M_GG->Fill( diPhoton->diPhoton->mass() , W );
 
   metReader->Read(iEvent);
-  met = metReader->met.pt();
-  metPhi = metReader->met.phi();
+  met.set( metReader->met.pt() , metReader->met.phi() );
 
 
   flashggjetreader->Read( iEvent , diPhoton->diPhoton ); // , &(flashggmuonreader->goodMus[0]) ) )
@@ -374,6 +387,7 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       jetsPhi.push_back( theJet->phi() );
       jetsEta.push_back( theJet->eta() );
       jetsPt.push_back( theJet->pt() );
+      jetsE.push_back( theJet->energy() );
 
       int eta_index = flashggjetreader->GetJetEtaSortedIndex( index );
       etaSortedJetIndices[eta_index]  = ij ;
@@ -457,7 +471,9 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	    flashggmuonreader->goodMus[0].eta() ,
 	    flashggmuonreader->goodMus[0].phi() ,
 	    flashggmuonreader->Iso ,
-	    flashggmuonreader->W );
+	    flashggmuonreader->W ,
+	    flashggmuonreader->goodMus[0].charge() );
+    
     nMuons = 1;
     break;
   case flashggMuonReader::MoreThanOne :
@@ -468,29 +484,77 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	    flashggmuonreader->goodMus[0].eta() ,
 	    flashggmuonreader->goodMus[0].phi() ,
 	    flashggmuonreader->Iso ,
-	    flashggmuonreader->W );
+	    flashggmuonreader->W ,
+	    flashggmuonreader->goodMus[0].charge() );
   case flashggMuonReader::ZeroMuons :
     nMuons = flashggmuonreader->nMuons ;
-    FillTree();
-    return true;
   }
 
 
-  for(int i=0 ; i < nJets ; i++){
-    float dri = reco::deltaR( jetsEta[i] , jetsPhi[i] , mu.eta , mu.phi );
-    if( dri < closest_jet_dr ){
-      closest_jet_index = i;
-      closest_jet_dr = dri ;
+
+
+  if( mu.isSet ){
+
+    for(int i=0 ; i < nJets ; i++){
+      float dri = reco::deltaR( jetsEta[i] , jetsPhi[i] , mu.eta , mu.phi );
+      if( dri < closest_jet_dr ){
+	closest_jet_index = i;
+	closest_jet_dr = dri ;
+      }
+    }
+
+
+    TLorentzVector g1,g2,higgs;
+    g1.SetPtEtaPhiM( G1.pt , G1.eta , G1.phi , 0 );
+    g2.SetPtEtaPhiM( G2.pt , G2.eta , G2.phi , 0 );
+    higgs = (g1+g2);
+
+    std::vector< math::RhoEtaPhiVector > particles;
+    particles.push_back( math::RhoEtaPhiVector(mu.pt, mu.eta , mu.phi) );
+    particles.push_back( math::RhoEtaPhiVector(G1.pt, G1.eta , G1.phi) );
+    particles.push_back( math::RhoEtaPhiVector(G2.pt, G2.eta , G2.phi) );
+    for(unsigned int i = 0 ; i < jetsPhi.size() ; i++)
+      particles.push_back( math::RhoEtaPhiVector( jetsPt[i] , jetsEta[i] , jetsPhi[i] ) );
+    
+    EventShapeVariables shapeVars(particles);
+    eventshapes.set( shapeVars.aplanarity() ,
+		     shapeVars.C() ,
+		     shapeVars.circularity(),
+		     shapeVars.D() ,
+		     shapeVars.isotropy(),
+		     shapeVars.sphericity() );
+    
+
+    if( nJets > 0 ){
+      TLorentzVector muL,bL,fwdJL,metL ;
+      muL.SetPtEtaPhiM( mu.pt, mu.eta, mu.phi , 0 );
+      bL.SetPtEtaPhiE( jetsPt[0] , jetsEta[0] , jetsPhi[0] , jetsE[0] );
+      metL.SetPtEtaPhiM( met.pt , 0 , met.eta , 0 );
+      SemiLepTopQuark singletop( bL , metL , muL , fwdJL, fwdJL );
+
+      TLorentzVector topRec = singletop.top() ;
+
+      //"THInvM:THDPhi:THDR:"
+      TVector3 hv3 = higgs.Vect();
+      TVector3 tv3 = topRec.Vect();
+      double costheta = tv3.Dot( hv3 )/ (tv3.Mag()*hv3.Mag()) ;
+
+      TVector3 jprimev3;
+      jprimev3.SetPtEtaPhi( jetsPt[ oneB.index_forward ] , 
+			    jetsEta[ oneB.index_forward ] ,
+			    jetsPhi[ oneB.index_forward ] );
+      TVector3 htopcross = hv3.Cross( tv3 );
+      double costhetajprime = htopcross.Dot( jprimev3 ) / ( htopcross.Mag() * jprimev3.Mag() );
+      THReco.set( (topRec+higgs).M() , 
+		  topRec.DeltaPhi( higgs ) , topRec.DrEtaPhi( higgs ) );
+
+      //"THDEta:CosTheta:JPrime:WM:topM:CosThetaStar:nLoops/s:goodEvent/O"
+      Top.set( topRec.Eta() - higgs.Eta() , costheta , costhetajprime ,
+	       singletop.W().M() , topRec.M() , singletop.cosThetaStar() );
+      Top.number = singletop.nLoopsToSolve;
+      Top.isSet = singletop.goodEvent;
     }
   }
-
-  // Pt_b->Fill( flashggjetreader->selectedBJets[0].pt()  , W );
-  // Eta_b->Fill( fabs( flashggjetreader->selectedBJets[0].eta() )  , W );
-
-  // DEta_Jb->Fill( fabs( flashggjetreader->selectedBJets[0].eta()-firstJet.eta() ) , W );
-
-
-  // DEta_bMu->Fill( fabs( flashggmuonreader->goodMus[0].eta() -  flashggjetreader->selectedBJets[0].eta() ) , W );
 
   FillTree();
   return true;
