@@ -3,7 +3,6 @@
 flashggElectronReader::flashggElectronReader( edm::ParameterSet const& iConfig, edm::ConsumesCollector && iC , bool isData , string SetupDir) :
   BaseEventReader< edm::View<flashgg::Electron> >( iConfig , &iC ),
   ElectronPtCut( iConfig.getParameter<double>( "ElectronPtCut" ) ),
-  ElectronIsoCut( iConfig.getParameter<double>( "ElectronIsoCut" ) ),
   ElectronEtaCut( iConfig.getParameter<double>( "ElectronEtaCut" ) ),
   DeltaRElectronPho( iConfig.getParameter<double>( "DeltaRElectronPho" ) ),
   DeltaRElectronTrk( iConfig.getParameter<double>( "DeltaRElectronTrk" ) ), 

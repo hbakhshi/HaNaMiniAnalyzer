@@ -22,13 +22,11 @@ public:
   enum SelectionStep{
     ZeroElectrons,
     MoreThanOne,
-    ExactlyOneNonIso,
     ExactlyOne
   };
   SelectionStep Read( const edm::Event& iEvent , const DiPhotonCandidate* dipho );
 
   short nElectrons;
-  double Iso;
   std::vector<flashgg::Electron> goodEles;
   double W;
 private :
@@ -37,7 +35,6 @@ private :
   TH2* hEleSFReco;
   /* ELECTRON SF TOOLS */
   double ElectronPtCut;
-  double ElectronIsoCut;
   double ElectronEtaCut;
   double DeltaRElectronPho;
   double DeltaRElectronTrk;
