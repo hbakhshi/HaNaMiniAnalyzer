@@ -54,6 +54,11 @@ BaseMiniAnalyzer::BaseMiniAnalyzer(const edm::ParameterSet& iConfig):
   }else
     flashggmuonreader = NULL;
 
+  if( iConfig.exists( "Electrons" ) ){
+    flashggelectronreader = new flashggElectronReader( iConfig.getParameter< edm::ParameterSet >("Electrons") , consumesCollector() , IsData , SetupDir );
+  }else
+    flashggelectronreader = NULL;
+
   if( iConfig.exists( "diPhoton" ) ){
     diPhoton = new DiPhotonReader( iConfig.getParameter< edm::ParameterSet >("diPhoton") , consumesCollector() , IsData , SetupDir );
   }else
