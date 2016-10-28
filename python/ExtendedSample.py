@@ -224,12 +224,12 @@ class ExtendedSample: #extend the sample object to store histograms
 
         # open the target file
         print "fhadd Target file:", target
-        outfile = TFile(target, "RECREATE")
+        outfile = TFile.Open(target, "RECREATE")
 
         # open the seed file - contents is looked up from here
         seedfilename = sources[0]
         print "fhadd Source file 1", seedfilename
-        seedfile = TFile(seedfilename)
+        seedfile = TFile.Open(seedfilename)
 
         # get contents of seed file
         print "looping over seed file"
@@ -244,7 +244,7 @@ class ExtendedSample: #extend the sample object to store histograms
         otherfiles = []
         for n, f in enumerate(sources[1:]):
             print "fhadd Source file %d: %s" % (n+2, f)
-            otherfiles.append(TFile(f))
+            otherfiles.append(TFile.Open(f))
 
         
         # loop over contents and merge objects from other files to seed file objects

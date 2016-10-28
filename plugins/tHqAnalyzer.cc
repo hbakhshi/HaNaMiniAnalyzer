@@ -224,7 +224,7 @@ void tHqAnalyzer::beginJob()
     theSelectionResultTree->Branch("puWeight", &puWeight);
     theSelectionResultTree->Branch("bWs", bSelWeights , "W0L:W0M:W0T:W1L:W1M:W1M0L:W1T:W1T0L:W1T0M:W2L:W2M:W2T");
     //theSelectionResultTree->Branch("diGMVA", &diGMVA);
-    theSelectionResultTree->Branch("met", &met , "pt,phi" );
+    theSelectionResultTree->Branch("met", &met , "pt:phi" );
     theSelectionResultTree->Branch("G1" , &G1 , "pt:eta:phi:mva:w" );
     theSelectionResultTree->Branch("G2" , &G2 , "pt:eta:phi:mva:w"  );
     theSelectionResultTree->Branch("DiG", &DiG , "pt:eta:phi:mass:w:mva"  );

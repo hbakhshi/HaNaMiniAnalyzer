@@ -16,14 +16,14 @@ for sample in samples:
         #job is already created : sample.MakeJobs( 20 , "%s/%s" % (OutPath24June , prefix) )
     #    print sample.Name 
     #else:
-    sample.MakeJobs( 3 , "eos/cms/store/user/%s/%s/%s" % (GetUserName(), "thqTree2016" , "tree" ) ) 
+    sample.MakeJobs( 3 , "root://eoscms//eos/cms/store/user/%s/%s/%s" % (GetUserName(), "thqTree2016Optim" , "tree" ) ) 
 
 from tHqAnalyzer.HaNaMiniAnalyzer.ExtendedSample import *
 for sample in samples:
-    if sample.Name in ["DiPhoton_Jets"]:
-    #    print "skipping " + sample.Name
-    #    continue
-        ss = ExtendedSample(sample)
+    if sample.Name in ["Signal" , "ttH" , "GJet80M80_40"]:
+        print "skipping " + sample.Name
+        continue
+    ss = ExtendedSample(sample)
     #export EOS_MGM_URL=root://eosuser.cern.ch
     #eosmount eos_cb
-        ss.fhadd("eos_cb/user/h/hbakhshi/Personal/Projects/tHq/nTuples/")
+    ss.fhadd("root://eosuser//eos/user/h/hbakhshi/Personal/Projects/tHq/nTuples/Optimization/")
