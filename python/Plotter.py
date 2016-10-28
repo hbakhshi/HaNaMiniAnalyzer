@@ -4,7 +4,7 @@ import os
 import sys
 import Sample
 from array import array
-
+from collections import OrderedDict
 from ExtendedSample import *
 from SampleType import *
 from Property import *
@@ -79,8 +79,9 @@ class CutInfo:
         else:
             self.ListOfEvents[samplename] = lst
 
-        #print self.ListOfEvents[samplename]
-        #self.ListOfEvents[samplename].Print()
+        # print self.ListOfEvents[samplename]
+        # self.ListOfEvents[samplename].Print()
+        # self.ListOfEvents[samplename].SetTreeName( tree.GetName() )
         tree.SetEntryList( self.ListOfEvents[samplename] )
         
         ret = {}
@@ -90,14 +91,14 @@ class CutInfo:
                 hname =  hist.MakeName(samplename , n)
                 gROOT.cd()
                 
-                tocheck = ["jPt","jEta" , "jPhi","bjPt" ]
+                tocheck = [] #"jPt","jEta" , "jPhi","bjPt" ]
                 for sss in tocheck:
                     if sss in hist.Name:
                         print "%s : %d , %.2f , %.2f" % (hist.Name , hist.nBins , hist.From , hist.To)
 
                 if nLoaded > 0:
                     tree.Draw( "%s>>cloned_%s(%d,%.1f,%.1f)" % ( hist.VarName , hname , hist.nBins , hist.From , hist.To ) ,
-                                    self.Weights( n ) )
+                               "" if isdata else self.Weights( n ) )
                     setattr( self , hname , gDirectory.Get( "cloned_"+hname ).Clone( hname ) )
                 else :
                     hcloned_empty = TH1D( "%s" % (hname) , "" ,  hist.nBins , hist.From , hist.To )
@@ -149,7 +150,7 @@ class Plotter:
             st.LoadHistos( lumi , dirName , cftName , self.TreePlots )
             for prop in st.AllHists:
                 if not prop in self.Props:
-                    self.Props[prop] = Property( prop , {} , None, None , [] )
+                    self.Props[prop] = Property( prop , OrderedDict() , None, None , [] )
                 self.Props[prop].Samples += [ s.AllHists[prop][0] for s in st.Samples ]
                 if st.IsData():
                     self.Props[prop].Data = st.AllHists[prop]

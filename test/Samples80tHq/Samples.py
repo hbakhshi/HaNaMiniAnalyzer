@@ -6,6 +6,13 @@ print Sample.WD
 
 MicroAOD80Samples = []
 
+DoubleEG80Dp2 = Sample( "DoubleEG_2016Dp2" , 0 , False , "/DoubleEG/ferrif-RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2_p2-2_2_0-v0-Run2016D-PromptReco-v2-9a092465adbfb13c40886e07b86f6d23/USER" )
+MicroAOD80Samples.append( DoubleEG80Dp2 )
+DoubleEG80Dp3 = Sample( "DoubleEG_2016Dp3" , 0 , False , "/DoubleEG/ferrif-RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2_p3-2_2_0-v0-Run2016D-PromptReco-v2-9a092465adbfb13c40886e07b86f6d23/USER" )
+MicroAOD80Samples.append( DoubleEG80Dp3 )
+DoubleEG80Dp4 = Sample( "DoubleEG_2016Dp4" , 0 , False , "/DoubleEG/ferrif-RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2_p4-2_2_0-v0-Run2016D-PromptReco-v2-9a092465adbfb13c40886e07b86f6d23/USER" )
+MicroAOD80Samples.append( DoubleEG80Dp4 )
+
 DoubleEG80Bp3 = Sample( "DoubleEG_2016Bp3" , 0 , False , "/DoubleEG/ferrif-RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2_p3-2_2_0-v0-Run2016B-PromptReco-v2-6afd65c310508d0f49bd277bc7a8e5b1/USER" )
 MicroAOD80Samples.append( DoubleEG80Bp3 )
 DoubleEG80Bp2 = Sample( "DoubleEG_2016Bp2" , 0 , False , "/DoubleEG/ferrif-RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2_p2-2_2_0-v0-Run2016B-PromptReco-v2-6afd65c310508d0f49bd277bc7a8e5b1/USER" )
@@ -17,13 +24,6 @@ DoubleEG80Cp1 = Sample( "DoubleEG_2016Cp1" , 0 , False , "/DoubleEG/ferrif-RunII
 MicroAOD80Samples.append( DoubleEG80Cp1 )
 DoubleEG80Cp2 = Sample( "DoubleEG_2016Cp2" , 0 , False , "/DoubleEG/ferrif-RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2_p2-2_2_0-v0-Run2016C-PromptReco-v2-9a092465adbfb13c40886e07b86f6d23/USER" )
 MicroAOD80Samples.append( DoubleEG80Cp2 )
-
-DoubleEG80Dp2 = Sample( "DoubleEG_2016Dp2" , 0 , False , "/DoubleEG/ferrif-RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2_p2-2_2_0-v0-Run2016D-PromptReco-v2-9a092465adbfb13c40886e07b86f6d23/USER" )
-MicroAOD80Samples.append( DoubleEG80Dp2 )
-DoubleEG80Dp3 = Sample( "DoubleEG_2016Dp3" , 0 , False , "/DoubleEG/ferrif-RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2_p3-2_2_0-v0-Run2016D-PromptReco-v2-9a092465adbfb13c40886e07b86f6d23/USER" )
-MicroAOD80Samples.append( DoubleEG80Dp3 )
-DoubleEG80Dp4 = Sample( "DoubleEG_2016Dp4" , 0 , False , "/DoubleEG/ferrif-RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2_p4-2_2_0-v0-Run2016D-PromptReco-v2-9a092465adbfb13c40886e07b86f6d23/USER" )
-MicroAOD80Samples.append( DoubleEG80Dp4 )
 
 
 ttH80GG = Sample("ttH" , 0.5085*1.525639529*2.28e-3 , True  , "/ttHJetToGG_M125_13TeV_amcatnloFXFX_madspin_pythia8_v2/ferrif-RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2-2_2_0-v0-RunIISpring16MiniAODv2-PUSpring16RAWAODSIM_reHLT_80X_mcRun2_asymptotic_v14-v1-2a45e67daf15c7abeea509b3e1c7829c/USER")

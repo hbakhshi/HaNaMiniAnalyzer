@@ -26,6 +26,7 @@ class ExtendedSample: #extend the sample object to store histograms
             self.ParentSample = None
 
     def LoadJobs(self , Dir , pattern_ = "%s.root" ):
+        self.JobFilesDir = Dir
         self.Jobs = []
         pattern = ( pattern_ % (self.Name) )
         for fn, ff in [("%s/%s" % ( Dir , f) , f) for f in os.listdir(Dir)]:
@@ -75,11 +76,26 @@ class ExtendedSample: #extend the sample object to store histograms
                     self.AllHists[h][index].Scale(self.XSFactor)
 
 
-    def DrawTreeHistos( self , treeselections ,  treeName = "tHq/Trees/Events" ):
+    def SetFriendTreeInfo(self , friendsDir , friendTreeName ):
+        self.FriendsDir = friendsDir
+        self.FriendTreeName = friendTreeName
+        
+    def LoadTree(self , treeName ):
+        if hasattr(self,"Tree"):
+            return
+        
         self.Tree = TChain( treeName )
         for Job in self.Jobs:
             self.Tree.Add( Job.Output )
 
+        if hasattr( self , "FriendsDir"):
+            self.FriendFile = TFile.Open( "%s/%s.root" % (self.FriendsDir , self.Name ) )
+            self.FriendTree = self.FriendFile.Get( self.FriendTreeName )
+            self.Tree.AddFriend( self.FriendTree )
+            
+    def DrawTreeHistos( self , treeselections ,  treeName = "tHq/Trees/Events"):
+        self.LoadTree(treeName)
+        
         if not hasattr( self, "LoadedIndices" ):
             print "call DrawTreeHistos after LoadHistos"
 

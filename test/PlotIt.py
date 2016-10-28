@@ -1,7 +1,24 @@
 #!/usr/bin/env python
-from ROOT import gROOT, TLatex, TCanvas, TFile, gROOT, TColor
+from ROOT import gROOT, TLatex, TCanvas, TFile, gROOT, TColor, TSystem
 import math
+import sys
 
+outfname = ""
+normtodata = True
+
+if len(sys.argv) < 2:
+    raise RuntimeError("at least one parameter has to be given")
+
+if sys.argv[1] == "lumi":
+    outfname = "out_cft_normtolumi.root"
+    normtodata = False
+elif sys.argv[1] == "data":
+    outfname = "out_cft_normtodata.root"
+    normtodata = True
+else :
+    raise RuntimeError("the first argument must be either lumi or data to set the final normalization method of the histograms")
+    
+    
 gROOT.SetBatch(True)
 
 from Samples80tHq.Samples import *
@@ -36,7 +53,9 @@ def GetSample( s ):
 
 # GetSample(DiGG_76) ,    , GetSample(TTBar76_FGG)
 
-nTuples = "/home/hbakhshi/Downloads/CERNBox/Personal/Projects/tHq/nTuples/80_19Sept/"
+#nTuples = "/home/hbakhshi/Downloads/CERNBox/Personal/Projects/tHq/nTuples/80_19Sept/"
+nTuples = "/home/hbakhshi/Downloads/CERNBox/Personal/Projects/tHq/nTuples/Optimization/"
+
 
 from tHqAnalyzer.HaNaMiniAnalyzer.SampleType import *
 from ROOT import kGray, kGreen, kOrange, kRed, kBlack, kCyan, kBlue
@@ -47,7 +66,7 @@ from ROOT import kGray, kGreen, kOrange, kRed, kBlack, kCyan, kBlue
 # SM = SampleType("SM" , kCyan , [ GetSample(WZ76_FGG) , GetSample(ZZ76_FGG) , GetSample(WW76_FGG) , GetSample(DYee) , GetSample(ZG2LG76) , GetSample(WJetsMG76_FGG) , GetSample(WG76_FGG) ,GetSample(TTGG76) , GetSample(TTGJ76) , GetSample(TGJ76) ] , nTuples )
 # Higgs = SampleType("Higgs" , kRed , [GetSample(GluGluH76GG) , GetSample(VBFH76GG) , GetSample(VH76GG) ] , nTuples )
 dataSamples = SampleType("Data" , kBlack , [GetSample(s) for s in MicroAOD80Samples if s.IsData] , nTuples ) # the first item must be data
-multigSamples = SampleType("MultiGamma" , kOrange , [ GetSample(DiG_80Box) , GetSample(DiG_40Box80) , GetSample(GJet80M80_2040) , GetSample(GJet80M80_40) , GetSample(GJet8040M80) , GetSample(DiG_Jets)] , nTuples )
+multigSamples = SampleType("MultiGamma" , kOrange , [ GetSample(DiG_80Box) , GetSample(DiG_40Box80) , GetSample(GJet80M80_2040)  , GetSample(GJet8040M80) , GetSample(DiG_Jets)] , nTuples ) #, GetSample(GJet80M80_40)
 QCDSamples = SampleType("QCD" , kGreen+2 , [ GetSample(QCDDoubleEM80_m4080_pt30) , GetSample(QCDDoubleEM80_m80_pt3040) , GetSample(QCDDoubleEM80_m80_pt40) ] , nTuples )
 ttH = SampleType("ttH" , kBlue , [ GetSample(ttH80GG) ] , nTuples )
 SM = SampleType("SM" , kCyan , [GetSample(DYee),GetSample(ZG2LG80),GetSample(TTGG80),GetSample(TGJ80)] , nTuples )
@@ -149,12 +168,13 @@ nTotals = {}
             
 from tHqAnalyzer.HaNaMiniAnalyzer.Plotter import *
 plotter = Plotter()
-allSTs = [dataSamples ,multigSamples , QCDSamples , ttH , SM , Higgs , signalSample]
+allSTs = [dataSamples ,QCDSamples , ttH , SM , Higgs , multigSamples , signalSample] #
 allNonQCDSTs = [ ttH , SM , Higgs ]
 QCDSTs = [ multigSamples , QCDSamples ]
 for st in allSTs :
     plotter.AddSampleType( st )
     for s in st.Samples:
+        s.SetFriendTreeInfo( "/home/hbakhshi/Desktop/tHq/Analyzer/test/mva" , "friend" )
         if s.IsData :
             continue
         if s.Name in nTotals :
@@ -162,20 +182,21 @@ for st in allSTs :
         else:
             print "total number for sample %s is not set" % s.Name
 
-Cuts = {"DiG":"SelectionStep>%d"%(8),
+Cuts = {"DiG":"1",
         "atLeastTwoJets":"nJets>1" ,
         "OneMediumB":"nMbJets==1" ,
         "exactlyOneMu" : "nMuons == 1" ,
         "nonIsoMu" : "nMuons == 100" ,
         "met" : "met > 30" }
-        
+
+
 # cDiGnopuw = CutInfo( "DiGSelectionNopu" , Cuts["DiG"] , "Weight.W%d * G1.w * G2.w/puWeight" )
 # cDiGnopuw.AddHist( "nVerticesBeforePU" , "nVertices", 40 , 0. , 40. )
 # plotter.AddTreePlots( cDiGnopuw )
 
-# cDiG = CutInfo( "DiGSelection" , Cuts["DiG"] , "Weight.W%d * G1.w * G2.w" )
+cDiG = CutInfo( "DiGSelection" , Cuts["DiG"] , "Weight.W%d * G1.w * G2.w" )
 # cDiG.AddHist( "nVertices" , "nVertices", 40 , 0. , 40. )
-# cDiG.AddHist( "mGG",  "DiG.other" , 10 , 92. , 152. )
+cDiG.AddHist( "mGG",  "DiG.other" , 10 , 92. , 152. )
 # cDiG.AddHist( "nGPairs" , "nGPairs" , 10 , 0. , 10. )
 # cDiG.AddHist( "nSelGPairs" , "nSelGPairs",  10 , 0. , 10. )
 # cDiG.AddHist( "ptGG" , "DiG.pt",  8 , 10. , 250. )
@@ -204,7 +225,8 @@ Cuts = {"DiG":"SelectionStep>%d"%(8),
 # cDiG.AddHist( "bjPhi" , "(nJets>200 || nJets==0) ? 10 : jetsPhi[0]" , 5 , -3.2 , 4.8 )
 # cDiG.AddHist( "met" , "met",  20 , 20. , 220. )
 # cDiG.AddHist( "metPhi" , "metPhi" , 16 , -3.2 , 3.2 )
-# plotter.AddTreePlots( cDiG )
+cDiG.AddHist( "BDT" , "BDT" , 18 , -.3 , .3 )
+plotter.AddTreePlots( cDiG )
 
 
 # cNonIsoMu = CutInfo("nonIsoMu" , Cuts["DiG"] + " && " + Cuts["nonIsoMu"] , "Weight.W%d * G1.w * G2.w" )
@@ -212,10 +234,10 @@ Cuts = {"DiG":"SelectionStep>%d"%(8),
 #     cNonIsoMu.AddHist( h )
 # plotter.AddTreePlots( cNonIsoMu )
 
-# c2J = CutInfo("2J" , Cuts["DiG"] + " && " + Cuts["atLeastTwoJets"]  , "Weight.W%d * G1.w * G2.w" )
-# for h in cDiG.ListOfHists:
-#     c2J.AddHist( h )
-# plotter.AddTreePlots( c2J )
+c2J = CutInfo("2J" , Cuts["DiG"] + " && " + Cuts["atLeastTwoJets"]  , "Weight.W%d * G1.w * G2.w" )
+for h in cDiG.ListOfHists:
+    c2J.AddHist( h )
+plotter.AddTreePlots( c2J )
 
 # c2JF1 = CutInfo("2JF1" , Cuts["DiG"] + " && " + Cuts["atLeastTwoJets"] + " && " + "abs(jetsEta[zeroB.forward])>1.0" , "Weight.W%d * G1.w * G2.w" )
 # for h in cDiG.ListOfHists:
@@ -227,25 +249,25 @@ Cuts = {"DiG":"SelectionStep>%d"%(8),
 #     c2JF3.AddHist( h )
 # plotter.AddTreePlots( c2JF3 )
 
-# c2J1T = CutInfo("2J1T" , Cuts["DiG"] + " && " + Cuts["atLeastTwoJets"] + " && " + Cuts["OneMediumB"] , "Weight.W%d * G1.w * G2.w" )
-# for h in cDiG.ListOfHists:
-#     c2J1T.AddHist( h )
-# plotter.AddTreePlots( c2J1T )
+c2J1T = CutInfo("2J1T" , Cuts["DiG"] + " && " + Cuts["atLeastTwoJets"] + " && " + Cuts["OneMediumB"] , "Weight.W%d * G1.w * G2.w" )
+for h in cDiG.ListOfHists:
+    c2J1T.AddHist( h )
+plotter.AddTreePlots( c2J1T )
 
-# cMuSel = CutInfo("MuSel" , Cuts["DiG"] + " && " + Cuts["exactlyOneMu"]  , "Weight.W%d * G1.w * G2.w" )
-# for h in cDiG.ListOfHists:
-#     cMuSel.AddHist( h )
-# plotter.AddTreePlots( cMuSel )
+cMuSel = CutInfo("MuSel" , Cuts["DiG"] + " && " + Cuts["exactlyOneMu"]  , "Weight.W%d * G1.w * G2.w" )
+for h in cDiG.ListOfHists:
+    cMuSel.AddHist( h )
+plotter.AddTreePlots( cMuSel )
 
-# cMuSel2J = CutInfo("MuSel2J" , Cuts["DiG"] + " && " + Cuts["exactlyOneMu"]  + " && " + Cuts["atLeastTwoJets"]   , "Weight.W%d * G1.w * G2.w" )
-# for h in cDiG.ListOfHists:
-#     cMuSel2J.AddHist( h )
-# plotter.AddTreePlots( cMuSel2J )
+cMuSel2J = CutInfo("MuSel2J" , Cuts["DiG"] + " && " + Cuts["exactlyOneMu"]  + " && " + Cuts["atLeastTwoJets"]   , "Weight.W%d * G1.w * G2.w" )
+for h in cDiG.ListOfHists:
+    cMuSel2J.AddHist( h )
+plotter.AddTreePlots( cMuSel2J )
 
-# cMuSel2J1B = CutInfo("MuSel2J1B" , Cuts["DiG"] + " && " + Cuts["exactlyOneMu"]  + " && " + Cuts["atLeastTwoJets"]  + " && " + Cuts["OneMediumB"]   , "Weight.W%d * G1.w * G2.w * bWs.W1M" )
-# for h in cDiG.ListOfHists:
-#     cMuSel2J1B.AddHist( h )
-# plotter.AddTreePlots( cMuSel2J1B )
+cMuSel2J1B = CutInfo("MuSel2J1B" , Cuts["DiG"] + " && " + Cuts["exactlyOneMu"]  + " && " + Cuts["atLeastTwoJets"]  + " && " + Cuts["OneMediumB"]   , "Weight.W%d * G1.w * G2.w * bWs.W1M" ) 
+for h in cDiG.ListOfHists:
+    cMuSel2J1B.AddHist( h )
+plotter.AddTreePlots( cMuSel2J1B )
 
 # cMuSel2J1BF1 = CutInfo("MuSel2J1BF1" , Cuts["DiG"] + " && " + Cuts["exactlyOneMu"]  + " && " + Cuts["atLeastTwoJets"]  + " && " + Cuts["OneMediumB"] + " && " + "abs(jetsEta[oneB.forward])>1.0"  , "Weight.W%d * G1.w * G2.w * bWs.W1M" )
 # for h in cDiG.ListOfHists:
@@ -257,14 +279,15 @@ Cuts = {"DiG":"SelectionStep>%d"%(8),
 #     cMuSel2J1BF3.AddHist( h )
 # plotter.AddTreePlots( cMuSel2J1BF3 )
 
+
 plotter.LoadHistos( 12900 )
 
-plotter.AddLabels( "CutFlowTable" , ["All" , "HLT" , "Vertex" , ">1Pair" , "LeadingPass" , "SubLeadingPass" , "PairCuts" ] )
+plotter.AddLabels( "CutFlowTable" , ["All" , "HLT" , "Vertex" , ">1Pair" , "LeadingPass" , "SubLeadingPass" , "PairCuts" , ">1Jets" , "//" , "//" , "--" , "--" , ">0#mu" , "1#mu" , "--" ] )
 
 #["All" , "HLT" , "Vertex" , "#gamma pair" , "p_{T}^{#gamma_{0}}" , "p_{T}^{#gamma_{1}}" , "#gamma ID" , "MVA", "inv mass" ,"#mu selection" , "extra #mu veto", "2jets" , "1bjets" , "MET" ] )
 
-fout = TFile.Open("out_cft_normtolumi.root", "recreate")
-plotter.Write(fout, False)
+fout = TFile.Open( outfname , "recreate")
+plotter.Write(fout, normtodata)
 
 # for sel in ["MuSel"] : # , "Jet" , "bJet" , "2J" , "2J1T" , "bJetF1"  ]:
 #     seldir = fout.mkdir( "res_" + sel )

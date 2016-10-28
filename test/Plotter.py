@@ -85,7 +85,6 @@ plotter = Plotter()
 for st in [dataSamples , higgsSamples , multigSamples , QCDSamples , topSamples , WJets, DY, multiBoson , ttbar ]:
     plotter.AddSampleType( st )
 
-
 plotter.LoadHistos( 2200 )
 
 plotter.AddLabels( "CutFlowTable" , ["All" , "HLT" , "Vertex" , "#gamma pair" , "p_{T}^{#gamma_{0}}" , "p_{T}^{#gamma_{1}}" , "#gamma ID" , "MVA", "inv mass" ,"#mu selection" , "extra #mu veto", "2jets" , "1bjets" , "MET" ] )

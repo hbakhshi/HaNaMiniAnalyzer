@@ -1,5 +1,5 @@
 from ROOT import TDirectory, TFile, TCanvas , TH1D , TH1 , THStack, TList, gROOT, TLegend, TPad, TLine, gStyle, TTree , TObject , gDirectory, gPad
-from ROOT import RooFit,RooDataHist, RooHistPdf,RooAddPdf,RooFitResult, RooRealVar, RooArgSet, RooArgList
+#from ROOT import RooFit,RooDataHist, RooHistPdf,RooAddPdf,RooFitResult, RooRealVar, RooArgSet, RooArgList
 
 from math import sqrt
 import os
@@ -177,10 +177,10 @@ class Property:
                 totalmc = 0.
                 for st in self.Bkg:
                     totalmc += self.Bkg[st].Integral()
-                if totalmc > 0.000001 :
+                if totalmc > 0.000001 and self.Data.Integral() != 0 :
                     scale = self.Data.Integral()/totalmc
                 else :
-                    print "\t%s was not normalized to data as the mc yield is %.2f" % (self.Name , totalmc)
+                    print "\t%s was not normalized to data as the mc yield is %.2f and data yield is %d" % (self.Name , totalmc , int(self.Data.Integral()) )
             #print "in getStack, normtodata = %s and scale is %f" % (str(normtodata) , scale)
             self.Stack = THStack( stackname , self.Name ) 
             for st in self.Bkg:

@@ -140,7 +140,7 @@ protected:
       Weight[i] = 1.0 ;
 
     for(unsigned int i=0 ; i < 12 ; i++)
-      bSelWeights[i] = 0.0;
+      bSelWeights[i] = 1.0;
 
     puWeight = -999;
     particleinfo tmp;
