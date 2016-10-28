@@ -22,6 +22,7 @@
 #include "METReader.h"
 #include "flashggJetReader.h"
 #include "flashggMuonReader.h"
+#include "flashggElectronReader.h"
 #include "DiPhotonReader.h"
 
 #include "Histograms.h"
@@ -59,6 +60,7 @@ protected:
   METReader* metReader;
   flashggJetReader* flashggjetreader;
   flashggMuonReader* flashggmuonreader;
+  flashggElectronReader* flashggelectronreader;
   DiPhotonReader* diPhoton;
 };
 

@@ -17,6 +17,14 @@ tHq = cms.EDFilter('tHqAnalyzer',
                                        MuonID = cms.int32( 3 ), #0:no id, 1:Loose , 2:Medium , 3:tight , 4 : soft
                                        DeltaRMuonPho = cms.double( 0.3 )
                                        ),
+                     Electrons = cms.PSet( Input = cms.InputTag("flashggSelectedElectrons"),
+                                       ElectronPtCut = cms.double(20),
+                                       ElectronEtaCut = cms.double( 2.4 ),
+                                       ElectronID = cms.int32( 3 ), #0:veto, 1:Loose , 2:Medium , 3:tight ,
+                                       DeltaRElectronPho = cms.double( 0.3 ),
+                                       DeltaRElectronTrk = cms.double( 0.4 ),
+                                       DeltaMassElectronZ = cms.double( 10 )
+                                       ),
 
                      MET = cms.PSet( Input = cms.InputTag("slimmedMETs"),
                                      Cut = cms.double( -1. )
