@@ -61,6 +61,7 @@ protected:
   flashggJetReader* flashggjetreader;
   flashggMuonReader* flashggmuonreader;
   flashggElectronReader* flashggelectronreader;
+  flashggElectronReader* flashggelectronVetoReader;
   DiPhotonReader* diPhoton;
 };
 

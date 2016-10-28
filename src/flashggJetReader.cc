@@ -56,9 +56,9 @@ flashggJetReader::flashggJetReader( edm::ParameterSet const& iConfig, edm::Consu
     btw2L = new BTagWeight("CSVv2", 0 , SetupDir, 2 , 2 , BTagWPL, BTagWPM, BTagWPT,-1);
     btw2M = new BTagWeight("CSVv2", 1 , SetupDir, 2 , 2 , BTagWPL, BTagWPM, BTagWPT,-1);
     btw2T = new BTagWeight("CSVv2", 2 , SetupDir, 2 , 2 , BTagWPL, BTagWPM, BTagWPT,-1);
-    btw1M0L = new BTagWeight("CSVv2", 1 , SetupDir, 1 , 1 , BTagWPL, BTagWPM, BTagWPT,0);
-    btw1T0L = new BTagWeight("CSVv2", 2 , SetupDir, 1 , 1 , BTagWPL, BTagWPM, BTagWPT,0);
-    btw1T0M = new BTagWeight("CSVv2", 2 , SetupDir, 1 , 1 , BTagWPL, BTagWPM, BTagWPT,1);
+    btw1M0L = new BTagWeight("CSVv2", 1 , SetupDir, 1 , 1 , BTagWPL, BTagWPM, BTagWPT,0 , 0 , 0);
+    btw1T0L = new BTagWeight("CSVv2", 2 , SetupDir, 1 , 1 , BTagWPL, BTagWPM, BTagWPT,0 , 0 , 0);
+    btw1T0M = new BTagWeight("CSVv2", 2 , SetupDir, 1 , 1 , BTagWPL, BTagWPM, BTagWPT,1 , 0 , 0);
     allBTWs = {btw0L , btw0M, btw0T , btw1L , btw1M , btw1M0L , btw1T , btw1T0L, btw1T0M , btw2L , btw2M , btw2T};
     allWs = {&W0L , &W0M, &W0T , &W1L , &W1M , &W1M0L , &W1T , &W1T0L, &W1T0M , &W2L , &W2M , &W2T};
 

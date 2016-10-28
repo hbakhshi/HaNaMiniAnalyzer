@@ -4,8 +4,6 @@
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
 
-
-
 #include "TTree.h"
 #include <iostream>
 #include "TROOT.h"
@@ -70,7 +68,7 @@ protected:
   unsigned long long EventN;
   unsigned char SelectionStep;
 
-  unsigned char nVertices, nJets, nLbJets , nMbJets , nTbJets, nMuons, nGPairs , nSelGPairs ;
+  unsigned char nVertices, nJets, nLbJets , nMbJets , nTbJets, LeptonType , nMuons, nEles , nElesVeto , nGPairs , nSelGPairs ;
   struct particleinfo{
     float pt, eta, phi , other , w , another; //other : for photon id, for diphoton mass, for jets btagging vals
     unsigned short number;
@@ -107,7 +105,7 @@ protected:
   float* Weight;
   float puWeight , diGMVA ;
   float* bSelWeights;
-  particleinfo G1 , G2 , DiG , mu , eventshapes , met , THReco , Top ;
+  particleinfo G1 , G2 , DiG , lepton , eventshapes , met , THReco , Top ;
 
   char  closest_jet_index ;
   float closest_jet_dr    ;
@@ -133,7 +131,7 @@ protected:
   void resetTreeVals(){
     RunN = 0;
     EventN = 0;
-    SelectionStep = nVertices = nJets = nLbJets = nMbJets = nTbJets = nMuons = nGPairs = nSelGPairs = 250;
+    SelectionStep = nVertices = nJets = nLbJets = nMbJets = nTbJets = LeptonType = nMuons = nElesVeto = nEles = nGPairs = nSelGPairs = 250;
 
     W = 1.0;
     for(unsigned int i=0 ; i < nHistos ; i++)
@@ -144,7 +142,7 @@ protected:
 
     puWeight = -999;
     particleinfo tmp;
-    Top = THReco = G1 = G2 = DiG = mu = met = tmp ;
+    Top = THReco = G1 = G2 = DiG = lepton = met = tmp ;
 
     jetsPhi.clear();
     jetsPt.clear();
@@ -213,6 +211,9 @@ void tHqAnalyzer::beginJob()
     theSelectionResultTree->Branch("nMbJets", &nMbJets);
     theSelectionResultTree->Branch("nTbJets", &nTbJets);
     theSelectionResultTree->Branch("nMuons", &nMuons);
+    theSelectionResultTree->Branch("LeptonType", &LeptonType);
+    theSelectionResultTree->Branch("nEles", &nEles);
+    theSelectionResultTree->Branch("nElesVeto", &nElesVeto);
     theSelectionResultTree->Branch("nGPairs", &nGPairs);
     theSelectionResultTree->Branch("nSelGPairs", &nSelGPairs);
 
@@ -228,7 +229,7 @@ void tHqAnalyzer::beginJob()
     theSelectionResultTree->Branch("G1" , &G1 , "pt:eta:phi:mva:w" );
     theSelectionResultTree->Branch("G2" , &G2 , "pt:eta:phi:mva:w"  );
     theSelectionResultTree->Branch("DiG", &DiG , "pt:eta:phi:mass:w:mva"  );
-    theSelectionResultTree->Branch("mu", &mu , "pt:eta:phi:iso:w:charge"  );
+    theSelectionResultTree->Branch("lepton", &lepton , "pt:eta:phi:iso:w:charge"  );
     theSelectionResultTree->Branch("eventshapes", &eventshapes , "aplanarity:C:circularity:D:isotropy:sphericity"  );
     theSelectionResultTree->Branch("THReco", &THReco , "THInvM:THDPhi:THDR" );
     theSelectionResultTree->Branch("Top", &Top , "THDEta:CosTheta:JPrime:WM:topM:CosThetaStar:nLoops/s:goodEvent/O" );
@@ -251,14 +252,6 @@ void tHqAnalyzer::beginJob()
     nHistos = 2;
   hCutFlowTable = new Histograms( SampleName , "CutFlowTable" , 15 , 0.5 , 15.5 , nHistos );
   M_GG = new Histograms( SampleName , "M_GG" , 100 , 50 , 250 , nHistos );
-  // Eta_J = new Histograms( SampleName , "Eta_J" , 24 , -4.7 , 4.7 , nHistos );
-  // Pt_J  = new Histograms( SampleName , "Pt_J" , 27 , 20 , 200 , nHistos );
-  // Pt_Mu  = new Histograms( SampleName , "Pt_Mu" , 27 , 20 , 200 , nHistos );
-  // Eta_Mu = new Histograms( SampleName , "Eta_Mu" , 8 , 0 , 2.4 , nHistos );
-  // Pt_b  = new Histograms( SampleName , "Pt_b" , 27 , 20 , 200 , nHistos );
-  // Eta_b  = new Histograms( SampleName , "Eta_b" , 8 , 0 , 2.5 , nHistos );
-  // DEta_Jb  = new Histograms( SampleName , "DEta_Jb" , 16 , 0 , 8 , nHistos );
-  // DEta_bMu = new Histograms( SampleName , "DEta_bMu" , 16 , 0 , 8 , nHistos );
 }
 
 
@@ -461,42 +454,53 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     // twoB.Print("two");
   }
 
-  switch( flashggmuonreader->Read( iEvent , diPhoton->diPhoton ) ){
-  case flashggMuonReader::ExactlyOne :
-    W *= (flashggmuonreader->W);
-    hCutFlowTable->Fill( ++SelectionStep , W );
-    hCutFlowTable->Fill( ++SelectionStep , W );
+  flashggMuonReader::SelectionStep muSelStep = flashggmuonreader->Read( iEvent , diPhoton->diPhoton );
+  flashggElectronReader::SelectionStep eleSelStep = flashggelectronreader->Read( iEvent , diPhoton->diPhoton );
+  flashggElectronReader::SelectionStep eleVetoStep = flashggelectronVetoReader->Read( iEvent , diPhoton->diPhoton );
 
-    mu.set( flashggmuonreader->goodMus[0].pt() ,
-	    flashggmuonreader->goodMus[0].eta() ,
-	    flashggmuonreader->goodMus[0].phi() ,
-	    flashggmuonreader->Iso ,
-	    flashggmuonreader->W ,
-	    flashggmuonreader->goodMus[0].charge() );
-    
-    nMuons = 1;
-    break;
-  case flashggMuonReader::MoreThanOne :
-    hCutFlowTable->Fill( ++SelectionStep , W );
-  case flashggMuonReader::ExactlyOneNonIso :
+  nMuons = flashggmuonreader->nMuons;
+  nEles  = flashggelectronreader->nElectrons;
+  nElesVeto = flashggelectronVetoReader->nElectrons;
+  LeptonType = 0;
+
+  if( nMuons == 1 && nElesVeto == 0 ){
+    LeptonType = 1 ;
+
     W *= (flashggmuonreader->W);
-    mu.set( flashggmuonreader->goodMus[0].pt() ,
-	    flashggmuonreader->goodMus[0].eta() ,
-	    flashggmuonreader->goodMus[0].phi() ,
-	    flashggmuonreader->Iso ,
-	    flashggmuonreader->W ,
-	    flashggmuonreader->goodMus[0].charge() );
-  case flashggMuonReader::ZeroMuons :
-    nMuons = flashggmuonreader->nMuons ;
+    lepton.set( flashggmuonreader->goodMus[0].pt() ,
+		flashggmuonreader->goodMus[0].eta() ,
+		flashggmuonreader->goodMus[0].phi() ,
+		flashggmuonreader->Iso ,
+		flashggmuonreader->W ,
+		flashggmuonreader->goodMus[0].charge() );
+  }else if(nMuons == 0 && nEles == 1 ){
+    LeptonType = 2 ;
+
+    W *= (flashggelectronreader->W);
+    lepton.set( flashggelectronreader->goodEles[0].pt() ,
+		flashggelectronreader->goodEles[0].eta() ,
+		flashggelectronreader->goodEles[0].phi() ,
+		flashggelectronreader->goodEles[0].energy() ,
+		flashggelectronreader->W ,
+		flashggelectronreader->goodEles[0].charge() );    
+  }else if( nMuons == 100 ){
+    LeptonType = 3;
+
+    W *= (flashggmuonreader->W);
+    lepton.set( flashggmuonreader->goodMus[0].pt() ,
+		flashggmuonreader->goodMus[0].eta() ,
+		flashggmuonreader->goodMus[0].phi() ,
+		flashggmuonreader->Iso ,
+		flashggmuonreader->W ,
+		flashggmuonreader->goodMus[0].charge() );
   }
 
 
 
-
-  if( mu.isSet ){
+  if( lepton.isSet ){
 
     for(int i=0 ; i < nJets ; i++){
-      float dri = reco::deltaR( jetsEta[i] , jetsPhi[i] , mu.eta , mu.phi );
+      float dri = reco::deltaR( jetsEta[i] , jetsPhi[i] , lepton.eta , lepton.phi );
       if( dri < closest_jet_dr ){
 	closest_jet_index = i;
 	closest_jet_dr = dri ;
@@ -510,7 +514,7 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     higgs = (g1+g2);
 
     std::vector< math::RhoEtaPhiVector > particles;
-    particles.push_back( math::RhoEtaPhiVector(mu.pt, mu.eta , mu.phi) );
+    particles.push_back( math::RhoEtaPhiVector(lepton.pt, lepton.eta , lepton.phi) );
     particles.push_back( math::RhoEtaPhiVector(G1.pt, G1.eta , G1.phi) );
     particles.push_back( math::RhoEtaPhiVector(G2.pt, G2.eta , G2.phi) );
     for(unsigned int i = 0 ; i < jetsPhi.size() ; i++)
@@ -527,7 +531,7 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     if( nJets > 0 ){
       TLorentzVector muL,bL,fwdJL,metL ;
-      muL.SetPtEtaPhiM( mu.pt, mu.eta, mu.phi , 0 );
+      muL.SetPtEtaPhiM( lepton.pt, lepton.eta, lepton.phi , 0 );
       bL.SetPtEtaPhiE( jetsPt[0] , jetsEta[0] , jetsPhi[0] , jetsE[0] );
       metL.SetPtEtaPhiM( met.pt , 0 , met.eta , 0 );
       SemiLepTopQuark singletop( bL , metL , muL , fwdJL, fwdJL );

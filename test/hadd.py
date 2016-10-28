@@ -20,7 +20,7 @@ for sample in samples:
 
 from tHqAnalyzer.HaNaMiniAnalyzer.ExtendedSample import *
 for sample in samples:
-    if sample.Name in ["Signal" , "ttH" , "GJet80M80_40"]:
+    if sample.Name not in ["GJet80M80_40"]:
         print "skipping " + sample.Name
         continue
     ss = ExtendedSample(sample)

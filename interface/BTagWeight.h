@@ -35,71 +35,90 @@ typedef vector< flashgg::Jet > flashggJetCollection;
 
 
 class BTagWeight
+{
+private:
+  string algo;
+  int WPT, WPL, minTag, maxTag;
+  int syst, minTagL, maxTagL;
+  float bTagMapCSVv2[3];
+public:
+  BTagWeight(string algorithm, int WPt, string setupDir, int mintag, int maxtag, double BLCut = 0.460, double BMCut = 0.800, 
+	     double BTCut = 0.935, int WPl = -1, int systematics = 0, int mintagl = -1, int maxtagl = -1): 
+    algo(algorithm), WPT(WPt), WPL(WPl), minTag(mintag), maxTag(maxtag), syst(systematics), minTagL(mintagl), maxTagL(maxtagl), readerExc(0),readerCentExc(0)
   {
-  private:
-    string algo;
-    int WPT, WPL, minTag, maxTag;
-    int syst;
-    float bTagMapCSVv2[3];
-  public:
-    BTagWeight(string algorithm, int WPt, string setupDir, int mintag, int maxtag, double BLCut = 0.460, double BMCut = 0.800, 
-	       double BTCut = 0.935, int WPl = -1, int systematics = 0): 
-      algo(algorithm), WPT(WPt), WPL(WPl), minTag(mintag), maxTag(maxtag), syst(systematics),readerExc(0),readerCentExc(0)
-    {
-	bTagMapCSVv2[0] = BLCut;
-	bTagMapCSVv2[1] = BMCut;
-	bTagMapCSVv2[2] = BTCut;
-	if(WPL != -1){
-    		if (WPL > WPT){
-		       	int tmp;
-		       	tmp = WPL;
-			WPL = WPT;
-			WPT = tmp;
-		}
-	}
-	Systs[0] = "central";
-	Systs[-1] = "down";
-	Systs[1] = "up";
-	cout<< setupDir+"/"+algo+string(".csv")<<endl;
-	calib = new BTagCalibration(algo /*"CSVv2"*/, setupDir+"/"+algo+string(".csv"));
-	reader = new BTagCalibrationReader(calib,(BTagEntry::OperatingPoint)WPT,"mujets",Systs[syst]);
-        readerCent = new BTagCalibrationReader(calib,(BTagEntry::OperatingPoint)WPT,"mujets","central");  
-	readerLight = new BTagCalibrationReader(calib,(BTagEntry::OperatingPoint)WPT,"incl",Systs[syst]);
-        readerCentLight = new BTagCalibrationReader(calib,(BTagEntry::OperatingPoint)WPT,"incl","central");  
-	if(WPL != -1){
-		readerExc = new BTagCalibrationReader(calib,(BTagEntry::OperatingPoint)WPL,"mujets",Systs[syst]);
-        	readerCentExc = new BTagCalibrationReader(calib,(BTagEntry::OperatingPoint) WPL,"mujets","central");  
-		readerExcLight = new BTagCalibrationReader(calib,(BTagEntry::OperatingPoint)WPL,"incl",Systs[syst]);
-        	readerCentExcLight = new BTagCalibrationReader(calib,(BTagEntry::OperatingPoint) WPL,"incl","central");  
-	}
-
-	/* Sanity checks
-	 * std::cout<< "---- BTag WPs ----\n\t" <<bTagMapCSVv2[0] <<",\t"<<bTagMapCSVv2[1] <<",\t"<<bTagMapCSVv2[2]
-	 *	 <<"\n---- WPs to select ----\n\t"<<bTagMapCSVv2[WPT]
-	 *	 <<"\n---- WPs to veto ----\n\t";
-	 *	 if(WPL != -1) std::cout << bTagMapCSVv2[WPL]<<std::endl;
-	 *	 else std::cout << "No veto is requested" <<std::endl;
-	 * End Sanity Checks
-	 */
-    };
-    inline bool filter(int t){
-	 return (t >= minTag && t <= maxTag);
+    bTagMapCSVv2[0] = BLCut;
+    bTagMapCSVv2[1] = BMCut;
+    bTagMapCSVv2[2] = BTCut;
+    if(WPL != -1){
+      if(minTagL == -1){
+	std::cout<<"At least provide the minimum number of loose-non-tight tags you want!!"<<std::endl;
+	return;
+      }
+      if (WPL > WPT){
+	int tmp;
+	tmp = WPL;
+	WPL = WPT;
+	WPT = tmp;
+      }
     }
-    float weight(flashggJetCollection jets);
-    float weight(flashggJetCollection jets, int);
-    float weightExclusive(flashggJetCollection jetsTags);
-    float TagScaleFactor(flashgg::Jet jet, bool LooseWP = false);
-    float MCTagEfficiency(flashgg::Jet jet, int WP);
-    std::map<int, string> Systs;
-    BTagCalibration * calib;
-    BTagCalibrationReader * reader;
-    BTagCalibrationReader * readerCent;
-    BTagCalibrationReader * readerExc;
-    BTagCalibrationReader * readerCentExc;
-    BTagCalibrationReader * readerLight;
-    BTagCalibrationReader * readerCentLight;
-    BTagCalibrationReader * readerExcLight;
-    BTagCalibrationReader * readerCentExcLight;
+    Systs[0] = "central";
+    Systs[-1] = "down";
+    Systs[1] = "up";
+    cout<< setupDir+"/"+algo+string(".csv")<<endl;
+    calib = new BTagCalibration(algo /*"CSVv2"*/, setupDir+"/"+algo+string(".csv"));
+    reader = new BTagCalibrationReader(calib,(BTagEntry::OperatingPoint)WPT,"mujets",Systs[syst]);
+    readerCent = new BTagCalibrationReader(calib,(BTagEntry::OperatingPoint)WPT,"mujets","central");  
+    readerLight = new BTagCalibrationReader(calib,(BTagEntry::OperatingPoint)WPT,"incl",Systs[syst]);
+    readerCentLight = new BTagCalibrationReader(calib,(BTagEntry::OperatingPoint)WPT,"incl","central");  
+    if(WPL != -1){
+      readerExc = new BTagCalibrationReader(calib,(BTagEntry::OperatingPoint)WPL,"mujets",Systs[syst]);
+      readerCentExc = new BTagCalibrationReader(calib,(BTagEntry::OperatingPoint) WPL,"mujets","central");  
+      readerExcLight = new BTagCalibrationReader(calib,(BTagEntry::OperatingPoint)WPL,"incl",Systs[syst]);
+      readerCentExcLight = new BTagCalibrationReader(calib,(BTagEntry::OperatingPoint) WPL,"incl","central");  
+    }
+
+    /* Sanity checks
+     * std::cout<< "---- BTag WPs ----\n\t" <<bTagMapCSVv2[0] <<",\t"<<bTagMapCSVv2[1] <<",\t"<<bTagMapCSVv2[2]
+     * <<"\n---- WPs to select ----\n\t"<<bTagMapCSVv2[WPT]
+     * <<"\n---- WPs to veto ----\n\t";
+     * if(WPL != -1) std::cout << bTagMapCSVv2[WPL]<<std::endl;
+     * else std::cout << "No veto is requested" <<std::endl;
+     * End Sanity Checks
+     */
   };
+  inline bool filter(int t){
+    if(maxTag != -1)
+      return (t >= minTag && t <= maxTag);
+    else
+      return (t >= minTag);
+  }
+  inline bool filter(int tight, int looseNonTight){
+    bool OK = false;
+    if(maxTag != -1)
+      OK = (tight >= minTag && tight <= maxTag);
+    else
+      OK = (tight >= minTag);
+    if(maxTagL != -1)
+      OK = (OK && (looseNonTight >= minTagL && looseNonTight <= maxTagL));
+    else
+      OK = (OK && (looseNonTight >= minTagL));
+    return OK;
+  }
+  float weight(flashggJetCollection jets);
+  float weight(flashggJetCollection jets, int);
+  float weightExclusive(flashggJetCollection jetsTags);
+  float TagScaleFactor(flashgg::Jet jet, bool LooseWP = false);
+  float MCTagEfficiency(flashgg::Jet jet, int WP);
+  std::map<int, string> Systs;
+  BTagCalibration * calib;
+  BTagCalibrationReader * reader;
+  BTagCalibrationReader * readerCent;
+  BTagCalibrationReader * readerExc;
+  BTagCalibrationReader * readerCentExc;
+  BTagCalibrationReader * readerLight;
+  BTagCalibrationReader * readerCentLight;
+  BTagCalibrationReader * readerExcLight;
+  BTagCalibrationReader * readerCentExcLight;
+};
 #endif
 

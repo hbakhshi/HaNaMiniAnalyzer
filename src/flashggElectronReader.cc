@@ -16,25 +16,25 @@ flashggElectronReader::flashggElectronReader( edm::ParameterSet const& iConfig, 
 	  if(ElectronID == 0 )// Veto ID
 	  {
 	      TFile* f1 = TFile::Open( TString(SetupDir + "/egammaEffi_SF2D_Veto.root") );
-	      hEleSFID = (TH2*)( f1->Get("EGamma_SF2D") );
+	      hEleSFID = (TH2*)( f1->Get("EGamma_SF2D")->Clone("EGamma_SF2D_Cloned") );
 	      f1->Close();
 	  }
 	  else if(ElectronID == 2 ) // Loose ID
 	  {
 	      TFile* f1 = TFile::Open( TString(SetupDir + "/egammaEffi_SF2D_Loose.root") );
-	      hEleSFID = (TH2*)( f1->Get("EGamma_SF2D") );
+	      hEleSFID = (TH2*)( f1->Get("EGamma_SF2D")->Clone("EGamma_SF2D_Cloned" ) );
 	      f1->Close();
 	  }
 	  else if(ElectronID == 3 ) // Medium ID
 	  {
 	    TFile* f1 = TFile::Open( TString(SetupDir + "/egammaEffi_SF2D_Medium.root") );
-	    hEleSFID = (TH2*)( f1->Get("EGamma_SF2D") );
+	    hEleSFID = (TH2*)( f1->Get("EGamma_SF2D")->Clone("EGamma_SF2D_Cloned" ) );
 	    f1->Close();
 	  }
 	  else if(ElectronID == 4 ) // Tight ID
 	  {
 	    TFile* f1 = TFile::Open( TString(SetupDir + "/egammaEffi_SF2D_Tight.root") );
-	    hEleSFID = (TH2*)( f1->Get("EGamma_SF2D") );
+	    hEleSFID = (TH2*)( f1->Get("EGamma_SF2D")->Clone("EGamma_SF2D_Cloned" ) );
 	    f1->Close();
 	  }
 	  else
@@ -42,7 +42,7 @@ flashggElectronReader::flashggElectronReader( edm::ParameterSet const& iConfig, 
 
 	  
 	  TFile* f1 = TFile::Open( TString(SetupDir + "/egammaEffi_SF2D_Reco.root") );
-	  hEleSFReco = (TH2*)( f1->Get("EGamma_SF2D") );
+	  hEleSFReco = (TH2*)( f1->Get("EGamma_SF2D")->Clone("EGamma_SF2D_Cloned" ) );
 	  f1->Close();
       }
       

@@ -1,23 +1,6 @@
 #include "tHqAnalyzer/HaNaMiniAnalyzer/interface/BTagWeight.h"
 
 
-/*float BTagWeight::weight(pat::JetCollection jets){
-    float pMC = 1;
-    float pData = 1;
-    for (auto j : jets){
-	float eff = this->MCTagEfficiency(j,WPT);
-	float sf= this->TagScaleFactor(j);
-	if(j.bDiscriminator(algo)>bTagMapCSVv2[WPT] ){
-		pMC*=eff;
-		pData*=sf*eff;
-	}else{
-		pMC*=(1-eff);
-		pData*=(1-sf*eff);
-	}
-    }
-    return pData/pMC;
-}*/
-
 float BTagWeight::weight(flashggJetCollection jets/*, int ntag*/){
 	//if (!filter(ntag)){
       		//   std::cout << "nThis event should not pass the selection, what is it doing here?" << std::endl;
@@ -61,35 +44,67 @@ float BTagWeight::weight(flashggJetCollection jets/*, int ntag*/){
 
 
 
-//*************************************************************************
-//DONT USE !!!!! METHOD INCOMPLETE ****************************************
-//*************************************************************************
 float BTagWeight::weightExclusive(flashggJetCollection jets){
 //This function takes into account cases where you have n b-tags and m vetoes, but they have different thresholds.
     if(WPL == -1){
 	std::cout<<"FATAL ERROR: Provide the second btag WP!!!!"<<std::endl;
 	return 0;
-    } 
-    float pMC = 1;
-    float pData = 1;
+    } //https://twiki.cern.ch/twiki/pub/CMS/BTagSFMethods/latex3766350f938279e8ab2cee576fcba0d7.png
+    std::vector<float> effL, effT, sfL, sfT;
     for (auto j : jets){
-	float effL = this->MCTagEfficiency(j,WPL);
-	float sfL= this->TagScaleFactor(j,(WPL != -1));
-	float effT = this->MCTagEfficiency(j,WPT);
-	float sfT= this->TagScaleFactor(j);
-	if(j.bDiscriminator(algo) > bTagMapCSVv2[WPT]){
-		pMC*=effT;
-		pData*=sfT*effT;
-	}else if (j.bDiscriminator(algo) > bTagMapCSVv2[WPL]){
-		pMC*=(effL-effT);
-		pData*=fabs(sfL*effL - sfT*effT);
-	} else {
-		pMC*=(1-effL);
-		pData*=(1-sfL*effL);
+	effL.push_back(this->MCTagEfficiency(j,WPL));
+	sfL.push_back(this->TagScaleFactor(j,(WPL != -1)));
+	effT.push_back(this->MCTagEfficiency(j,WPT));
+	sfT.push_back(this->TagScaleFactor(j));
+    }
+    int njetTags = jets.size();
+    int comb = 1 << njetTags;
+    float pMC = 0;
+    float pData = 0;
+
+    for (int i = 0; i < comb; i++){
+      	int ntagged = 0;
+        float wNonTaggedData = 1;
+        float wNonTaggedMC = 1;
+	std::vector<unsigned int> taggedIndecies;
+      	for (int j = 0; j < njetTags; j++){
+		bool tagged = ((i >> j) & 0x1) == 1;
+	  	if (tagged){
+	      		ntagged++;
+			taggedIndecies.push_back(j);
+		} else {
+			wNonTaggedMC*=(1.-effL[j]);
+                	wNonTaggedData*=(1.-sfL[j]*effL[j]);
+            	}
+       	}
+	
+	int combTagged = 1 << ntagged;
+	for (int iTagged = 0; iTagged < combTagged; iTagged++){
+		int nLoose = 0;
+		float wTaggedData = 1;
+                float wTaggedMC = 1;
+	      	for (int jTagged = 0; jTagged < ntagged; jTagged++){
+			bool tight = ((iTagged >> jTagged) & 0x1) == 1;	
+			unsigned int realIndex = taggedIndecies[jTagged];
+
+			if (tight){
+				wTaggedMC*=(effT[realIndex]);
+                		wTaggedData*=(sfT[realIndex]*effT[realIndex]);
+			} else {
+				nLoose++;
+				wTaggedMC*=(effT[realIndex] - effL[realIndex]);
+                		wTaggedData*=(sfT[realIndex]*effT[realIndex] - sfL[realIndex]*effL[realIndex]);
+			}
+		}
+		if( filter( ntagged-nLoose , nLoose ) ){
+			pMC += ( wNonTaggedMC*wTaggedMC );
+			pData += (wNonTaggedData*wTaggedData) ;
+		}
 	}
     }
-    
-    return pData/pMC;
+    if (pMC == 0) return 0;
+    return pData / pMC;
+
 }
 //*************************************************************************
 
