@@ -87,4 +87,40 @@ MicroAOD80Samples.append(TGJ80_ext)
 
 
 Signal76  = Sample("Signal" , 0.01561  , True , "/THQ_HToGG_13TeV-madgraph-pythia8_TuneCUETP8M1/hbakhshi-thggqProduction-Moriond16WSFinal-0305d2bd17670bc0d20b0c34c43ed269/USER")
-MicroAOD80Samples.append(Signal76)
+#MicroAOD80Samples.append(Signal76)
+
+
+####
+UCLSamples = []
+Signal80 = Sample("Signal80" , 0.01561  , True , "/THQ_HToGG_13TeV-madgraph-pythia8_TuneCUETP8M1/hbakhshi-tHq2016-d268d1dd43f5a38cde25f3714af3e8cb/USER" , "root://xrootd.ba.infn.it/")
+MicroAOD80Samples.append(Signal80)
+UCLSamples.append(Signal80)
+
+TTGJ80 = Sample("TTGJ" , 3.697 , True , "/TTGJets_TuneCUETP8M1_13TeV-amcatnloFXFX-madspin-pythia8/hbakhshi-tHq2016-86aa1c06e8428b339478fcecb3fa7c2a/USER" , "root://xrootd.ba.infn.it/")
+MicroAOD80Samples.append(TTGJ80)
+UCLSamples.append(TTGJ80)
+
+TTBar80 = Sample( "TTbar" ,  831.76 , False , "/TT_TuneCUETP8M1_13TeV-powheg-pythia8/hbakhshi-tHq2016-4fa665931138c7739c29d6d0b6fb8d73/USER" , "root://xrootd.ba.infn.it/")
+MicroAOD80Samples.append( TTBar80 )
+UCLSamples.append( TTBar80 )
+
+WG80 = Sample( "WG" , 1 , False , "/WGToLNuG_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/hbakhshi-tHq2016-86aa1c06e8428b339478fcecb3fa7c2a/USER" , "root://xrootd.ba.infn.it/")
+MicroAOD80Samples.append( WG80 )
+UCLSamples.append( WG80 )
+
+WJetsMG80 = Sample( "WJets" , 61526.7 , False , "/WJetsToLNu_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/hbakhshi-tHq2016-4fa665931138c7739c29d6d0b6fb8d73/USER" , "root://xrootd.ba.infn.it/")
+MicroAOD80Samples.append( WJetsMG80 )
+UCLSamples.append( WJetsMG80 )
+
+ZZ80 = Sample( "ZZ" , 15.4*2*0.071 , True  , "/ZZTo2L2Q_13TeV_amcatnloFXFX_madspin_pythia8/hbakhshi-tHq2016-86aa1c06e8428b339478fcecb3fa7c2a/USER" , "root://xrootd.ba.infn.it/")
+MicroAOD80Samples.append(ZZ80)
+UCLSamples.append(ZZ80)
+
+WZ80 = Sample( "WZ" ,  44.9*0.068 , True  , "/WZTo2L2Q_13TeV_amcatnloFXFX_madspin_pythia8/hbakhshi-tHq2016-86aa1c06e8428b339478fcecb3fa7c2a/USER" , "root://xrootd.ba.infn.it/")
+MicroAOD80Samples.append(WZ80)
+UCLSamples.append(WZ80)
+
+WW80 = Sample( "WW" ,  118.7 , False  , "/WW_TuneCUETP8M1_13TeV-pythia8/hbakhshi-tHq2016-86aa1c06e8428b339478fcecb3fa7c2a/USER" , "root://xrootd.ba.infn.it/")
+MicroAOD80Samples.append(WW80)
+UCLSamples.append(WW80)
+

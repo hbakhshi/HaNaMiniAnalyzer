@@ -134,7 +134,8 @@ else :
     else:
         raise Exception,"The default setup for microAODstd.py does not support releases other than 76X and 80X"
 
-    if theSample.DSName.count( "_reHLT_" ):
+    from Samples80tHq.Samples import Signal80 , WJetsMG80 , TTBar80
+    if theSample.DSName.count( "_reHLT_" ) or theSample in [Signal80 , WJetsMG80 , TTBar80]:
         process.tHq.HLT.Input = cms.InputTag( "TriggerResults","","HLT2" )
     #process.GlobalTag.globaltag = '76X_dataRun2_16Dec2015_v0'
     #from PhysicsTools.PatAlgos.producersLayer1.jetUpdater_cff import *
