@@ -114,6 +114,7 @@ protected:
   std::vector<float> jetsEta;
   std::vector<float> jetsPhi;
   std::vector<float> jetsE;
+  std::vector<int> jetsIndex;
 
   struct Nb_scenario{
     char index_forward, index_highpt , index_secondpt ;
@@ -148,6 +149,7 @@ protected:
     jetsPt.clear();
     jetsEta.clear();
     jetsE.clear();
+    jetsIndex.clear();
 
     zeroB.set( 255 , 255 , 255 );
     oneB.set( 255 , 255 , 255 );
@@ -381,6 +383,7 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       jetsEta.push_back( theJet->eta() );
       jetsPt.push_back( theJet->pt() );
       jetsE.push_back( theJet->energy() );
+      jetsIndex.push_back( index );
 
       int eta_index = flashggjetreader->GetJetEtaSortedIndex( index );
       etaSortedJetIndices[eta_index]  = ij ;
@@ -493,8 +496,22 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 		flashggmuonreader->Iso ,
 		flashggmuonreader->W ,
 		flashggmuonreader->goodMus[0].charge() );
-  }
+  }else if( nJets > 2){
+    LeptonType = 4;
+    const flashgg::Jet* theJet = &(flashggjetreader->selectedJets[ jetsIndex[1] ]) ;
 
+    lepton.set( jetsPt[1] ,
+		jetsEta[1] ,
+		jetsPhi[1] , 
+		theJet->muonMultiplicity (),
+		theJet->muonEnergy(),
+		theJet->muonEnergyFraction() );
+    jetsPt.erase ( jetsPt.begin()  + 1 );
+    jetsEta.erase( jetsEta.begin() + 1 );
+    jetsPhi.erase( jetsPhi.begin() + 1 );
+    jetsE.erase  ( jetsE.begin()   + 1 );
+  }
+  
 
 
   if( lepton.isSet ){
@@ -544,9 +561,12 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       double costheta = tv3.Dot( hv3 )/ (tv3.Mag()*hv3.Mag()) ;
 
       TVector3 jprimev3;
-      jprimev3.SetPtEtaPhi( jetsPt[ oneB.index_forward ] , 
-			    jetsEta[ oneB.index_forward ] ,
-			    jetsPhi[ oneB.index_forward ] );
+      int jpIndex = oneB.index_forward;
+      if( LeptonType == 4 )
+	jpIndex = twoB.index_forward;
+      jprimev3.SetPtEtaPhi( jetsPt[ jpIndex ] , 
+			    jetsEta[ jpIndex ] ,
+			    jetsPhi[ jpIndex ] );
       TVector3 htopcross = hv3.Cross( tv3 );
       double costhetajprime = htopcross.Dot( jprimev3 ) / ( htopcross.Mag() * jprimev3.Mag() );
       THReco.set( (topRec+higgs).M() , 

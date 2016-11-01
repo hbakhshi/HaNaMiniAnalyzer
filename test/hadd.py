@@ -20,9 +20,9 @@ for sample in samples:
 
 from tHqAnalyzer.HaNaMiniAnalyzer.ExtendedSample import *
 for sample in samples:
-    #if sample.Name not in ["GJet80M80_40"]:
-    #    print "skipping " + sample.Name
-    #    continue
+    if sample.Name not in ["Signal80"]:
+        print "skipping " + sample.Name
+        continue
     ss = ExtendedSample(sample)
     #export EOS_MGM_URL=root://eosuser.cern.ch
     #eosmount eos_cb
