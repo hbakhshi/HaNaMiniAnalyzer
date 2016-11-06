@@ -3,7 +3,7 @@
 runOnOutsOfAnotherJob = False
 
 nFilesPerJob=3
-CheckFailedJobs=True
+CheckFailedJobs=False
 hname = "tHq/CutFlowTable/CutFlowTable"
 prefix = "tree"
 
@@ -62,7 +62,6 @@ call(["voms-proxy-init" , "--out" , "./%s/.x509up_u%d" % ( workingdir , os.getui
 FailedJobs = {}
 if CheckFailedJobs:
     for sample in samples:
-
         ListOfFailedJobs = []
         for job_ in sample.Jobs :
             outfile = job_.Output
@@ -83,7 +82,7 @@ if CheckFailedJobs:
             else :
                 ListOfFailedJobs.append( str(job))
                 print outfile + " : file doesn't exist"
-
+                
         FailedJobs[ sample.Name ] = ListOfFailedJobs
     print FailedJobs
 

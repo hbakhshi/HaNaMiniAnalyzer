@@ -13,6 +13,9 @@
 #include "DataFormats/Math/interface/Vector3D.h"
 #include "SemiLepTopQuark.h"
 
+#include "tHqAnalyzer/HaNaMiniAnalyzer/interface/FoxWolfram.hpp"
+
+
 using namespace std;
 
 class UIntReader : public BaseEventReader< unsigned int  > {
@@ -105,7 +108,8 @@ protected:
   float* Weight;
   float puWeight , diGMVA ;
   float* bSelWeights;
-  particleinfo G1 , G2 , DiG , lepton , eventshapes , met , THReco , Top ;
+  particleinfo G1 , G2 , DiG , lepton , eventshapes , eventshapesMet , met , THReco , Top ;
+  particleinfo foxwolf1 , foxwolf2 , foxwolf1Met, foxwolf2Met ;
 
   char  closest_jet_index ;
   float closest_jet_dr    ;
@@ -144,6 +148,7 @@ protected:
     puWeight = -999;
     particleinfo tmp;
     Top = THReco = G1 = G2 = DiG = lepton = met = tmp ;
+    eventshapes = foxwolf1 = foxwolf2 = foxwolf1Met = foxwolf2Met = tmp ;
 
     jetsPhi.clear();
     jetsPt.clear();
@@ -233,6 +238,12 @@ void tHqAnalyzer::beginJob()
     theSelectionResultTree->Branch("DiG", &DiG , "pt:eta:phi:mass:w:mva"  );
     theSelectionResultTree->Branch("lepton", &lepton , "pt:eta:phi:iso:w:charge"  );
     theSelectionResultTree->Branch("eventshapes", &eventshapes , "aplanarity:C:circularity:D:isotropy:sphericity"  );
+    theSelectionResultTree->Branch("eventshapesMET", &eventshapesMet , "aplanarity:C:circularity:D:isotropy:sphericity"  );
+    theSelectionResultTree->Branch("foxwolf1", &foxwolf1 , "SHAT:PT:ETA:PSUM:PZ:ONE" );
+    theSelectionResultTree->Branch("foxwolf2", &foxwolf2 , "SHAT:PT:ETA:PSUM:PZ:ONE" );
+    theSelectionResultTree->Branch("foxwolf1Met", &foxwolf1Met , "SHAT:PT:ETA:PSUM:PZ:ONE" );
+    theSelectionResultTree->Branch("foxwolf2Met", &foxwolf2Met , "SHAT:PT:ETA:PSUM:PZ:ONE" );
+
     theSelectionResultTree->Branch("THReco", &THReco , "THInvM:THDPhi:THDR" );
     theSelectionResultTree->Branch("Top", &Top , "THDEta:CosTheta:JPrime:WM:topM:CosThetaStar:nLoops/s:goodEvent/O" );
 
@@ -506,10 +517,6 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 		theJet->muonMultiplicity (),
 		theJet->muonEnergy(),
 		theJet->muonEnergyFraction() );
-    jetsPt.erase ( jetsPt.begin()  + 1 );
-    jetsEta.erase( jetsEta.begin() + 1 );
-    jetsPhi.erase( jetsPhi.begin() + 1 );
-    jetsE.erase  ( jetsE.begin()   + 1 );
   }
   
 
@@ -530,8 +537,39 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     g2.SetPtEtaPhiM( G2.pt , G2.eta , G2.phi , 0 );
     higgs = (g1+g2);
 
+    TLorentzVector muL,metL ;
+    muL.SetPtEtaPhiM( lepton.pt, lepton.eta, lepton.phi , 0 );
+    metL.SetPtEtaPhiM( met.pt , 0 , met.eta , 0 );
+
+    std::vector< TLorentzVector > particles_;
+    if( LeptonType != 4 ){
+      particles_.push_back( muL );
+      //cout << "mu:" ; muL.Print();
+    }
+    particles_.push_back( g1 );     //cout << "g1:" ; g1.Print();
+    particles_.push_back( g2 );     //cout << "g2:" ; g2.Print();
+    for(unsigned int i = 0 ; i < jetsPhi.size() ; i++){
+      TLorentzVector ji;
+      ji.SetPtEtaPhiE(  jetsPt[i] , jetsEta[i] , jetsPhi[i] , jetsE[i] );
+      particles_.push_back( ji );
+      //cout << "j" << i << ": "; ji.Print();
+    }
+    FoxWolfram fwam( particles_ );
+
+    std::vector< particleinfo*> allfoxwolfs = {&foxwolf1 , &foxwolf2 };
+    for(uint ifw = 1 ; ifw < allfoxwolfs.size()+1 ; ifw++)
+      allfoxwolfs[ifw-1]->set( fwam.getMoment( FoxWolfram::SHAT , ifw ),
+			       fwam.getMoment( FoxWolfram::PT , ifw ),
+			       fwam.getMoment( FoxWolfram::ETA , ifw ),
+			       fwam.getMoment( FoxWolfram::PSUM , ifw ),
+			       fwam.getMoment( FoxWolfram::PZ , ifw ),
+			       fwam.getMoment( FoxWolfram::ONE , ifw ) );
+    
+
     std::vector< math::RhoEtaPhiVector > particles;
-    particles.push_back( math::RhoEtaPhiVector(lepton.pt, lepton.eta , lepton.phi) );
+    if( LeptonType != 4 )
+      particles.push_back( math::RhoEtaPhiVector(lepton.pt, lepton.eta , lepton.phi) );
+    
     particles.push_back( math::RhoEtaPhiVector(G1.pt, G1.eta , G1.phi) );
     particles.push_back( math::RhoEtaPhiVector(G2.pt, G2.eta , G2.phi) );
     for(unsigned int i = 0 ; i < jetsPhi.size() ; i++)
@@ -545,13 +583,13 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 		     shapeVars.isotropy(),
 		     shapeVars.sphericity() );
     
-
+    
     if( nJets > 0 ){
-      TLorentzVector muL,bL,fwdJL,metL ;
-      muL.SetPtEtaPhiM( lepton.pt, lepton.eta, lepton.phi , 0 );
+      TLorentzVector bL,fwdJL;
       bL.SetPtEtaPhiE( jetsPt[0] , jetsEta[0] , jetsPhi[0] , jetsE[0] );
-      metL.SetPtEtaPhiM( met.pt , 0 , met.eta , 0 );
+      
       SemiLepTopQuark singletop( bL , metL , muL , fwdJL, fwdJL );
+      metL = singletop.getMET();
 
       TLorentzVector topRec = singletop.top() ;
 
@@ -578,7 +616,31 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       Top.number = singletop.nLoopsToSolve;
       Top.isSet = singletop.goodEvent;
     }
+
+    particles.emplace_back( metL.Pt() ,  metL.Eta() , metL.Phi() );
+    EventShapeVariables shapeVars2(particles);
+    eventshapesMet.set( shapeVars2.aplanarity() ,
+			shapeVars2.C() ,
+			shapeVars2.circularity(),
+			shapeVars2.D() ,
+			shapeVars2.isotropy(),
+			shapeVars2.sphericity() );
+    
+    particles_.push_back(metL);
+    FoxWolfram fwam2( particles_ );
+    allfoxwolfs.clear();
+    allfoxwolfs.push_back(&foxwolf1Met);
+    allfoxwolfs.push_back(&foxwolf2Met);
+    for(uint ifw = 1 ; ifw < allfoxwolfs.size()+1 ; ifw++)
+      allfoxwolfs[ifw-1]->set( fwam2.getMoment( FoxWolfram::SHAT , ifw ),
+			       fwam2.getMoment( FoxWolfram::PT , ifw ),
+			       fwam2.getMoment( FoxWolfram::ETA , ifw ),
+			       fwam2.getMoment( FoxWolfram::PSUM , ifw ),
+			       fwam2.getMoment( FoxWolfram::PZ , ifw ),
+			       fwam2.getMoment( FoxWolfram::ONE , ifw ) );
+    
   }
+
 
   FillTree();
   return true;

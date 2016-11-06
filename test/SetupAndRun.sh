@@ -2,23 +2,6 @@ export X509_USER_PROXY=$1
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 export SCRAM_ARCH=$2
 
-cp -r /afs/cern.ch/user/h/hbakhshi/work/tHq/2016/CMSSW_8_0_8_patch1/ .
-cd CMSSW_8_0_8_patch1/src
-eval `scramv1 runtime -sh`
-scramv1 b ProjectRename
-
-rm -rf tHqAnalyzer/
-#############################
-
-
-mkdir tHqAnalyzer/
-cd tHqAnalyzer
-git clone https://github.com/hbakhshi/HaNaMiniAnalyzer/
-cd HaNaMiniAnalyzer/
-git checkout $4
-scram b
-cd test
-
 if [ ! -z "$LSB_JOBINDEX" ];
 then
     echo $LSB_JOBINDEX
@@ -31,6 +14,25 @@ else
 	echo $FILEID
     fi
 fi
+
+cp -rp /afs/cern.ch/user/h/hbakhshi/work/tHq/2016/CMSSW_8_0_8_patch1/ .
+cd CMSSW_8_0_8_patch1/src
+eval `scramv1 runtime -sh`
+scramv1 b ProjectRename >& ${LSB_OUTPUTFILE}_scram
+mv ${LSB_OUTPUTFILE}_scram $LSB_OUTDIR
+
+rm -rf tHqAnalyzer/
+#############################
+
+
+mkdir tHqAnalyzer/
+cd tHqAnalyzer
+git clone https://github.com/hbakhshi/HaNaMiniAnalyzer/
+cd HaNaMiniAnalyzer/
+git checkout $4
+scram b  >& ${LSB_OUTPUTFILE}_scram2
+mv ${LSB_OUTPUTFILE}_scram2 $LSB_OUTDIR
+cd test
 
 
 echo cmsRun tHq_cfg.py sample=$5 job=$FILEID output=$6 maxEvents=-1 nFilesPerJob=$8

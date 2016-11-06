@@ -19,8 +19,8 @@ for sample in samples:
     sample.MakeJobs( 3 , "root://eoscms//eos/cms/store/user/%s/%s/%s" % (GetUserName(), "thqTree2016OptimEle" , "tree" ) ) 
 
 from tHqAnalyzer.HaNaMiniAnalyzer.ExtendedSample import *
-for sample in samples:
-    if sample.Name not in ["Signal80"]:
+for sample in UCLSamples: 
+    if sample.Name not in ["TTbar"]:
         print "skipping " + sample.Name
         continue
     ss = ExtendedSample(sample)

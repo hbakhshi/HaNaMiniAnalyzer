@@ -126,8 +126,13 @@ flashggElectronReader::SelectionStep flashggElectronReader::Read( const edm::Eve
 	  
 	  if( !IsData )
 	  {
-	      wId =  hEleSFID->GetBinContent( hEleSFID->FindBin( goodEles[0].pt() , fabs(goodEles[0].superCluster()->eta())) ) ;
-	      wReco = hEleSFReco->GetBinContent( hEleSFReco->FindBin(goodEles[0].pt() , fabs(goodEles[0].superCluster()->eta())) ) ;
+	    wId =  hEleSFID->GetBinContent( (goodEles[0].superCluster()->eta()) , hEleSFID->FindBin( goodEles[0].pt() ) ) ;
+	    wReco = hEleSFReco->GetBinContent( (goodEles[0].superCluster()->eta()) , hEleSFReco->FindBin(goodEles[0].pt() ) ) ;
+
+	    if(wId == 0)
+	      wId = 1.0;
+	    if(wReco == 0)
+	      wReco = 1.0;
 	  }
 	  W *= (wId * wReco);
 	  return flashggElectronReader::ExactlyOne ;
