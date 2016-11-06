@@ -53,8 +53,8 @@ theSample = None
 import os
 
 
-from Samples76tHq.Samples import *
-samples = samples24june
+from Samples80tHq.Samples import *
+samples = skimmedSamples1
 
 for sample in samples:
     if sample.Name == options.sample :
@@ -84,7 +84,7 @@ if theSample.IsData :
     if os.environ["CMSSW_VERSION"].count("CMSSW_7_6"):
         process.GlobalTag = GlobalTag(process.GlobalTag, '76X_dataRun2_v15')
     elif os.environ["CMSSW_VERSION"].count("CMSSW_8_0"):
-        process.GlobalTag = GlobalTag(process.GlobalTag,'80X_mcRun2_asymptotic_v11')
+        process.GlobalTag = GlobalTag(process.GlobalTag,'80X_dataRun2_Prompt_ICHEP16JEC_v0')
     else:
         raise Exception,"The default setup for microAODstd.py does not support releases other than 76X and 80X"
 
@@ -92,18 +92,23 @@ if theSample.IsData :
     process.source.lumisToProcess = LumiList.LumiList(filename = (process.tHq.SetupDir.value() + '/JSON.txt')).getVLuminosityBlockRange()
     process.p = cms.Path( process.tHq )
     for v in range(0 , 10 ):
-        process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30_18_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass95_v%d' % (v) )
-        process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30PV_18PV_R9Id_AND_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
-        process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30EB_18EB_R9Id_OR_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
+        process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30_18_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90_v%d' % (v) )
+        #process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30_18_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass95_v%d' % (v) )
+        #process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30PV_18PV_R9Id_AND_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
+        #process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30EB_18EB_R9Id_OR_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
 
 else :
     if os.environ["CMSSW_VERSION"].count("CMSSW_7_6"):
         process.GlobalTag = GlobalTag(process.GlobalTag, '76X_mcRun2_asymptotic_v13')
     elif os.environ["CMSSW_VERSION"].count("CMSSW_8_0"):
-        process.GlobalTag = GlobalTag(process.GlobalTag,'80X_mcRun2_asymptotic_v11')
+        process.GlobalTag = GlobalTag(process.GlobalTag,'80X_mcRun2_asymptotic_2016_miniAODv2_v1')
     else:
         raise Exception,"The default setup for microAODstd.py does not support releases other than 76X and 80X"
 
+    from Samples80tHq.Samples import Signal80 , WJetsMG80 , TTBar80
+    rehltsamples = [Signal80 , WJetsMG80 , TTBar80]
+    if theSample.DSName.count( "_reHLT_" ) or theSample.Name in [s.Name for s in rehltsamples]:
+        process.tHq.HLT.Input = cms.InputTag( "TriggerResults","","HLT2" )
     #process.GlobalTag.globaltag = '76X_dataRun2_16Dec2015_v0'
     #from PhysicsTools.PatAlgos.producersLayer1.jetUpdater_cff import *
     # process.patJetCorrFactorsReapplyJEC = updatedPatJetCorrFactors.clone(
@@ -120,6 +125,7 @@ else :
     #process.p = cms.Path( process.patJetCorrFactorsReapplyJEC + process.patJetsReapplyJEC + process.TTH + process.Hamb)
     process.p = cms.Path( process.tHq )
     for v in range(0 , 10 ):
-        process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30_18_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass95_v%d' % (v) )
-        process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30PV_18PV_R9Id_AND_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
-        process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30EB_18EB_R9Id_OR_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
+        continue
+        # process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30_18_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass95_v%d' % (v) )
+        # process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30PV_18PV_R9Id_AND_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )
+        # process.tHq.HLT.HLT_To_Or.append( 'HLT_Diphoton30EB_18EB_R9Id_OR_IsoCaloId_AND_HE_R9Id_DoublePixelVeto_Mass55_v%d' % (v) )

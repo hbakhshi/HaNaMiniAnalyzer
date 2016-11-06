@@ -124,3 +124,11 @@ WW80 = Sample( "WW" ,  118.7 , False  , "/WW_TuneCUETP8M1_13TeV-pythia8/hbakhshi
 MicroAOD80Samples.append(WW80)
 UCLSamples.append(WW80)
 
+def MakeAllChildSamples( nFilesPerJob , outputName  ):
+    ret = []
+    for s in MicroAOD80Samples:
+        s.MakeJobs( nFilesPerJob , outputName )
+        ret.append( s.MakeSampleFromOutputs() )
+    return ret
+        
+skimmedSamples1 = MakeAllChildSamples( 3 , "/store/user/%s/%s/%s" % ("hbakhshi", "thqTree2016OptimEle" , "tree" )  )

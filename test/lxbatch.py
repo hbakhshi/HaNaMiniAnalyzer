@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-runOnOutsOfAnotherJob = False
+runOnOutsOfAnotherJob = True
 
 nFilesPerJob=3
 CheckFailedJobs=False
@@ -21,7 +21,7 @@ OutPath = "eos/cms/store/user/%s/%s/" % (user, sys.argv[2] )
 from Samples80tHq.Samples import *
 samples = None
 if runOnOutsOfAnotherJob :
-    samples = samples24june
+    samples = skimmedSamples1
 else :
     samples = MicroAOD80Samples
 

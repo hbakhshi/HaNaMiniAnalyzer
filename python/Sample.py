@@ -105,6 +105,7 @@ class Sample :
 
     def MakeSampleFromOutputs(self):
         ret = Sample( self.Name , self.XSection , self.LHEWeight , "" , dir )
+        ret.DSName = self.DSName
         for j in self.Jobs:
             ret.Files.append( "%s" % ( j.Output2 ) )
         ret.ParentSample = self
