@@ -1,4 +1,4 @@
-from ROOT import TDirectory, TFile, TCanvas , TH1D , TH1 , THStack, TList, gROOT, TLegend, TPad, TLine, gStyle, TTree , TObject , gDirectory, gPad
+from ROOT import TDirectory, TFile, TCanvas , TH1D , TH1, TH2D , TH2 , THStack, TList, gROOT, TLegend, TPad, TLine, gStyle, TTree , TObject , gDirectory, gPad, TObject
 #from ROOT import RooFit,RooDataHist, RooHistPdf,RooAddPdf,RooFitResult, RooRealVar, RooArgSet, RooArgList
 
 from math import sqrt
@@ -16,6 +16,16 @@ class Property:
         self.Signal = signal_hists
         self.Samples = sample_hists
 
+
+    def is2D(self):
+        if self.Data :
+            if "th2" in self.Data.ClassName().lower():
+                return True
+            else :
+                return False
+        else :
+            raise RunTimeError( "Data hist of property %s is not set, so it is not clear if it is 2d or 1d" % (self.Name) )
+        
     @staticmethod
     def AddOFUF(h):
         UF = h.GetBinContent(0)
@@ -208,10 +218,16 @@ class Property:
         if not hasattr(self , "Canvas"):
             #print canvasname
             if padOrCanvas == 0:
-                self.Canvas = TCanvas( canvasname )
+                if self.is2D():
+                    self.Canvas = TCanvas( canvasname , "" , 1000 , 1000 )
+                    self.Canvas.cd()
+                    return self.Canvas
+                else:
+                    self.Canvas = TCanvas( canvasname )
             else:
                 self.Canvas = gPad
             self.Canvas.cd()
+                
             self.Pad1 =  TPad(pad1name ,pad1name,0,0.25,1,1)
             self.Pad1.SetBottomMargin(0.1)
             self.Pad1.Draw()
@@ -223,6 +239,10 @@ class Property:
             self.Pad2.SetBottomMargin(0.1)
             self.Pad2.Draw()
 
+        if self.is2D():
+            self.Canvas.cd()
+            return self.Canvas
+            
         if padid == 0:
             self.Canvas.cd()
         elif padid == 1:
@@ -315,24 +335,35 @@ class Property:
 
 
     def Draw(self, normalizetodata = False , padOrCanvas = 0 ):
+        istwo = self.is2D()
+        optionData0 = "E"
+        optionStack = "" if istwo else "HIST SAME"
+        optionData1 = "E SAME" if istwo else "E SAME P"
+        optionRatioPlot = "COLZ" if istwo else "ep same"
         gStyle.SetOptTitle(0)
         #self.AddOF_UF_Bins()
         self.GetCanvas(1, padOrCanvas)
-        self.Data.Draw("E")
+        if not istwo:
+            self.Data.Draw(optionData0)
         #if normalizetodata:
         #    print "Norm to data"
-        self.GetStack(normalizetodata).Draw("HIST SAME")
-        self.Data.Draw("E SAME P")
-        if self.Signal:
+        self.GetStack(normalizetodata).Draw(optionStack)
+        self.Data.Draw(optionData1)
+        
+        if istwo:
+            return
+
+        if self.Signal :
             for s in self.Signal:
                 s.Draw("E SAME HIST")
             self.GetSLegend().Draw()
         self.GetLegend().Draw()
-            
         self.GetCanvas(2)
-        self.GetRatioUnc().Draw("E2")
-        self.GetRatioPlot().Draw("ep same")
-        self.GetLineOne().Draw()
+        if not istwo :
+            self.GetRatioUnc().Draw("E2")
+        self.GetRatioPlot().Draw(optionRatioPlot)
+        if not istwo :
+            self.GetLineOne().Draw()
 
     def Write(self , propdir , normtodata , mkdir=False ):
         if mkdir:
@@ -358,5 +389,8 @@ class Property:
 
         propdir.cd()
         self.Draw(normtodata)
+        self.GetStack(normtodata).Write()
+        self.GetLegend().Write()
+        self.GetRatioPlot().Write()
         self.GetCanvas(0).Write()
 

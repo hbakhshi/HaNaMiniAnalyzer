@@ -1,4 +1,4 @@
-from ROOT import TDirectory, TFile, TCanvas , TH1D , TH1 , THStack, TList, gROOT, TLegend, TPad, TLine, gStyle, TTree , TObject , gDirectory, TEntryList
+from ROOT import TDirectory, TFile, TCanvas , TH1D , TH1 , TH2D , THStack, TList, gROOT, TLegend, TPad, TLine, gStyle, TTree , TObject , gDirectory, TEntryList
 
 import os
 import sys
@@ -11,6 +11,7 @@ from Property import *
 
 class HistInfo:
     def __init__(self , name , varname = None , nbins = None , _from = None , to = None ):
+        self.TwoD = False
         if isinstance(name, HistInfo) and type(varname) == str and nbins == None and _from == None and to == None :
             s = name.Name
             if len(name.Name.split("_")) > 1 :
@@ -30,10 +31,41 @@ class HistInfo:
             self.nBins = nbins
             self.From = float(_from)
             self.To = float(to)
+        elif isinstance(name, HistInfo) and isinstance(varname, HistInfo) and type(nbins) == str  and _from == None and to == None : #2d
+            s = name.Name
+            if len(name.Name.split("_")) > 1 :
+                s = name.Name.split("_")[-1]
+                
+            s2 = varname.Name
+            if len(s2.split("_")) > 1 :
+                s2 = s2.split("_")[-1]
 
+            self.Name = nbins + "_" + s + "vs" + s2
+            self.VarName = name.VarName + ":" + varname.VarName
+
+            self.H1 = name
+            self.H2 = varname
+            self.TwoD = True
         else:
             print "Initiate histinfo correctly, the given parameters are not allowd"
-      
+
+    def MakeEmptyHist(self , sName , index = 0):
+        hname = self.MakeName( sName , index )
+        if hasattr(self, "emptyhist" ):
+            return self.emptyhist
+        elif self.TwoD:
+            self.emptyhist = TH2D( hname , "" , self.H2.nBins , self.H2.From , self.H2.To , self.H1.nBins , self.H1.From , self.H1.To )
+        else:
+            self.emptyhist = TH1D( hname , "" , self.nBins , self.From , self.To)
+
+        return self.emptyhist
+        
+    def Bins(self):
+        if self.TwoD:
+            return "%s,%s" % (self.H2.Bins() , self.H1.Bins())
+        else:
+            return "%d,%.2f,%.2f" % (self.nBins , self.From , self.To)
+            
     def MakeName(self , sName , index = 0 ):
         return "%s_%s_%d" % (sName , self.Name , index )
 
@@ -52,8 +84,12 @@ class CutInfo:
             self.ListOfHists.append( HistInfo(name , self.Name) )
         elif type(name) == str and type(varname) == str and type(nbins) == int and ( type(_from) == float or type(_from) == int ) and ( type(to) == float or type(to) == int ) :
             self.ListOfHists.append( HistInfo( self.Name + "_" + name , varname , nbins , _from , to) )
+        elif isinstance(name , HistInfo) and isinstance(varname , HistInfo) and nbins == None and _from == None and to == None : #2d histogram
+            self.ListOfHists.append( HistInfo(name , varname , self.Name) )
         else:
             print "Initiate histinfo correctly, the given parameters to AddHists are not allowd(%s=%s,%s=%s,%s=%s,%s=%s,%s=%s)" % (type(name),name,type(varname),varname,type(nbins),nbins,type(_from),_from,type(to),to)
+
+        return self.ListOfHists[-1]
         
     def SetWeight(self, w):
         self.Weight = w
@@ -97,14 +133,14 @@ class CutInfo:
                         print "%s : %d , %.2f , %.2f" % (hist.Name , hist.nBins , hist.From , hist.To)
 
                 if nLoaded > 0:
-                    tree.Draw( "%s>>cloned_%s(%d,%.1f,%.1f)" % ( hist.VarName , hname , hist.nBins , hist.From , hist.To ) ,
+                    tree.Draw( "%s>>cloned_%s(%s)" % ( hist.VarName , hname , hist.Bins() ) ,
                                "" if isdata else self.Weights( n ) )
                     setattr( self , hname , gDirectory.Get( "cloned_"+hname ).Clone( hname ) )
                 else :
-                    hcloned_empty = TH1D( "%s" % (hname) , "" ,  hist.nBins , hist.From , hist.To )
+                    hcloned_empty = hist.MakeEmptyHist( samplename , n )
                     setattr( self , hname , hcloned_empty )
                 hhh = getattr( self , hname )
-                print "\t\t\tHisto %s[%d] created ([%d,%.1f,%1f] and integral=%.2f, average=%.2f)" % ( hist.Name , n , hhh.GetNbinsX() , hhh.GetBinLowEdge(1) , hhh.GetBinLowEdge( hhh.GetNbinsX() ) + hhh.GetBinWidth( hhh.GetNbinsX() )  , hhh.Integral() , hhh.GetMean() )
+                print "\t\t\tHisto %s[%d] created ([%d,%.1f,%1f] and integral=%.2f, average=%.2f)" % ( hist.Name , n , hhh.GetXaxis().GetNbins() , hhh.GetXaxis().GetBinLowEdge(1) , hhh.GetXaxis().GetBinLowEdge( hhh.GetXaxis().GetNbins() ) + hhh.GetXaxis().GetBinWidth( hhh.GetXaxis().GetNbins() ) , hhh.Integral() , hhh.GetMean() )
                 hhh.SetBit(TH1.kNoTitle)
                 hhh.SetLineColor( 1 )
                 hhh.SetLineWidth( 2 )
@@ -168,7 +204,7 @@ class Plotter:
         return self.Props[propname]
     
     def Write(self, fout , normtodata ):
-        print "Starter writing the plots to the output file..."
+        print "Started writing the plots to the output file..."
         for propname in self.Props :
             propdir = None
             for selection in self.TreePlots:

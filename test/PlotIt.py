@@ -23,10 +23,9 @@ gROOT.SetBatch(True)
 
 from Samples80tHq.Samples import *
 samples = None
-runOnOutsOfAnotherJob = False
+runOnOutsOfAnotherJob = True
 if runOnOutsOfAnotherJob :
-    samples = samples24june
-    samples += sampleswith24juneonly
+    samples = skimmedSamples1
 else :
     samples = MicroAOD80Samples
 
@@ -54,7 +53,7 @@ def GetSample( s ):
 # GetSample(DiGG_76) ,    , GetSample(TTBar76_FGG)
 
 #nTuples = "/home/hbakhshi/Downloads/CERNBox/Personal/Projects/tHq/nTuples/80_19Sept/"
-nTuples = "/home/hbakhshi/Downloads/CERNBox/Personal/Projects/tHq/nTuples/Optimization/"
+nTuples = "/home/hbakhshi/Downloads/CERNBox/Personal/Projects/tHq/nTuples/FoxWolfram1/;/home/hbakhshi/Downloads/CERNBox/Personal/Projects/tHq/nTuples/OptimizationEle/"
 
 
 from tHqAnalyzer.HaNaMiniAnalyzer.SampleType import *
@@ -69,8 +68,8 @@ dataSamples = SampleType("Data" , kBlack , [GetSample(s) for s in MicroAOD80Samp
 multigSamples = SampleType("MultiGamma" , kOrange , [ GetSample(DiG_80Box) , GetSample(DiG_40Box80) , GetSample(GJet80M80_2040)  , GetSample(GJet8040M80) , GetSample(DiG_Jets)] , nTuples ) #, GetSample(GJet80M80_40)
 QCDSamples = SampleType("QCD" , kGreen+2 , [ GetSample(QCDDoubleEM80_m4080_pt30) , GetSample(QCDDoubleEM80_m80_pt3040) , GetSample(QCDDoubleEM80_m80_pt40) ] , nTuples )
 ttH = SampleType("ttH" , kBlue , [ GetSample(ttH80GG) ] , nTuples )
-SM = SampleType("SM" , kCyan , [GetSample(DYee),GetSample(ZG2LG80),GetSample(TTGG80),GetSample(TGJ80)] , nTuples )
-#GetSample(TTGJ80) ,GetSample(WZ76_FGG) , GetSample(ZZ76_FGG) , GetSample(WW76_FGG) , GetSample(WJetsMG76_FGG) , GetSample(WG76_FGG)
+SM = SampleType("SM" , kCyan , [GetSample(DYee),GetSample(ZG2LG80),GetSample(TTGG80),GetSample(TGJ80), GetSample(TTGJ80) ,GetSample(WZ80) , GetSample(ZZ80) , GetSample(WW80) , GetSample(WJetsMG80) , GetSample(WG80)] , nTuples )
+#
 Higgs = SampleType("Higgs" , kRed , [GetSample(GluGluH80GG) , GetSample(VBFH80GG) , GetSample(VH80GG) ] , nTuples )
 
 
@@ -131,13 +130,13 @@ def GetXSecs():
 signalXSecs=GetXSecs()
 #print signalXSecs
 fxsec.Close()
-Signal76.ParentSample = ExtendedSample( Signal76 )
-Signal76.ParentSample.LoadJobs( nTuples , "out_%s_myMicroAODOutputFile_1_20.root" )
-signalPoints = [(1.0,-1.0), (1.0 , 1.0) ] # ,(1.0,-.5) , (1.0, 0.0) , (1.0, 0.5)  ,   (1.5 , -3)  ]
+#Signal80.ParentSample = ExtendedSample( Signal80 )
+#Signal80.ParentSample.LoadJobs( nTuples , "out_%s_myMicroAODOutputFile_1_20.root" )
+signalPoints = [(1.0,-1.0)] #, (1.0 , 1.0) ,(1.0,-.5) , (1.0, 0.0) , (1.0, 0.5)  ,   (1.5 , -3)  ]
 # # for KV in Kvs:
 # #     for KF in KvKfs[KV]:
 # #         signalPoints.append( (KV, KF) )
-signalSample = SampleType( "Signal" ,{i:signalXSecs[i] for i in [GetSignalIndex(s[0],s[1]) for s in signalPoints]}  , [ Signal76 ] , nTuples , True )
+signalSample = SampleType( "Signal" ,{i:signalXSecs[i] for i in [GetSignalIndex(s[0],s[1]) for s in signalPoints]}  , [ GetSample(Signal80) ] , nTuples , True )
 
 nTotals76 = { "GluGluH":546308 ,
             "VBFH":612352 ,
@@ -168,13 +167,13 @@ nTotals = {}
             
 from tHqAnalyzer.HaNaMiniAnalyzer.Plotter import *
 plotter = Plotter()
-allSTs = [dataSamples ,QCDSamples , ttH , SM , Higgs , multigSamples , signalSample] #
+allSTs = [dataSamples , ttH , SM , Higgs , signalSample , QCDSamples , multigSamples ]
 allNonQCDSTs = [ ttH , SM , Higgs ]
 QCDSTs = [ multigSamples , QCDSamples ]
 for st in allSTs :
     plotter.AddSampleType( st )
     for s in st.Samples:
-        s.SetFriendTreeInfo( "/home/hbakhshi/Desktop/tHq/Analyzer/test/mva" , "friend" )
+        s.SetFriendTreeInfo( "/home/hbakhshi/Desktop/tHq/Analyzer/test/mva/Samples07Nov/" , "friend" )
         if s.IsData :
             continue
         if s.Name in nTotals :
@@ -184,8 +183,13 @@ for st in allSTs :
 
 Cuts = {"DiG":"1",
         "atLeastTwoJets":"nJets>1" ,
+        "atLeastThreeJets":"nJets>2" ,
         "OneMediumB":"nMbJets==1" ,
-        "exactlyOneMu" : "nMuons == 1" ,
+        "MuonChannel" : "(LeptonType == 1)" ,
+        "ElecChannel" : "(LeptonType == 2)" ,
+        "Leptons" : "(LeptonType == 1 || LeptonType == 2)" ,
+        "InvMassCut" : "( (DiG.mass < 130 ) && (DiG.mass > 120 ) )" ,
+        "CR1" : "(LeptonType == 4)",
         "nonIsoMu" : "nMuons == 100" ,
         "met" : "met > 30" }
 
@@ -194,97 +198,70 @@ Cuts = {"DiG":"1",
 # cDiGnopuw.AddHist( "nVerticesBeforePU" , "nVertices", 40 , 0. , 40. )
 # plotter.AddTreePlots( cDiGnopuw )
 
-cDiG = CutInfo( "DiGSelection" , Cuts["DiG"] , "Weight.W%d * G1.w * G2.w" )
-# cDiG.AddHist( "nVertices" , "nVertices", 40 , 0. , 40. )
-cDiG.AddHist( "mGG",  "DiG.other" , 10 , 92. , 152. )
-# cDiG.AddHist( "nGPairs" , "nGPairs" , 10 , 0. , 10. )
-# cDiG.AddHist( "nSelGPairs" , "nSelGPairs",  10 , 0. , 10. )
-# cDiG.AddHist( "ptGG" , "DiG.pt",  8 , 10. , 250. )
-# cDiG.AddHist( "etaGG" , "abs(DiG.eta)",  12, 0. , 4.8 )
-# cDiG.AddHist( "phiGG" , "DiG.phi" , 8, -3.2 , 3.2 )
-# cDiG.AddHist( "g1pt" , "G1.pt" , 20 , 20. , 220. )
-# cDiG.AddHist( "g2pt" , "G2.pt" , 20 , 20. , 220. )
-# cDiG.AddHist( "g1eta" , "abs(G1.eta)",  4 , 0. , 2.4 )
-# cDiG.AddHist( "g2eta" , "abs(G2.eta)",  4 , 0. , 2.4 )
-# cDiG.AddHist( "g1phi" , "G1.phi",  8 , -3.2 , 3.2 )
-# cDiG.AddHist( "g2phi" , "G2.phi",  8 , -3.2 , 3.2 )
-# cDiG.AddHist( "g1mva" , "G1.other" , 10 , -1. , 1. )
-# cDiG.AddHist( "g2mva" , "G2.other",  10 , -1. , 1. )
-# cDiG.AddHist( "digMVA" , "diGMVA",  10 , -1. , 1. )
-# cDiG.AddHist( "nMus" , "nMuons" , 10 , 0. , 10. )
-# cDiG.AddHist( "muPt" , "mu.pt",  7 , 10. , 150. )
-# cDiG.AddHist( "muEta" , "abs(mu.eta)" , 4 , 0. , 2.8 )
-# cDiG.AddHist( "muPhi" , "mu.phi" , 8 , -3.2 , 3.2 )
-# cDiG.AddHist( "nJets" , "nJets" , 10 , 0. , 10. )
-# cDiG.AddHist( "jPt" , "oneB.forward < 0 ? -1 : jetsPt[oneB.forward]",  29 , 10. , 300. )
-# cDiG.AddHist( "jEta" , "oneB.forward < 0 ? -8 : abs(jetsEta[oneB.forward])",  18 , -1. , 5.0 )
-# cDiG.AddHist( "jPhi" , "oneB.forward < 0 ? 10 : jetsPhi[oneB.forward]" , 17 , -3.2 , 3.6 )
-# cDiG.AddHist( "nbJets" , "nMbJets" , 5 , 0. , 5. )
-# cDiG.AddHist( "bjPt" , "(nJets>200 || nJets==0) ? -1 : jetsPt[0]",  9 , 20. , 200. )
-# cDiG.AddHist( "bjEta" , "(nJets>200 || nJets==0) ? -8 : abs(jetsEta[0])",  5 , -0.7 , 2.8 )
-# cDiG.AddHist( "bjPhi" , "(nJets>200 || nJets==0) ? 10 : jetsPhi[0]" , 5 , -3.2 , 4.8 )
-# cDiG.AddHist( "met" , "met",  20 , 20. , 220. )
-# cDiG.AddHist( "metPhi" , "metPhi" , 16 , -3.2 , 3.2 )
-cDiG.AddHist( "BDT" , "BDT" , 18 , -.3 , .3 )
-plotter.AddTreePlots( cDiG )
+cDiGLeptons = CutInfo( "Lepton" , Cuts["DiG"] + " && " + Cuts["Leptons"] , "(Weight.W%d) * G1.w * G2.w" )
+cDiGLeptons.AddHist( "mGG",  "DiG.mass" , 10 , 92. , 152. )
+cDiGLeptons.AddHist( "nJets" , "nJets" , 10 , 0. , 10. )
+cDiGLeptons.AddHist( "LepPt" , "lepton.pt",  7 , 10. , 150. )
+cDiGLeptons.AddHist( "nbJets" , "nMbJets" , 5 , 0. , 5. )
+cDiGLeptons.AddHist( "met" , "met",  20 , 20. , 220. )
+cDiGLeptons.AddHist( "jPt" , "nJets < 1 ? -1 : jetsPt[zeroB.leading]",  29 , 10. , 300. )
+cDiGLeptons.AddHist( "jEta" , "nJets < 1 ? -1 : abs(jetsEta[zeroB.forward])",  15 , 0 , 5.0 )
+plotter.AddTreePlots( cDiGLeptons )
 
+cDiGEle = CutInfo( "Electron" , Cuts["DiG"] + " && " + Cuts["ElecChannel"] , "(Weight.W%d) * G1.w * G2.w" )
+for h in cDiGLeptons.ListOfHists:
+    cDiGEle.AddHist( h )
+plotter.AddTreePlots( cDiGEle )
 
-# cNonIsoMu = CutInfo("nonIsoMu" , Cuts["DiG"] + " && " + Cuts["nonIsoMu"] , "Weight.W%d * G1.w * G2.w" )
-# for h in cDiG.ListOfHists:
-#     cNonIsoMu.AddHist( h )
-# plotter.AddTreePlots( cNonIsoMu )
+cDiGMu = CutInfo( "Muon" , Cuts["DiG"] + " && " + Cuts["MuonChannel"] , "(Weight.W%d) * G1.w * G2.w" )
+for h in cDiGLeptons.ListOfHists:
+    cDiGMu.AddHist( h )
+plotter.AddTreePlots( cDiGMu )
 
-c2J = CutInfo("2J" , Cuts["DiG"] + " && " + Cuts["atLeastTwoJets"]  , "Weight.W%d * G1.w * G2.w" )
-for h in cDiG.ListOfHists:
-    c2J.AddHist( h )
-plotter.AddTreePlots( c2J )
+cut2J1T = " && " + Cuts["atLeastTwoJets"] + " && " + Cuts["OneMediumB"]
+cDiGLeptons2j1t = CutInfo( "Lepton2J1T" , Cuts["DiG"] + " && " + Cuts["Leptons"] + cut2J1T  , "(Weight.W%d) * G1.w * G2.w" )
+cDiGLeptons2j1t.AddHist( "TopMass",  "Top.topM" , 40 , 100 , 300)
+cDiGLeptons2j1t.AddHist( "tH_DPhi",  "THReco.THDPhi" , 10 , -3.15 , 3.15 )
+cDiGLeptons2j1t.AddHist( "tH_CosTheta",  "Top.CosTheta" , 10 , -1 , 1 )
+cDiGLeptons2j1t.AddHist( "tH_jpDPhi",  "Top.JPrime" , 10 , -1 , 1 )
+cDiGLeptons2j1t.AddHist( "es_aplanarity",  "eventshapes.aplanarity" , 10 , 0 , 0.4 )
+cDiGLeptons2j1t.AddHist( "es_isotropy",  "eventshapes.isotropy" , 10 , -1 , 1 )
+cDiGLeptons2j1t.AddHist( "met" , "met",  20 , 20. , 220. )
+cDiGLeptons2j1t.AddHist( "jprimeeta" , "abs(jetsEta[oneB.forward])" , 10 , 0 , 5 )
+BDThist = cDiGLeptons2j1t.AddHist( "BDT",  "BDT" , 50 , -0.5 , 0.5 )
+mGGhist = cDiGLeptons2j1t.AddHist( "mGG",  "DiG.mass" , 30 , 100. , 400. )
+plotter.AddTreePlots( cDiGLeptons2j1t )
 
-# c2JF1 = CutInfo("2JF1" , Cuts["DiG"] + " && " + Cuts["atLeastTwoJets"] + " && " + "abs(jetsEta[zeroB.forward])>1.0" , "Weight.W%d * G1.w * G2.w" )
-# for h in cDiG.ListOfHists:
-#     c2JF1.AddHist( h )
-# plotter.AddTreePlots( c2JF1 )
+cDiGEle2j1t = CutInfo( "Electron2j1t" , Cuts["DiG"] + " && " + Cuts["ElecChannel"] + cut2J1T, "(Weight.W%d) * G1.w * G2.w" )
+for h in cDiGLeptons2j1t.ListOfHists:
+    cDiGEle2j1t.AddHist( h )
+cDiGEle2j1t.AddHist( mGGhist, BDThist )
+plotter.AddTreePlots( cDiGEle2j1t )
 
-# c2JF3 = CutInfo("2JF3" , Cuts["DiG"] + " && " + Cuts["atLeastTwoJets"] + " && " + "abs(jetsEta[zeroB.forward])>3.0" , "Weight.W%d * G1.w * G2.w" )
-# for h in cDiG.ListOfHists:
-#     c2JF3.AddHist( h )
-# plotter.AddTreePlots( c2JF3 )
+cDiGMu2j1t = CutInfo( "Muon2j1t" , Cuts["DiG"] + " && " + Cuts["MuonChannel"] + cut2J1T , "(Weight.W%d) * G1.w * G2.w" )
+for h in cDiGLeptons2j1t.ListOfHists:
+    cDiGMu2j1t.AddHist( h )
+cDiGMu2j1t.AddHist( mGGhist, BDThist )
+plotter.AddTreePlots( cDiGMu2j1t )
 
-c2J1T = CutInfo("2J1T" , Cuts["DiG"] + " && " + Cuts["atLeastTwoJets"] + " && " + Cuts["OneMediumB"] , "Weight.W%d * G1.w * G2.w" )
-for h in cDiG.ListOfHists:
-    c2J1T.AddHist( h )
-plotter.AddTreePlots( c2J1T )
+cDiGCR1 = CutInfo( "CR1" , Cuts["DiG"] + " && " + Cuts["CR1"]  , "Weight.W%d * G1.w * G2.w" )
+for h in cDiGLeptons2j1t.ListOfHists:
+    cDiGCR1.AddHist( h )
+cDiGCR1.AddHist( mGGhist, BDThist )
+plotter.AddTreePlots( cDiGCR1 )
 
-cMuSel = CutInfo("MuSel" , Cuts["DiG"] + " && " + Cuts["exactlyOneMu"]  , "Weight.W%d * G1.w * G2.w" )
-for h in cDiG.ListOfHists:
-    cMuSel.AddHist( h )
-plotter.AddTreePlots( cMuSel )
+cut3J1T = " && " + Cuts["atLeastThreeJets"] + " && " + Cuts["OneMediumB"]
+cDiGCR12j1t = CutInfo( "CR12j1t" , Cuts["DiG"] + " && " + Cuts["CR1"] + cut3J1T , "Weight.W%d * G1.w * G2.w" )
+for h in cDiGLeptons2j1t.ListOfHists:
+    cDiGCR12j1t.AddHist( h )
+cDiGCR12j1t.AddHist( mGGhist, BDThist)
+plotter.AddTreePlots( cDiGCR12j1t )
 
-cMuSel2J = CutInfo("MuSel2J" , Cuts["DiG"] + " && " + Cuts["exactlyOneMu"]  + " && " + Cuts["atLeastTwoJets"]   , "Weight.W%d * G1.w * G2.w" )
-for h in cDiG.ListOfHists:
-    cMuSel2J.AddHist( h )
-plotter.AddTreePlots( cMuSel2J )
-
-cMuSel2J1B = CutInfo("MuSel2J1B" , Cuts["DiG"] + " && " + Cuts["exactlyOneMu"]  + " && " + Cuts["atLeastTwoJets"]  + " && " + Cuts["OneMediumB"]   , "Weight.W%d * G1.w * G2.w * bWs.W1M" ) 
-for h in cDiG.ListOfHists:
-    cMuSel2J1B.AddHist( h )
-plotter.AddTreePlots( cMuSel2J1B )
-
-# cMuSel2J1BF1 = CutInfo("MuSel2J1BF1" , Cuts["DiG"] + " && " + Cuts["exactlyOneMu"]  + " && " + Cuts["atLeastTwoJets"]  + " && " + Cuts["OneMediumB"] + " && " + "abs(jetsEta[oneB.forward])>1.0"  , "Weight.W%d * G1.w * G2.w * bWs.W1M" )
-# for h in cDiG.ListOfHists:
-#     cMuSel2J1BF1.AddHist( h )
-# plotter.AddTreePlots( cMuSel2J1BF1 )
-
-# cMuSel2J1BF3 = CutInfo("MuSel2J1BF3" , Cuts["DiG"] + " && " + Cuts["exactlyOneMu"]  + " && " + Cuts["atLeastTwoJets"]  + " && " + Cuts["OneMediumB"] + " && " + "abs(jetsEta[oneB.forward])>3.0"  , "Weight.W%d * G1.w * G2.w * bWs.W1M" )
-# for h in cDiG.ListOfHists:
-#     cMuSel2J1BF3.AddHist( h )
-# plotter.AddTreePlots( cMuSel2J1BF3 )
-
+cDiGLeptons2j1t.AddHist( mGGhist, BDThist )
 
 plotter.LoadHistos( 12900 )
 
 plotter.AddLabels( "CutFlowTable" , ["All" , "HLT" , "Vertex" , ">1Pair" , "LeadingPass" , "SubLeadingPass" , "PairCuts" , ">1Jets" , "//" , "//" , "--" , "--" , ">0#mu" , "1#mu" , "--" ] )
-
-#["All" , "HLT" , "Vertex" , "#gamma pair" , "p_{T}^{#gamma_{0}}" , "p_{T}^{#gamma_{1}}" , "#gamma ID" , "MVA", "inv mass" ,"#mu selection" , "extra #mu veto", "2jets" , "1bjets" , "MET" ] )
 
 fout = TFile.Open( outfname , "recreate")
 plotter.Write(fout, normtodata)

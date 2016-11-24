@@ -26,14 +26,17 @@ class ExtendedSample: #extend the sample object to store histograms
             self.ParentSample = None
 
     def LoadJobs(self , Dir , pattern_ = "%s.root" ):
-        self.JobFilesDir = Dir
+        Dirs = Dir.split(";")            
+        self.JobFilesDir = Dirs[0]
         self.Jobs = []
         pattern = ( pattern_ % (self.Name) )
-        for fn, ff in [("%s/%s" % ( Dir , f) , f) for f in os.listdir(Dir)]:
+        for fn, ff in [("%s/%s" % ( Dirs[0] , f) , f) for f in os.listdir(Dirs[0])]:
             if os.path.isfile(fn):
                 if fnmatch.fnmatch(ff , pattern):
                     self.Jobs.append( JobInformation( self , 0 , self.Files , fn ) )
-                                
+        if self.ParentSample and (len(Dirs) == 2):
+            self.ParentSample.LoadJobs( Dirs[1] , pattern_)
+            
     def GetCFT(self , index = 0):
         if not hasattr( self, "CutFlowTableName" ):
             return None

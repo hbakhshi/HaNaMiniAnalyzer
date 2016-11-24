@@ -8,16 +8,20 @@ from ExtendedSample import *
 
 class SampleType:
     def __init__(self , name , color , samples = [] , LoadJobDir = "" , signal = False ):
-        self.Name = name 
+        self.Name = name
         if type(color) is int:
             self.Color = color
             self.MultiPlot = False
             
         self.Samples = [ExtendedSample(s) for s in samples]
         if not LoadJobDir == "":
+            Dirs = LoadJobDir.split(";")
             for ss in self.Samples:
                 ss.LoadJobs( LoadJobDir )
                 print [j.Output for j in ss.Jobs]
+                if len(Dirs)==2 :
+                    print "    Parent Files : %s" % ( [j.Output for j in ss.ParentSample.Jobs] )
+                    
         if type(color) is dict: #{ index:(color,xsec,title) }
             self.MultiPlot = True
             self.Colors = color
@@ -101,4 +105,4 @@ class SampleType:
                             self.AllHists[propname] = hhh
                         
                         self.AllOtherHists[propname][i] = hhh
-                        print "\t%s[%d] is created for %s : (%d, %.2f, %.2f)" % (propname , i , self.Name , hhh.GetNbinsX() , hhh.GetBinLowEdge(1) , hhh.GetBinLowEdge( hhh.GetNbinsX() ) + hhh.GetBinWidth( hhh.GetNbinsX() ) )
+                        print "\t%s[%d] is created for %s : (%d, %.2f, %.2f)" % (propname , i , self.Name , hhh.GetXaxis().GetNbins() , hhh.GetXaxis().GetBinLowEdge(1) , hhh.GetXaxis().GetBinLowEdge( hhh.GetXaxis().GetNbins() ) + hhh.GetXaxis().GetBinWidth( hhh.GetXaxis().GetNbins() ) )
