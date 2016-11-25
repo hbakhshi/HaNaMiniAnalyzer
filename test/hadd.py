@@ -4,10 +4,9 @@ gROOT.SetBatch(True)
 
 from Samples80tHq.Samples import *
 samples = None
-runOnOutsOfAnotherJob = False
+runOnOutsOfAnotherJob = True
 if runOnOutsOfAnotherJob :
-    samples = samples24june
-    samples += sampleswith24juneonly
+    samples = skimmedSamples1
 else :
     samples = MicroAOD80Samples
 
@@ -16,14 +15,15 @@ for sample in samples:
         #job is already created : sample.MakeJobs( 20 , "%s/%s" % (OutPath24June , prefix) )
     #    print sample.Name 
     #else:
-    sample.MakeJobs( 3 , "root://eoscms//eos/cms/store/user/%s/%s/%s" % (GetUserName(), "thqTree2016OptimEle" , "tree" ) ) 
+    sample.MakeJobs( 3 , "root://eoscms//eos/cms/store/user/%s/%s/%s" % (GetUserName(), "thqTreeFoxWolf1" , "tree" ) ) 
+
 
 from tHqAnalyzer.HaNaMiniAnalyzer.ExtendedSample import *
-for sample in UCLSamples: 
-    if sample.Name not in ["TTbar"]:
-        print "skipping " + sample.Name
-        continue
+for sample in samples:
+    # if sample.Name not in ["TTbar"]:
+    #     print "skipping " + sample.Name
+    #     continue
     ss = ExtendedSample(sample)
     #export EOS_MGM_URL=root://eosuser.cern.ch
     #eosmount eos_cb
-    ss.fhadd("root://eosuser//eos/user/h/hbakhshi/Personal/Projects/tHq/nTuples/OptimizationEle/")
+    ss.fhadd("root://eosuser//eos/user/h/hbakhshi/Personal/Projects/tHq/nTuples/FoxWolfram1/")

@@ -3,7 +3,7 @@
 runOnOutsOfAnotherJob = True
 
 nFilesPerJob=3
-CheckFailedJobs=False
+CheckFailedJobs=True
 hname = "tHq/CutFlowTable/CutFlowTable"
 prefix = "tree"
 
@@ -40,20 +40,20 @@ while os.path.isdir( "./%s" % (workingdir) ):
 os.mkdir( workingdir )
 
 
-if runOnOutsOfAnotherJob :
-    outfile = "./%s/SetupAndRun.sh" % (workingdir)
-    with open( outfile, "wt") as fout:
-        with open("SetupAndRun.sh", "rt") as fin:
-            for line in fin:
-                if not "flashgg" in line :
-                    fout.write( line.replace('tHq_cfg', 'tHq_onTaggFiles_cfg') )
-                elif "FORBOTH" in line :
-                    fout.write( line.replace('tHq_cfg', 'tHq_onTaggFiles_cfg') )
+# if runOnOutsOfAnotherJob :
+#     outfile = "./%s/SetupAndRun.sh" % (workingdir)
+#     with open( outfile, "wt") as fout:
+#         with open("SetupAndRun.sh", "rt") as fin:
+#             for line in fin:
+#                 if not "flashgg" in line :
+#                     fout.write( line.replace('tHq_cfg', 'tHq_onTaggFiles_cfg') )
+#                 elif "FORBOTH" in line :
+#                     fout.write( line.replace('tHq_cfg', 'tHq_onTaggFiles_cfg') )
                                         
-    st = os.stat(outfile)
-    os.chmod(outfile, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH )
-else :
-    copy( "SetupAndRun.sh" , "./%s/" % (workingdir) )
+#     st = os.stat(outfile)
+#     os.chmod(outfile, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH )
+# else :
+copy( "SetupAndRun.sh" , "./%s/" % (workingdir) )
 
 from subprocess import call
 call(["voms-proxy-init" , "--out" , "./%s/.x509up_u%d" % ( workingdir , os.getuid()) , "--voms" , "cms" , "--valid" , "1000:0"])

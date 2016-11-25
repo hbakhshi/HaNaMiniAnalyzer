@@ -51,6 +51,7 @@ protected:
   virtual void beginJob() override;
   virtual bool filter(edm::Event&, const edm::EventSetup&) override;
 
+  flashggJetReader* flashggjetreader_lowpt;
   // void endRun(edm::Run const& iRun, edm::EventSetup const&) override {
   //   edm::Handle<LHERunInfoProduct> run; 
   //   typedef std::vector<LHERunInfoProduct::Header>::const_iterator headers_const_iterator;
@@ -108,11 +109,11 @@ protected:
   float* Weight;
   float puWeight , diGMVA ;
   float* bSelWeights;
-  particleinfo G1 , G2 , DiG , lepton , eventshapes , eventshapesMet , met , THReco , Top ;
+  particleinfo G1 , G2 , DiG , lepton, leptonextrainfo , eventshapes , eventshapesMet , met , THReco , Top ;
   particleinfo foxwolf1 , foxwolf2 , foxwolf1Met, foxwolf2Met ;
 
   char  closest_jet_index ;
-  float closest_jet_dr    ;
+  float closest_jet_dr, HT    ;
 
   std::vector<float> jetsPt;
   std::vector<float> jetsEta;
@@ -147,7 +148,7 @@ protected:
 
     puWeight = -999;
     particleinfo tmp;
-    Top = THReco = G1 = G2 = DiG = lepton = met = tmp ;
+    Top = THReco = G1 = G2 = DiG = lepton = leptonextrainfo = met = tmp ;
     eventshapes = foxwolf1 = foxwolf2 = foxwolf1Met = foxwolf2Met = tmp ;
 
     jetsPhi.clear();
@@ -162,6 +163,7 @@ protected:
 
     closest_jet_index = 255;
     closest_jet_dr = 1000. ;
+    HT = 0. ;
   }
 
   TTree* theSelectionResultTree;
@@ -169,8 +171,10 @@ protected:
   bool MakeTree;
 
 
-  Histograms* M_GG; //Histograms*  Eta_J; Histograms*  Pt_J ; Histograms*  Pt_Mu ; Histograms*  Eta_Mu; Histograms*  Pt_b ; Histograms*  Eta_b ; Histograms*  DEta_Jb ; Histograms*  DEta_bMu ;
-
+  Histograms* M_GG;
+  Histograms* Ph1Pt;
+  Histograms* Ph1PtRatio;
+  
   //edm::EDGetTokenT<LHERunInfoProduct> LHERunInfoProduct_Token;
 };
 
@@ -184,6 +188,9 @@ tHqAnalyzer::tHqAnalyzer( const edm::ParameterSet& ps ) :
   MakeTree( ps.getParameter<bool>( "StoreEventNumbers" ) )
 {
   usesResource("TFileService");
+
+  edm::ParameterSet jetlowpt_pset = ps.getParameter< edm::ParameterSet >("JetsLowPt");
+  flashggjetreader_lowpt = new flashggJetReader( jetlowpt_pset , consumesCollector() , IsData , SetupDir );
   //LHERunInfoProduct_Token = consumes<LHERunInfoProduct,edm::InRun>(edm::InputTag("source","","LHEFile"));
 }
 // ------------ method called once each job just before starting event loop  ------------
@@ -237,6 +244,7 @@ void tHqAnalyzer::beginJob()
     theSelectionResultTree->Branch("G2" , &G2 , "pt:eta:phi:mva:w"  );
     theSelectionResultTree->Branch("DiG", &DiG , "pt:eta:phi:mass:w:mva"  );
     theSelectionResultTree->Branch("lepton", &lepton , "pt:eta:phi:iso:w:charge"  );
+    theSelectionResultTree->Branch("leptonextrainfo", &leptonextrainfo , "muMultiplicity:muEnergyFraction:elecMultiplicity:chargeEMFranction:neutralEMFraction"  );
     theSelectionResultTree->Branch("eventshapes", &eventshapes , "aplanarity:C:circularity:D:isotropy:sphericity"  );
     theSelectionResultTree->Branch("eventshapesMET", &eventshapesMet , "aplanarity:C:circularity:D:isotropy:sphericity"  );
     theSelectionResultTree->Branch("foxwolf1", &foxwolf1 , "SHAT:PT:ETA:PSUM:PZ:ONE" );
@@ -249,6 +257,7 @@ void tHqAnalyzer::beginJob()
 
     theSelectionResultTree->Branch("jMuIndex", &closest_jet_index );
     theSelectionResultTree->Branch("jMuDr", &closest_jet_dr );
+    theSelectionResultTree->Branch("HT", &HT );
 
     theSelectionResultTree->Branch("jetsPt", (&jetsPt) );
     theSelectionResultTree->Branch("jetsPhi", (&jetsPhi) );
@@ -264,7 +273,9 @@ void tHqAnalyzer::beginJob()
   if( !IsData && nHistos==1 )
     nHistos = 2;
   hCutFlowTable = new Histograms( SampleName , "CutFlowTable" , 15 , 0.5 , 15.5 , nHistos );
-  M_GG = new Histograms( SampleName , "M_GG" , 100 , 50 , 250 , nHistos );
+  M_GG = new Histograms( SampleName , "M_GG" , 10 , 50 , 250 , nHistos );
+  Ph1PtRatio = new Histograms(SampleName , "Ph1PtRatio" , 100 , 0 , 10 , nHistos );
+  Ph1Pt = new Histograms(SampleName , "Ph1Pt" , 100 , 20 , 520 , nHistos );
 }
 
 
@@ -343,6 +354,9 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	    diPhoton->diPhoton->leadingPhoton()->centralWeight() );
   case DiPhotonReader::LeadingCuts:
     hCutFlowTable->Fill( ++SelectionStep , W );
+
+    Ph1PtRatio->Fill( diPhoton->theSelected->lPt / diPhoton->theSelected->diGMass , W );
+    Ph1Pt->Fill( diPhoton->theSelected->lPt , W );
   case DiPhotonReader::ZeroPairs:
     nGPairs = diPhoton->handle->size();
     nSelGPairs = diPhoton->nSelGPairs;
@@ -507,16 +521,23 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 		flashggmuonreader->Iso ,
 		flashggmuonreader->W ,
 		flashggmuonreader->goodMus[0].charge() );
-  }else if( nJets > 2){
-    LeptonType = 4;
-    const flashgg::Jet* theJet = &(flashggjetreader->selectedJets[ jetsIndex[1] ]) ;
+  }else if( nJets > 1){
+    const flashgg::Jet* theBJet = &(flashggjetreader->selectedJets[ jetsIndex[0] ]) ;
+    const flashgg::Jet* theFJet = &(flashggjetreader->selectedJets[ jetsIndex[oneB.index_forward] ]) ;
+    flashggjetreader_lowpt->Read( iEvent , diPhoton->diPhoton , {theBJet, theFJet} );
+    if( flashggjetreader_lowpt->selectedJets.size() == 1 ){
+      LeptonType = 4;
 
-    lepton.set( jetsPt[1] ,
-		jetsEta[1] ,
-		jetsPhi[1] , 
-		theJet->muonMultiplicity (),
-		theJet->muonEnergy(),
-		theJet->muonEnergyFraction() );
+      const flashgg::Jet* theJet = &(flashggjetreader_lowpt->selectedJets[ 0 ] );
+      lepton.set( theJet->pt(),
+		  theJet->eta() ,
+		  theJet->phi() );
+      leptonextrainfo.set( theJet->muonMultiplicity (),
+			   theJet->muonEnergyFraction () ,
+			   theJet->electronMultiplicity (),
+			   theJet->chargedEmEnergyFraction ( ),
+			   theJet->neutralEmEnergyFraction() );
+    }
   }
   
 
@@ -545,6 +566,8 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     if( LeptonType != 4 ){
       particles_.push_back( muL );
       //cout << "mu:" ; muL.Print();
+    }else if(closest_jet_dr > 0.1){// it means that this jet-lepton is not included in the jet collection
+      particles_.push_back( muL );
     }
     particles_.push_back( g1 );     //cout << "g1:" ; g1.Print();
     particles_.push_back( g2 );     //cout << "g2:" ; g2.Print();
@@ -554,6 +577,9 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       particles_.push_back( ji );
       //cout << "j" << i << ": "; ji.Print();
     }
+    for(auto p : particles_)
+      HT += p.Pt();
+
     FoxWolfram fwam( particles_ );
 
     std::vector< particleinfo*> allfoxwolfs = {&foxwolf1 , &foxwolf2 };

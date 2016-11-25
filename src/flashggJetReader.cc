@@ -1,5 +1,5 @@
 #include "tHqAnalyzer/HaNaMiniAnalyzer/interface/flashggJetReader.h"
-
+#include "DataFormats/Math/interface/deltaR.h"
 
 flashggJetReader::flashggJetReader( edm::ParameterSet const& iConfig, edm::ConsumesCollector && iC , bool isData , string SetupDir) :
   BaseEventReader< flashggJetCollection >( iConfig , &iC ),
@@ -8,14 +8,17 @@ flashggJetReader::flashggJetReader( edm::ParameterSet const& iConfig, edm::Consu
   JetPtCut( iConfig.getParameter<double>( "JetPtCut" ) ),
   JetEtaCut( iConfig.getParameter<double>( "JetEtaCut" ) ),
   //MinNJets( iConfig.getParameter<unsigned int>( "MinNJets" ) ),
-  
-  BTagWPL( iConfig.getParameter<double>( "BTagWPL" ) ),
-  BTagWPM( iConfig.getParameter<double>( "BTagWPM" ) ),
-  BTagWPT( iConfig.getParameter<double>( "BTagWPT" ) ),
-  BTagAlgo( iConfig.getParameter<string>( "BTagAlgo" ) ),
+  doBStudies( iConfig.getParameter<bool>("doBTags") ),
   //MinNBJets( iConfig.getParameter<unsigned int>( "MinNBJets" ) ),
   rndJER(new TRandom3( 13611360 ) )
 {
+  if(doBStudies){
+    BTagWPL =  iConfig.getParameter<double>( "BTagWPL" ) ;
+    BTagWPM = iConfig.getParameter<double>( "BTagWPM" ) ;
+    BTagWPT = iConfig.getParameter<double>( "BTagWPT" ) ;
+    BTagAlgo = iConfig.getParameter<string>( "BTagAlgo" );
+  }
+
   all_tokens.push_back( token );
   if( iConfig.exists( "MoreInputs" ) ){
     std::vector<edm::InputTag> moreinputs = iConfig.getParameter< std::vector<edm::InputTag> >( "MoreInputs" );
@@ -46,7 +49,7 @@ flashggJetReader::flashggJetReader( edm::ParameterSet const& iConfig, edm::Consu
   //   BTagCut = BTagWPT ;
   // }
   
-  if( !IsData ){
+  if( !IsData && doBStudies){
     btw0L = new BTagWeight("CSVv2", 0 , SetupDir, 0 , 0 , BTagWPL, BTagWPM, BTagWPT,-1);
     btw0M = new BTagWeight("CSVv2", 1 , SetupDir, 0 , 0 , BTagWPL, BTagWPM, BTagWPT,-1);
     btw0T = new BTagWeight("CSVv2", 2 , SetupDir, 0 , 0 , BTagWPL, BTagWPM, BTagWPT,-1);
@@ -78,8 +81,8 @@ const flashggJetCollection* flashggJetReader::GetAllJets(){
   return handle.product() ;
 }
 
-
-flashggJetReader::SelectionStatus flashggJetReader::Read(const edm::Event& iEvent , const DiPhotonCandidate* diPhoton ){ // , const flashgg::Muon* mu ){
+	      
+flashggJetReader::SelectionStatus flashggJetReader::Read(const edm::Event& iEvent , const DiPhotonCandidate* diPhoton , std::vector< const flashgg::Jet* > toRemove ){ // , const flashgg::Muon* mu ){
 
   // cout << diPhoton->jetCollectionIndex() << "Jet Reader " << all_tokens.size() ;
   // for(auto tkn : all_tokens )
@@ -122,7 +125,7 @@ flashggJetReader::SelectionStatus flashggJetReader::Read(const edm::Event& iEven
     
     //bool isB = false;
  
-    if ( fabs(j.eta() ) < 2.4 ){
+    if ( fabs(j.eta() ) < 2.4  && doBStudies){
       selectedJetsEtaLT24.push_back(j);
       
       float btagval = j.bDiscriminator( BTagAlgo );
@@ -137,9 +140,16 @@ flashggJetReader::SelectionStatus flashggJetReader::Read(const edm::Event& iEven
     }
 
     // if( !isB )
+    for(auto jtoremove : toRemove)
+      if( reco::deltaR( *jtoremove , j ) < 0.1 )
+	continue;
+
     selectedJets.push_back(j);
     int index = ( selectedJets.size() - 1 ) ;
-    bVals.push_back( make_pair( j.bDiscriminator( BTagAlgo ) , index ) );
+    if( doBStudies )
+      bVals.push_back( make_pair( j.bDiscriminator( BTagAlgo ) , index ) );
+    else
+      bVals.push_back( make_pair( -1.0 , index ) );
     ptVals.push_back( make_pair( j.pt() , index ) );
     etaVals.push_back( make_pair( fabs( j.eta() ) , index ) );
   }
@@ -151,7 +161,7 @@ flashggJetReader::SelectionStatus flashggJetReader::Read(const edm::Event& iEven
   // if( (selectedJets.size()+selectedBJets.size())  < MinNJets ) return flashggJetReader::NotEnoughJets ;
   // if( selectedBJets.size() != MinNBJets ) return flashggJetReader::NotEnoughBJets;
   //cout << "fromJet : " ;
-  if(!IsData)
+  if(!IsData && doBStudies)
     for(uint i =0 ; i < allBTWs.size(); i++){
       double ww = allBTWs[i]->weight(selectedJetsEtaLT24);
       //cout << ww << " " ;

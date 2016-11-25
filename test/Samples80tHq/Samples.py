@@ -86,13 +86,13 @@ TGJ80_ext  = Sample("TGJ_ext" , 2.967 , True , "/TGJets_TuneCUETP8M1_13TeV_amcat
 MicroAOD80Samples.append(TGJ80_ext)
 
 
-Signal76  = Sample("Signal" , 0.01561  , True , "/THQ_HToGG_13TeV-madgraph-pythia8_TuneCUETP8M1/hbakhshi-thggqProduction-Moriond16WSFinal-0305d2bd17670bc0d20b0c34c43ed269/USER")
+Signal76  = Sample("Signal76" , 0.01561  , True , "/THQ_HToGG_13TeV-madgraph-pythia8_TuneCUETP8M1/hbakhshi-thggqProduction-Moriond16WSFinal-0305d2bd17670bc0d20b0c34c43ed269/USER")
 #MicroAOD80Samples.append(Signal76)
 
 
 ####
 UCLSamples = []
-Signal80 = Sample("Signal80" , 0.01561  , True , "/THQ_HToGG_13TeV-madgraph-pythia8_TuneCUETP8M1/hbakhshi-tHq2016-d268d1dd43f5a38cde25f3714af3e8cb/USER" , "root://xrootd.ba.infn.it/")
+Signal80 = Sample("Signal" , 0.01561  , True , "/THQ_HToGG_13TeV-madgraph-pythia8_TuneCUETP8M1/hbakhshi-tHq2016-d268d1dd43f5a38cde25f3714af3e8cb/USER" , "root://xrootd.ba.infn.it/")
 MicroAOD80Samples.append(Signal80)
 UCLSamples.append(Signal80)
 

@@ -52,7 +52,7 @@ public:
     Pass
   };
 
-  SelectionStatus Read( const edm::Event& iEvent , const DiPhotonCandidate* diPhoton ); //, const flashgg::Muon* mu);
+  SelectionStatus Read( const edm::Event& iEvent , const DiPhotonCandidate* diPhoton , std::vector<const flashgg::Jet* > toRemove = {}  ); //, const flashgg::Muon* mu);
 
 
   std::vector< std::pair<double , int> > bVals, etaVals , ptVals ;
@@ -85,6 +85,7 @@ private :
   double BTagWPL , BTagWPM , BTagWPT ; // , BTagCut ;
   //std::vector<int> BTagCuts; // atm only 2 are accepted, first for selection, second for veto
 public:
+  bool doBStudies ;
   string BTagAlgo ;
 private:
   //unsigned int MinNBJets ;
