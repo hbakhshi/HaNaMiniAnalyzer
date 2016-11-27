@@ -92,7 +92,7 @@ Signal76  = Sample("Signal76" , 0.01561  , True , "/THQ_HToGG_13TeV-madgraph-pyt
 
 ####
 UCLSamples = []
-Signal80 = Sample("Signal" , 0.01561  , True , "/THQ_HToGG_13TeV-madgraph-pythia8_TuneCUETP8M1/hbakhshi-tHq2016-d268d1dd43f5a38cde25f3714af3e8cb/USER" , "root://xrootd.ba.infn.it/")
+Signal80 = Sample("Signal" , 0.01561  , True , "/THQ_HToGG_13TeV-madgraph-pythia8_TuneCUETP8M1/hbakhshi-tHq2016LHE-d268d1dd43f5a38cde25f3714af3e8cb/USER" , "root://xrootd.ba.infn.it/")
 MicroAOD80Samples.append(Signal80)
 UCLSamples.append(Signal80)
 

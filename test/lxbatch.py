@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-runOnOutsOfAnotherJob = True
+runOnOutsOfAnotherJob = False
 
 nFilesPerJob=3
-CheckFailedJobs=True
+CheckFailedJobs=False
 hname = "tHq/CutFlowTable/CutFlowTable"
 prefix = "tree"
 
