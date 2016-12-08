@@ -1,4 +1,4 @@
-from ROOT import TDirectory, TFile, TCanvas , TH1D , TH1 , TH2D , THStack, TList, gROOT, TLegend, TPad, TLine, gStyle, TTree , TObject , gDirectory, TEntryList
+from ROOT import TDirectory, TFile, TCanvas , TH1D , TH1 , TH2D , THStack, TList, gROOT, TLegend, TPad, TLine, gStyle, TTree , TObject , gDirectory, TEntryList, TEventList
 
 import os
 import sys
@@ -9,8 +9,19 @@ from ExtendedSample import *
 from SampleType import *
 from Property import *
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 class HistInfo:
-    def __init__(self , name , varname = None , nbins = None , _from = None , to = None ):
+    def __init__(self , name , varname = None , nbins = None , _from = None , to = None , title = "" ):
+        self.Title = title
         self.TwoD = False
         if isinstance(name, HistInfo) and type(varname) == str and nbins == None and _from == None and to == None :
             s = name.Name
@@ -54,9 +65,9 @@ class HistInfo:
         if hasattr(self, "emptyhist" ):
             return self.emptyhist
         elif self.TwoD:
-            self.emptyhist = TH2D( hname , "" , self.H2.nBins , self.H2.From , self.H2.To , self.H1.nBins , self.H1.From , self.H1.To )
+            self.emptyhist = TH2D( hname , self.Title , self.H2.nBins , self.H2.From , self.H2.To , self.H1.nBins , self.H1.From , self.H1.To )
         else:
-            self.emptyhist = TH1D( hname , "" , self.nBins , self.From , self.To)
+            self.emptyhist = TH1D( hname , self.Title , self.nBins , self.From , self.To)
 
         return self.emptyhist
         
@@ -70,7 +81,7 @@ class HistInfo:
         return "%s_%s_%d" % (sName , self.Name , index )
 
 class CutInfo:
-    def __init__(self, name , cut , weight):
+    def __init__(self, name , cut , weight , title = ""):
         self.Name = name
         self.Cut = cut
         self.Weight = weight
@@ -79,13 +90,15 @@ class CutInfo:
         self.ListOfHists = []
         self.AllTH1s = {}
 
-    def AddHist(self, name , varname = None , nbins = None , _from = None , to = None ):
+        self.Title = name if title == "" else title
+        
+    def AddHist(self, name , varname = None , nbins = None , _from = None , to = None , Title = "" ):
         if isinstance(name , HistInfo) and varname == None and nbins == None and _from == None and to == None :
-            self.ListOfHists.append( HistInfo(name , self.Name) )
+            self.ListOfHists.append( HistInfo(name , self.Name , title = Title ) )
         elif type(name) == str and type(varname) == str and type(nbins) == int and ( type(_from) == float or type(_from) == int ) and ( type(to) == float or type(to) == int ) :
-            self.ListOfHists.append( HistInfo( self.Name + "_" + name , varname , nbins , _from , to) )
+            self.ListOfHists.append( HistInfo( self.Name + "_" + name , varname , nbins , _from , to , title = Title ) )
         elif isinstance(name , HistInfo) and isinstance(varname , HistInfo) and nbins == None and _from == None and to == None : #2d histogram
-            self.ListOfHists.append( HistInfo(name , varname , self.Name) )
+            self.ListOfHists.append( HistInfo(name , varname , self.Name , title = Title) )
         else:
             print "Initiate histinfo correctly, the given parameters to AddHists are not allowd(%s=%s,%s=%s,%s=%s,%s=%s,%s=%s)" % (type(name),name,type(varname),varname,type(nbins),nbins,type(_from),_from,type(to),to)
 
@@ -102,24 +115,25 @@ class CutInfo:
             return ("Weight.W%d" % (index) )
 
     def LoadHistos( self , samplename , isdata , tree , indices=[0] ):
-        tree.SetEntryList( None )
-        nLoaded = tree.Draw( ">>list_%s_%s"%(samplename, self.Name) , self.Cut , "entrylist" )
+        tree.SetEventList( None )
+        nLoaded = tree.Draw( ">>list_%s_%s"%(samplename, self.Name) , self.Cut ) # , "entrylist" )
         #gDirectory.ls()
         lst = gDirectory.Get( "list_%s_%s"%(samplename, self.Name) )
-        print "\t\tEvents from tree are loaded (%s , %s), %d" % (self.Name , self.Cut , nLoaded)
-        print "\t\tHistograms from tree are being created"
+        print "%s\t\tEvents from tree are loaded (%s , %s), %d" % (bcolors.UNDERLINE, self.Name , self.Cut , nLoaded )
+        print "\t\tHistograms from tree are being created" + bcolors.ENDC
         if nLoaded < 0:
             print "Error in loading events with cut (%s) from dataset (%s), nLoaded = %d" % (self.Cut,samplename , nLoaded)
         if nLoaded < 1 :
-            self.ListOfEvents[samplename] = TEntryList( "list_%s" % (samplename) , self.Cut , tree )
+            self.ListOfEvents[samplename] = TEventList( "list_%s" % (samplename) , self.Cut ) # , tree ) #TEntryList(
         else:
             self.ListOfEvents[samplename] = lst
 
-        # print self.ListOfEvents[samplename]
-        # self.ListOfEvents[samplename].Print()
-        # self.ListOfEvents[samplename].SetTreeName( tree.GetName() )
-        tree.SetEntryList( self.ListOfEvents[samplename] )
-        
+        #print self.ListOfEvents[samplename]
+        #self.ListOfEvents[samplename].Print()
+        #self.ListOfEvents[samplename].SetTreeName( tree.GetName() )
+        tree.SetEventList( self.ListOfEvents[samplename] )
+
+            
         ret = {}
         for hist in self.ListOfHists:
             ret[hist.Name] = {}
@@ -140,10 +154,27 @@ class CutInfo:
                     hcloned_empty = hist.MakeEmptyHist( samplename , n )
                     setattr( self , hname , hcloned_empty )
                 hhh = getattr( self , hname )
-                print "\t\t\tHisto %s[%d] created ([%d,%.1f,%1f] and integral=%.2f, average=%.2f)" % ( hist.Name , n , hhh.GetXaxis().GetNbins() , hhh.GetXaxis().GetBinLowEdge(1) , hhh.GetXaxis().GetBinLowEdge( hhh.GetXaxis().GetNbins() ) + hhh.GetXaxis().GetBinWidth( hhh.GetXaxis().GetNbins() ) , hhh.Integral() , hhh.GetMean() )
-                hhh.SetBit(TH1.kNoTitle)
+                hhh.SetTitle( hist.Title )
+                hhh.SetTitle( self.Title )
+                rebined = False
+                correct = True
+                color = bcolors.OKBLUE
+                if not hist.TwoD :
+                    if not hhh.GetNbinsX() == hist.nBins :
+                        if hhh.GetNbinsX()%hist.nBins == 0:
+                            hhh.Rebin( hhh.GetNbinsX()/hist.nBins )
+                            rebined = True
+                            color = bcolors.WARNING
+                        else:
+                            correct = False
+                            color = bcolors.FAIL
+                        
+                print "%s\t\t\tHisto %s[%d] created ([%d,%.1f,%1f] and integral=%.2f, average=%.2f)%s" % (color, hist.Name , n , hhh.GetXaxis().GetNbins() , hhh.GetXaxis().GetBinLowEdge(1) , hhh.GetXaxis().GetBinLowEdge( hhh.GetXaxis().GetNbins() ) + hhh.GetXaxis().GetBinWidth( hhh.GetXaxis().GetNbins() ) , hhh.Integral() , hhh.GetMean() , bcolors.ENDC )
+                        
+                    
                 hhh.SetLineColor( 1 )
                 hhh.SetLineWidth( 2 )
+                hhh.SetBit(TH1.kNoTitle)
                 if not isdata :
                     hhh.SetFillStyle( 1001 )
                 else:
@@ -182,7 +213,7 @@ class Plotter:
 
     def LoadHistos(self  , lumi , dirName = "tHq" , cftName = "CutFlowTable"):
         for st in self.Samples :
-            print "Creating histos for : %s" % (st.Name)
+            print "%sCreating histos for : %s%s" % (bcolors.OKGREEN , st.Name , bcolors.ENDC)
             st.LoadHistos( lumi , dirName , cftName , self.TreePlots )
             for prop in st.AllHists:
                 if not prop in self.Props:
@@ -204,7 +235,7 @@ class Plotter:
         return self.Props[propname]
     
     def Write(self, fout , normtodata ):
-        print "Started writing the plots to the output file..."
+        print "%sStarted writing the plots to the output file (%s)...%s" % (bcolors.BOLD, fout.GetPath() , bcolors.ENDC)
         for propname in self.Props :
             propdir = None
             for selection in self.TreePlots:

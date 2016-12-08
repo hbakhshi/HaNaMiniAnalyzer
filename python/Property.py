@@ -1,4 +1,4 @@
-from ROOT import TDirectory, TFile, TCanvas , TH1D , TH1, TH2D , TH2 , THStack, TList, gROOT, TLegend, TPad, TLine, gStyle, TTree , TObject , gDirectory, gPad, TObject
+from ROOT import TDirectory, TFile, TCanvas , TH1D , TH1, TH2D , TH2 , THStack, TList, gROOT, TLegend, TPad, TLine, gStyle, TTree , TObject , gDirectory, gPad, TObject, TRatioPlot, TLatex
 #from ROOT import RooFit,RooDataHist, RooHistPdf,RooAddPdf,RooFitResult, RooRealVar, RooArgSet, RooArgList
 
 from math import sqrt
@@ -224,8 +224,12 @@ class Property:
                     return self.Canvas
                 else:
                     self.Canvas = TCanvas( canvasname )
-            else:
+            elif padOrCanvas==1:
                 self.Canvas = gPad
+            elif padOrCanvas ==2:
+                self.Canvas = TCanvas(canvasname)
+                return
+            
             self.Canvas.cd()
                 
             self.Pad1 =  TPad(pad1name ,pad1name,0,0.25,1,1)
@@ -239,7 +243,7 @@ class Property:
             self.Pad2.SetBottomMargin(0.1)
             self.Pad2.Draw()
 
-        if self.is2D():
+        if self.is2D() or padOrCanvas==2:
             self.Canvas.cd()
             return self.Canvas
             
@@ -256,22 +260,24 @@ class Property:
     def GetLegend(self):
         legendname = "%s_legend" % (self.Name)
         if not hasattr(self , "Legend"):
-            self.Legend = TLegend(0.7,0.6,0.9,0.9,"","brNDC") 
+            self.Legend = TLegend(0.9,0.5,1.,0.89,"","brNDC") 
             self.Legend.SetName( legendname )
             self.Legend.AddEntry( self.Data , "Data" , "lp" )
             for st in reversed( self.Bkg.keys() ):
                 self.Legend.AddEntry( self.Bkg[st] , st , "f" )
-                
+            self.Legend.SetBorderSize(0)
+            self.Legend.SetFillStyle(0)
         return self.Legend
 
     def GetSLegend(self):
         legendname = "%s_Slegend" % (self.Name)
         if not hasattr(self , "SLegend"):
-            self.SLegend = TLegend(0.6,0.6,0.7,0.9,"","brNDC") 
+            self.SLegend = TLegend(0.9,0.4,1.,0.49,"","brNDC") 
             self.SLegend.SetName( legendname )
             for st in self.Signal:
                 self.SLegend.AddEntry( st , st.GetTitle() , "l" )
-            
+            self.SLegend.SetBorderSize(0)
+            self.SLegend.SetFillStyle(0)
         return self.SLegend
     
 
@@ -284,18 +290,18 @@ class Property:
             for i in range(1 , self.Data.GetNbinsX()+1 ):
                 self.Ratio.GetXaxis().SetBinLabel(i , "")
             self.Ratio.SetMarkerStyle(20)
-            self.Ratio.GetYaxis().SetRangeUser(0,2)
             self.Ratio.GetXaxis().SetLabelSize( 0.)
+            self.Ratio.GetXaxis().SetTitle("")
+            self.Ratio.GetYaxis().SetRangeUser(0,2)
             self.Ratio.GetYaxis().SetTitle("Data / MC")
             self.Ratio.GetXaxis().SetTitleSize(0.2) 
             self.Ratio.GetXaxis().SetTitleOffset(0.25)
-            self.Ratio.GetYaxis().SetLabelSize(0.1)
             self.Ratio.GetXaxis().SetTickLength(0.09)
+            self.Ratio.GetYaxis().SetLabelSize(0.1)
             self.Ratio.GetYaxis().SetTitleSize(0.18)
             self.Ratio.GetYaxis().SetNdivisions(509)
             self.Ratio.GetYaxis().SetTitleOffset(0.25)
             self.Ratio.SetFillStyle(3001)
-            
         return self.Ratio
 
     def GetRatioUnc(self):
@@ -320,6 +326,7 @@ class Property:
             self.RatioUncert.GetYaxis().SetTitleOffset(0.25)
             self.RatioUncert.SetFillStyle(3001)
             self.RatioUncert.SetFillColor(1)
+            self.RatioUncert.GetXaxis().SetTitle("")
             
         return self.RatioUncert
 
@@ -333,6 +340,14 @@ class Property:
 
         return self.LineOne
 
+    def GetTitleBox(self):
+        title = self.Samples[0].GetTitle()
+        if not hasattr(self , "TitleBox"):
+            self.TitleBox = TLatex()
+            self.TitleBox.SetNDC()
+            self.TitleBox.SetTextSize(0.06)
+            self.TitleBox.DrawLatex(0.6,0.943,title)
+        return self.TitleBox
 
     def Draw(self, normalizetodata = False , padOrCanvas = 0 ):
         istwo = self.is2D()
@@ -342,13 +357,27 @@ class Property:
         optionRatioPlot = "COLZ" if istwo else "ep same"
         gStyle.SetOptTitle(0)
         #self.AddOF_UF_Bins()
-        self.GetCanvas(1, padOrCanvas)
+        self.GetCanvas(1, padOrCanvas)        
+        if padOrCanvas == 2:
+            self.Ratio = TRatioPlot( self.GetStack(normalizetodata) ,
+                                     self.Data )
+            self.Ratio.Draw()
+            self.Ratio.GetLowerRefYaxis().SetTitle("ratio")
+            self.Ratio.GetUpperRefYaxis().SetTitle("entries")
+            self.Ratio.GetLowerRefXaxis().SetTitle( self.Name )
+            self.GetLegend().Draw()
+            return
+        
         if not istwo:
             self.Data.Draw(optionData0)
         #if normalizetodata:
         #    print "Norm to data"
         self.GetStack(normalizetodata).Draw(optionStack)
         self.Data.Draw(optionData1)
+
+        minY = 0.00001
+        maxY = max( self.GetStack(normalizetodata).GetStack().Last().GetMaximum() , self.Data.GetMaximum() )*1.4
+        self.Data.GetYaxis().SetRangeUser( minY , maxY )
         
         if istwo:
             return
@@ -358,6 +387,7 @@ class Property:
                 s.Draw("E SAME HIST")
             self.GetSLegend().Draw()
         self.GetLegend().Draw()
+        self.GetTitleBox().Draw()
         self.GetCanvas(2)
         if not istwo :
             self.GetRatioUnc().Draw("E2")
@@ -371,6 +401,14 @@ class Property:
         propdir.cd()
         catdir = propdir.mkdir( "cats" )
         catdir.cd()
+
+        self.Data.GetXaxis().SetTitleSize(0.05) 
+        self.Data.GetXaxis().SetTitleOffset(0.95)
+        # self.Data.GetYaxis().SetLabelSize(0.1)
+        # self.Data.GetYaxis().SetLabelSize(0.1)
+        self.Data.GetYaxis().SetTitleSize(0.07)
+        self.Data.GetYaxis().SetTitleOffset(0.72)
+        
         self.Data.Write()
         for bkg in self.Bkg :
             self.Bkg[bkg].Write()

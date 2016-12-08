@@ -40,7 +40,7 @@ import getopt # command line parser
 
 # Default settings for command line arguments
 DEFAULT_OUTFNAME = "thq_TMVA.root"
-DEFAULT_INFNAME  = "/home/hbakhshi/Desktop/tHq/nTuples/FoxWolfram1" #"tmva_class_example.root"
+DEFAULT_INFNAME  = "/home/hbakhshi/Desktop/tHq/nTuples/FoxWolfram2" #"tmva_class_example.root"
 DEFAULT_TREESIG  = "tHq/Trees/Events"
 DEFAULT_TREEBKG  = "tHq/Trees/Events"
 DEFAULT_METHODS  = "Likelihood,BDT"
@@ -101,7 +101,7 @@ def main():
         #     trees.sort()
         #     trees.reverse()
         #     if len(trees)-trees.count('') != 2:
-        #         print "ERROR: need to give two trees (each one for signal and background)"
+        #     o    print "ERROR: need to give two trees (each one for signal and background)"
         #         print trees
         #         sys.exit(1)
         #     treeNameSig = trees[0]
@@ -137,7 +137,7 @@ def main():
     # Output file
     if onlyGUI :
         # open the GUI for the result macros    
-        TMVA.TMVAGui(outfname)
+        TMVA.TMVAGui("TMVA_allbkgs.root")
     
         # keep the ROOT thread running
         gApplication.Run() 
@@ -224,19 +224,19 @@ def main():
     # Read input data
     # if gSystem.AccessPathName( infname ) != 0: gSystem.Exec( "wget http://root.cern.ch/files/" + infname )
         
-    inputS = TFile.Open( infname + "/Signal80.root" )
+    inputS = TFile.Open( infname + "/Signal.root" )
     signal      = inputS.Get( treeNameSig )
-    inputS2 = TFile.Open( infname + "/Signal80_friend.root" )
-    signalfriend = inputS2.Get( "Friend1" )
-    signal.AddFriend( signalfriend )
+    # inputS2 = TFile.Open( infname + "/Signal80_friend.root" )
+    # signalfriend = inputS2.Get( "Friend1" )
+    # signal.AddFriend( signalfriend )
     print signal
     
     # Get the signal and background trees for training
     inputB = TFile.Open( infname + "/ttH.root")
     background  = inputB.Get( treeNameBkg )
-    inputB2 = TFile.Open( infname + "/ttH_friend.root" )
-    backgroundfriend = inputB2.Get("Friend1")
-    background.AddFriend( backgroundfriend)
+    # inputB2 = TFile.Open( infname + "/ttH_friend.root" )
+    # backgroundfriend = inputB2.Get("Friend1")
+    # background.AddFriend( backgroundfriend)
 
     # Global event weights (see below for setting event-wise weights)
     signalWeight     = 1.0
@@ -280,7 +280,7 @@ def main():
         "nonIsoMu" : "nMuons == 100" ,
         "met" : "met > 30" }
 
-    cut = Cuts["atLeastTwoJets"] + " && " + Cuts["OneMediumB"] + " && " + Cuts["exactlyOneMu"]
+    cut = "(DiG.mass > 100) && (Sum$(jetsPt>30) > 1 ) && (nMbJets==1) && (jetsPt[0] > 30) && (met > 30) && (LeptonType == 1 || LeptonType == 2) && (lepton.pt > 20)"
     mycutSig = TCut( cut ) 
     mycutBkg = TCut( cut ) 
     

@@ -88,16 +88,20 @@ class SampleType:
                         hhh = getattr( self , "%s_%d" % (propname,i) )
                         if self.IsSignal:
                             hhh.SetLineColor( color )
-                            hhh.SetLineWidth( 2 )
+                            hhh.SetLineWidth( 3 )
                             hhh.SetLineStyle( 1 )
                             hhh.SetFillColor(0)
                             hhh.SetFillStyle(0)
                         else:
                             hhh.SetLineColor( 1 )
                             hhh.SetLineWidth( 2 )
+                            hhh.SetLineStyle( 1 )
                             if not self.IsData() :
                                 hhh.SetFillColor( color )
+                                hhh.SetLineColor( color )
                                 hhh.SetFillStyle( 1001 )
+                                hhh.SetLineWidth( 2 )
+                                hhh.SetLineStyle( 2 )
                             else:
                                 hhh.SetStats(0)
 
