@@ -82,8 +82,6 @@ class Sample :
                 f = open( self.JSONInfo['jsonfile'] , 'r')
                 self.JSONFile = json.load(f)[self.DSName]
                 f.close()
-            else:
-                print "the json file doesn't exists"
 
         
         if not datasetname == "" :
