@@ -5,7 +5,8 @@ from das_client import *
 from subprocess import call
 import os, ntpath
 import os.path
-
+from JSONSample import *
+import json
 ####NEVER TRY TO IMPORT ROOT MODULES IN THE PYTHON CONFIGURATION, Oherwise CMSSW fails in initiating the tree
 #kGray = 920
 #kGreen = 416
@@ -74,10 +75,20 @@ class Sample :
         #count the total number of events without cuts
         self.ParentSample = None
 
+        
+        self.JSONInfo = info_from_json
+        if info_from_json:
+            if os.path.exists( self.JSONInfo["jsonfile"] ):
+                f = open( self.JSONInfo['jsonfile'] , 'r')
+                self.JSONFile = json.load(f)[self.DSName]
+                f.close()
+            else:
+                print "the json file doesn't exists"
+
+        
         if not datasetname == "" :
             self.InitiateFilesFromListOrDAS( datasetname , appendix )
 
-        self.JSONInfo = info_from_json
             
     def AddFiles( self , directory ):
         files = [join(directory, f) for f in listdir(directory) if isfile(join(directory, f))]
@@ -104,6 +115,12 @@ class Sample :
         self.Files = []
         self.LoadFilesFromList()
 
+        if len(self.Files) == 0 and hasattr( self , "JSONFile") :
+            json_sample = JSONSample( self.DSName , self.JSONFile ,self.JSONInfo['jsonfile'] )
+            for f in json_sample.Files:
+                self.Files.append( str(f.name) )
+                self.WriteFileListToFile()
+        
         if len(self.Files) == 0 :
             self.AddDASFiles( sample , prefix )
             self.WriteFileListToFile()
