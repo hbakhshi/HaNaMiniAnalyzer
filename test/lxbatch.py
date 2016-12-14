@@ -18,12 +18,12 @@ if not len(sys.argv) == 3 :
     exit()
 
 OutPath = "eos/cms/store/user/%s/%s/" % (user, sys.argv[2] )
-from Samples80tHq.Samples import *
+from SamplesMoriond17.Samples import *
 samples = None
 if runOnOutsOfAnotherJob :
     samples = skimmedSamples1
 else :
-    samples = MicroAOD80Samples
+    samples = MicroAODSamples
 
 for sample in samples:
     sample.MakeJobs( nFilesPerJob , "%s/%s" % (OutPath , prefix) )

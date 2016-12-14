@@ -35,7 +35,7 @@ tHq = cms.EDFilter('tHqAnalyzer',
                                              DeltaMassElectronZ = cms.double( 10 )
                                              ),
 
-                   MET = cms.PSet( Input = cms.InputTag("slimmedMETs"),
+                   MET = cms.PSet( Input = cms.InputTag("patCaloMet"),
                                    Cut = cms.double( -1. )
                                    ),
                    Jets = cms.PSet( Input = cms.InputTag("flashggUnpackedJets","0"),
@@ -91,6 +91,6 @@ tHq = cms.EDFilter('tHqAnalyzer',
                                         ),
                    sample = cms.string("WJetsMG"),
                    isData = cms.bool( False ),
-                   SetupDir = cms.string("Setup80"),
+                   SetupDir = cms.string("SetupMoriond17"),
                    StoreEventNumbers = cms.bool( True )
                    )
