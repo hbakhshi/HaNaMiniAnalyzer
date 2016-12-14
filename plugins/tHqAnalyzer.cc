@@ -107,7 +107,7 @@ protected:
   }
   std::valarray<double> W;
   float* Weight;
-  float puWeight , diGMVA ;
+  float genW , puWeight , diGMVA ;
   float* bSelWeights;
   particleinfo G1 , G2 , DiG , lepton, leptonextrainfo , eventshapes , eventshapesMet , met , THReco , Top ;
   particleinfo foxwolf1 , foxwolf2 , foxwolf1Met, foxwolf2Met ;
@@ -146,7 +146,7 @@ protected:
     for(unsigned int i=0 ; i < 12 ; i++)
       bSelWeights[i] = 1.0;
 
-    puWeight = -999;
+    genW = puWeight = -999;
     particleinfo tmp;
     Top = THReco = G1 = G2 = DiG = lepton = leptonextrainfo = met = tmp ;
     eventshapes = foxwolf1 = foxwolf2 = foxwolf1Met = foxwolf2Met = tmp ;
@@ -237,11 +237,12 @@ void tHqAnalyzer::beginJob()
 
     theSelectionResultTree->Branch("Weight", Weight , weightLeafList.c_str() );
     theSelectionResultTree->Branch("puWeight", &puWeight);
+    theSelectionResultTree->Branch("genW", &genW);
     theSelectionResultTree->Branch("bWs", bSelWeights , "W0L:W0M:W0T:W1L:W1M:W1M0L:W1T:W1T0L:W1T0M:W2L:W2M:W2T");
     //theSelectionResultTree->Branch("diGMVA", &diGMVA);
     theSelectionResultTree->Branch("met", &met , "pt:phi" );
-    theSelectionResultTree->Branch("G1" , &G1 , "pt:eta:phi:mva:w" );
-    theSelectionResultTree->Branch("G2" , &G2 , "pt:eta:phi:mva:w"  );
+    theSelectionResultTree->Branch("G1" , &G1.eta , "pt:eta:phi:mva:w:match/s" );
+    theSelectionResultTree->Branch("G2" , &G2.eta , "pt:eta:phi:mva:w:match/s"  );
     theSelectionResultTree->Branch("DiG", &DiG , "pt:eta:phi:mass:w:mva"  );
     theSelectionResultTree->Branch("lepton", &lepton , "pt:eta:phi:iso:w:charge"  );
     theSelectionResultTree->Branch("leptonextrainfo", &leptonextrainfo , "muMultiplicity:muEnergyFraction:elecMultiplicity:chargeEMFranction:neutralEMFraction"  );
@@ -292,8 +293,10 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   }
   SelectionStep = 0;
   
-  if( geninfoReader )
+  if( geninfoReader ){
     W *= geninfoReader->Read( iEvent );
+    genW = geninfoReader->Weight ;
+  }
   if( !IsData && nHistos==2 )
     W[1] = 1.0;
   hCutFlowTable->Fill( ++SelectionStep , W );
@@ -336,22 +339,26 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       W[1] = 1.0;
 
     hCutFlowTable->Fill( ++SelectionStep , W );
-    G2.set( diPhoton->diPhoton->subLeadingPhoton()->pt(),
+    G2.set( 0,
+	    diPhoton->diPhoton->subLeadingPhoton()->pt(),
 	    diPhoton->diPhoton->subLeadingPhoton()->eta(),
 	    diPhoton->diPhoton->subLeadingPhoton()->phi(),
 	    diPhoton->diPhoton->subLeadingPhoton()->phoIdMvaDWrtVtx( diPhoton->diPhoton->vtx() ) ,
 	    diPhoton->diPhoton->subLeadingPhoton()->centralWeight() );
+    G2.number = diPhoton->diPhoton->subLeadingPhoton()->genMatchType() ;
   case DiPhotonReader::SubLeadingCuts:
     W *= diPhoton->diPhoton->leadingPhoton()->centralWeight();
     if( !IsData && nHistos==2 )
       W[1] = 1.0;
 
     hCutFlowTable->Fill( ++SelectionStep , W );
-    G1.set( diPhoton->diPhoton->leadingPhoton()->pt(),
+    G1.set( 0,
+	    diPhoton->diPhoton->leadingPhoton()->pt(),
 	    diPhoton->diPhoton->leadingPhoton()->eta(),
 	    diPhoton->diPhoton->leadingPhoton()->phi(),
 	    diPhoton->diPhoton->leadingPhoton()->phoIdMvaDWrtVtx( diPhoton->diPhoton->vtx() ),
 	    diPhoton->diPhoton->leadingPhoton()->centralWeight() );
+    G1.number = diPhoton->diPhoton->leadingPhoton()->genMatchType() ;
   case DiPhotonReader::LeadingCuts:
     hCutFlowTable->Fill( ++SelectionStep , W );
 

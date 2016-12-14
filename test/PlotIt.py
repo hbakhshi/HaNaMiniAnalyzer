@@ -187,7 +187,7 @@ QCDSTs = [ multigSamples , QCDSamples ]
 for st in allSTs :
     plotter.AddSampleType( st )
     for s in st.Samples:
-        s.SetFriendTreeInfo( "/home/hbakhshi/Desktop/tHq/Analyzer/test/mva/dataset/" , "friend" )
+        s.SetFriendTreeInfo( "/home/hbakhshi/Desktop/tHq/Analyzer/test/mva/trees/test3/" , "friend" )
         if s.IsData :
             continue
         if s.Name in nTotals :
@@ -212,14 +212,18 @@ Cuts = {"DiG":"(DiG.mass > 100)",
 cDiGLeptons = CutInfo( "Lepton" , Cuts["DiG"] + " && " + Cuts["Leptons"]  + " && " + Cuts["met"]  , "(Weight.W%d) * G1.w * G2.w" , "di#gamma + lepton selection (12.9fb^{-1})" )
 cDiGLeptons.AddHist( "nVertices" , "nVertices", 10 , 0. , 40. , ";#vertices" )
 cDiGLeptons.AddHist( "mGG",  "DiG.mass" , 60 , 100 , 400. , ";#gamma#gamma invariant mass (GeV);#entries")
-cDiGLeptons.AddHist( "mGG_FineBinned",  "DiG.mass" , 600 , 100 , 400. , ";#gamma#gamma invariant mass (GeV);#entries")
+cDiGLeptons.AddHist( "GGmva",  "DiG.mva" , 20 , -1. , 1. , ";#gamma#gamma mva;#entries")
+cDiGLeptons.AddHist( "maxGmva",  "((G1.mva>G2.mva)*G1.mva +  (G1.mva<=G2.mva)*G2.mva)" , 20 , -1. , 1. , ";max(#gamma_{1} mva,#gamma_{2} mva);#entries")
+cDiGLeptons.AddHist( "minGmva",  "((G1.mva>G2.mva)*G2.mva +  (G1.mva<=G2.mva)*G1.mva)" , 20 , -1. , 1. , ";min(#gamma_{1} mva,#gamma_{2} mva);#entries")
+cDiGLeptons.AddHist( "mGGFineBinned",  "DiG.mass" , 600 , 100 , 400. , ";#gamma#gamma invariant mass (GeV);#entries")
 cDiGLeptons.AddHist( "nJets" , "nJets" , 10 , 0. , 10. , "a;#Jets;#entries" )
 cDiGLeptons.AddHist( "LepPt" , "lepton.pt",  7 , 20. , 160. , "a;Lepton p_{T} (GeV);#entries" )
 cDiGLeptons.AddHist( "nbJets" , "nMbJets" , 5 , 0. , 5., "a;#b-tagged jets;#entries" )
 cDiGLeptons.AddHist( "met" , "met",  3 , 30. , 180. , "a;MET (GeV);#entries" )
 cDiGLeptons.AddHist( "jPt" , "Max$(jetsPt)" ,  10 , 10. , 310. , "a;leading jet p_{T};#entries" )
 cDiGLeptons.AddHist( "jEta" , "Max$( abs(jetsEta) )" ,  5 , 0 , 5.0 , "a;forward jet |#eta|;#entries" )
-cDiGLeptons.AddHist( "BDTDiG",  "BDTDiG" , 2 , -0.5 , 0.5 , ";BDT output" )
+cDiGLeptons.AddHist( "BDTDiG",  "BDTDiG" , 2 , -0.5 , 0.5 , ";BDT DiG output" )
+cDiGLeptons.AddHist( "BDTttGX",  "BDTttGX" , 2 , -0.5 , 0.5 , ";BDT ttGX output" )
 plotter.AddTreePlots( cDiGLeptons )
 
 cut2J1T = " && " + Cuts["atLeastTwoJets"] + " && " + Cuts["OneMediumB"]  + " && " + Cuts["met"] 
@@ -247,10 +251,16 @@ cDiGLeptons2j1t = CutInfo( "Lepton2J1T" , Cuts["DiG"] + " && " + Cuts["Leptons"]
 #cDiGLeptons2j1t.AddHist( "es_isotropy",  "eventshapes.isotropy" , 10 , -1 , 1 , ";isotropy" )
 cDiGLeptons2j1t.AddHist( "met" , "met",  3 , 30. , 180. , ";met (GeV)" )
 cDiGLeptons2j1t.AddHist( "jprimeeta" , "Max$(abs(jetsEta))" , 5 , 0 , 5 , ";forward jet |#eta|" )
+cDiGLeptons2j1t.AddHist( "maxGmva",  "((G1.mva>G2.mva)*G1.mva +  (G1.mva<=G2.mva)*G2.mva)" , 20 , -1. , 1. , ";max(#gamma_{1} mva,#gamma_{2} mva);#entries")
+cDiGLeptons2j1t.AddHist( "minGmva",  "((G1.mva>G2.mva)*G2.mva +  (G1.mva<=G2.mva)*G1.mva)" , 20 , -1. , 1. , ";min(#gamma_{1} mva,#gamma_{2} mva);#entries")
+cDiGLeptons2j1t.AddHist( "BDTDiG",  "BDTDiG" , 2 , -0.5 , 0.5 , ";BDT DiG output" )
+cDiGLeptons2j1t.AddHist( "BDTttGX",  "BDTttGX" , 2 , -0.5 , 0.5 , ";BDT ttGX output" )
+
 #cDiGLeptons2j1t.AddHist( "HT" , "HT" , 100 , 0 , 500 )
 BDThist = cDiGLeptons2j1t.AddHist( "BDT",  "BDT" , 2 , -0.5 , 0.5 , ";BDT output" )
-cDiGLeptons2j1t.AddHist( "BDTDiG",  "BDTDiG" , 2 , -0.5 , 0.5 , ";BDT output" )
+#cDiGLeptons2j1t.AddHist( "BDTDiG",  "BDTDiG" , 2 , -0.5 , 0.5 , ";BDT output" )
 mGGhist = cDiGLeptons2j1t.AddHist( "mGG",  "DiG.mass" , 60 , 100. , 400. , ";#gamma#gamma invariant mass (GeV)"  )
+cDiGLeptons2j1t.AddHist( "GGmva",  "DiG.mva" , 20 , -1. , 1. , ";#gamma#gamma mva;#entries")
 plotter.AddTreePlots( cDiGLeptons2j1t )
 
 cutFinal = Cuts["DiG"] + " && " + Cuts["Leptons"] +  " && " + Cuts["BDT"] + cut2J1T
@@ -261,6 +271,20 @@ for h in cDiGLeptons2j1t.ListOfHists:
 cDiGLeptons2j1tBDT.AddHist( mGGhist, BDThist )
 plotter.AddTreePlots( cDiGLeptons2j1tBDT )
 
+cDiGLeptons2j1tBDTDiG = CutInfo( "Lepton2J1TBDTDiG" , cutFinal + "&& BDTDiG > 0"  , "(Weight.W%d) * G1.w * G2.w" , "BDT(tth) and BDT(DiG) cuts (12.9fb^{-1})" )
+for h in cDiGLeptons2j1t.ListOfHists:
+    cDiGLeptons2j1tBDTDiG.AddHist( h )
+plotter.AddTreePlots( cDiGLeptons2j1tBDTDiG )
+
+cDiGLeptons2j1tBDTttgx = CutInfo( "Lepton2J1TBDTttgx" , cutFinal + "&& BDTttGX > 0"  , "(Weight.W%d) * G1.w * G2.w" , "BDT(tth) and BDT(ttGX) cuts (12.9fb^{-1})" )
+for h in cDiGLeptons2j1t.ListOfHists:
+    cDiGLeptons2j1tBDTttgx.AddHist( h )
+plotter.AddTreePlots( cDiGLeptons2j1tBDTttgx )
+
+cDiGLeptons2j1tBDTAll = CutInfo( "Lepton2J1TBDTAll" , cutFinal + "&& BDTttGX > 0 && BDTDiG > 0"  , "(Weight.W%d) * G1.w * G2.w" , "BDT(tth) and BDT(ttGX) and BDT(DiG) cuts (12.9fb^{-1})" )
+for h in cDiGLeptons2j1t.ListOfHists:
+    cDiGLeptons2j1tBDTAll.AddHist( h )
+plotter.AddTreePlots( cDiGLeptons2j1tBDTAll )
 
 cDiGEle2j1t = CutInfo( "Electron2j1t" , Cuts["DiG"] + " && " + Cuts["ElecChannel"] + cut2J1T, "(Weight.W%d) * G1.w * G2.w" )
 for h in cDiGLeptons2j1t.ListOfHists:
@@ -295,21 +319,24 @@ plotter.AddLabels( "CutFlowTable" , ["All" , "HLT" , "Vertex" , ">1Pair" , "Lead
 
 fout = TFile.Open( outfname , "recreate")
 
-digg_leptonsellevel = plotter.Props[ cDiGLeptons.Name + "_mGG" ]
-digg_leptonsellevel.Rebin(  [100, 115 , 135 , 180 , 220])
-digg_leptonsellevel.AddOF_UF_Bins()
 
 jpt_leptonsellevel = plotter.Props[ cDiGLeptons.Name + "_jPt" ]
 jpt_leptonsellevel.Rebin( [10 , 70 , 130 , 190 ] )
 jpt_leptonsellevel.AddOF_UF_Bins()
 
-digg_DiGLeptons2j1t = plotter.Props[ cDiGLeptons2j1t.Name + "_mGG"]
-digg_DiGLeptons2j1t.Rebin(  [100, 115 , 135 , 180 , 250 , 350])
-digg_DiGLeptons2j1t.AddOF_UF_Bins()
+rebinprops = [ cDiGLeptons2j1tBDT.Name ,  cDiGLeptons2j1t.Name ,  cDiGLeptons.Name , cDiGLeptons2j1tBDTDiG.Name , cDiGLeptons2j1tBDTttgx.Name ]
+for prop_ in rebinprops:
+    plot = plotter.Props[ prop_ + "_mGG"]
+    plot.Rebin(  [100, 115 , 135 , 180 , 250 , 350])
+    plot.AddOF_UF_Bins()
 
-digg_DiGLeptons2j1tBDT = plotter.Props[ cDiGLeptons2j1tBDT.Name + "_mGG"]
-digg_DiGLeptons2j1tBDT.Rebin(  [100, 115 , 135 , 180 , 250 , 350])
-digg_DiGLeptons2j1tBDT.AddOF_UF_Bins()
+drawnormalizedprops = ["maxGmva" , "minGmva" , "GGmva" , "BDTDiG" , "BDTttGX"]
+drawnormalizedcuts = [ cDiGLeptons.Name , cDiGLeptons2j1t.Name , cDiG2J1T.Name, cDiGLeptons2j1tBDT.Name ]
+for prop_ in drawnormalizedprops:
+    for cut_ in drawnormalizedcuts :
+        prop__ = plotter.Props[ cut_ + "_" + prop_ ]
+        prop__.CompareNormalizedDists( prop_ , True , [0] , ["DiG" , "ttH" , "topG"] , "")
+
 
 plotter.Write(fout, normtodata)
 

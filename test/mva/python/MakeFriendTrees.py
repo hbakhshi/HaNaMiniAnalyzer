@@ -8,12 +8,14 @@ sys.path.append('../')
 prefix = "tree"
 nTuples = "/home/hbakhshi/Downloads/CERNBox/Personal/Projects/tHq/nTuples/FoxWolfram2/;/home/hbakhshi/Downloads/CERNBox/Personal/Projects/tHq/nTuples/OptimizationEle/"
 
-gSystem.CompileMacro("MakeFriendTrees.C" , "k")
-gSystem.Load("bin/MakeFriendTrees.so")
+gSystem.CompileMacro("src/MakeFriendTrees.C" ) #, "k")
+print gSystem.Load("bin/MakeFriendTrees.so")
 from ROOT import MakeFriendTrees
 
 c = TCanvas()
 histos = {}
+
+inname = sys.argv[1]
 
 from Samples80tHq.Samples import *
 for s in MicroAOD80Samples:
@@ -27,7 +29,7 @@ for s in MicroAOD80Samples:
     es.LoadJobs( nTuples )
     es.LoadTree("tHq/Trees/Events")
 
-    MakeFriendTrees( es.Tree , "dataset/" + s.Name )
+    MakeFriendTrees( es.Tree , "trees/" + inname + "/" + s.Name , inname , True , True , True )
     continue
     
     fnew = TFile.Open( "4Dec/" + s.Name + ".root" )

@@ -29,11 +29,11 @@ BaseMiniAnalyzer::BaseMiniAnalyzer(const edm::ParameterSet& iConfig):
     edm::ParameterSet LHE = iConfig.getParameter< edm::ParameterSet >("LHE");
     if( LHE.getParameter< bool >( "useLHEW" ) ){
       LHEReader = new LHEEventReader( LHE , consumesCollector() );
-      
-      edm::ParameterSet genPset;
-      genPset.addParameter( "Input" , edm::InputTag( "generator" ) );
-      geninfoReader = new GenEventInfoProductReader( genPset , consumesCollector() );
     }
+      
+    edm::ParameterSet genPset;
+    genPset.addParameter( "Input" , edm::InputTag( "generator" ) );
+    geninfoReader = new GenEventInfoProductReader( genPset , consumesCollector() );
   }  
 
   hltReader = new HLTReader( iConfig.getParameter< edm::ParameterSet >("HLT") , consumesCollector() );

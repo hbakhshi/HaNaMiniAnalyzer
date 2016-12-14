@@ -13,7 +13,7 @@ public:
   GenEventInfoProductReader( edm::ParameterSet const& iPS, edm::ConsumesCollector && iC);
   double Read( const edm::Event& iEvent ) override;
   double WeightSign;
-
+  double Weight;
 private :
 
 };

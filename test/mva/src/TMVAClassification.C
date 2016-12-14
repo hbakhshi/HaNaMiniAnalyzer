@@ -78,7 +78,7 @@ int TMVAClassification( TString myMethodList = "" ,    TString extention = "" )
      dataloader_tth->AddVariable( "nJets", "nJets", "", 'I' ) ;
      dataloader_tth->AddVariable( "Max$( abs(jetsEta) )","jprimeeta" , "" , 'F' );
      dataloader_tth->AddVariable( "met.pt", "met", "", 'F' );
-     dataloader_tth->AddVariable( "lepton.iso","LepCharge" , "" , 'I' );
+     dataloader_tth->AddVariable( "lepton.charge","LepCharge" , "" , 'I' );
      dataloader_tth->AddVariable( "eventshapes.aplanarity" , "aplanarity" , "" , 'F' );
      dataloader_tth->AddVariable( "foxwolf1.ONE" , "fwf1ONE" , "" , 'F' );
      
@@ -113,7 +113,7 @@ int TMVAClassification( TString myMethodList = "" ,    TString extention = "" )
      dataloader_dig->AddVariable( "DiG.pt" , "digpt" , "" , 'F' );
      dataloader_dig->AddVariable( "abs(DiG.eta)" , "digeta" , "" , 'F' );
      dataloader_dig->AddVariable( "DiG.mva" , "digmva" , "" , 'F' );
-
+     dataloader_dig->AddVariable( "((G1.mva>G2.mva)*G2.mva +  (G1.mva<=G2.mva)*G1.mva)" , "minGmva" , "" , 'F' );
      dataloader_dig->AddSignalTree( signalTree,     signalWeight );
      dataloader_dig->AddBackgroundTree( backgroundDiG, 1 );
 
@@ -141,13 +141,14 @@ int TMVAClassification( TString myMethodList = "" ,    TString extention = "" )
      dataloader_ttgg->AddVariable( "DiG.pt" , "digpt" , "" , 'F' );
      dataloader_ttgg->AddVariable( "abs(DiG.eta)" , "digeta" , "" , 'F' );
      dataloader_ttgg->AddVariable( "DiG.mva" , "digmva" , "" , 'F' );
-
+     dataloader_ttgg->AddVariable( "((G1.mva>G2.mva)*G2.mva +  (G1.mva<=G2.mva)*G1.mva)" , "minGmva" , "" , 'F' );
+     
      dataloader_ttgg->AddSignalTree( signalTree,     signalWeight );
      dataloader_ttgg->AddBackgroundTree( backgroundTTGG, 1 );
 
      dataloader_ttgg->SetBackgroundWeightExpression( default_w_str  );
      dataloader_ttgg->SetSignalWeightExpression( default_w_str );
-     TString cut_ttgg = "(DiG.mass > 100) && (Sum$(jetsPt>30) > 1 ) && (nMbJets==1) && (jetsPt[0] > 30) && (met > 30) && (LeptonType == 1 || LeptonType == 2) && (lepton.pt > 20)";
+     TString cut_ttgg = "(DiG.mass > 100) && (Sum$(jetsPt>30) > 1 ) && (nMbJets==1) && (jetsPt[0] > 30) && (met > 30) " ;//&& (LeptonType == 1 || LeptonType == 2) && (lepton.pt > 20)";
      TCut mycuts_ttgg = TCut(cut_ttgg);
      TCut mycutb_ttgg = TCut(cut_ttgg);
      dataloader_ttgg->PrepareTrainingAndTestTree( mycuts_ttgg, mycutb_ttgg,

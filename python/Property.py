@@ -16,7 +16,8 @@ class Property:
         self.Signal = signal_hists
         self.Samples = sample_hists
 
-
+        self.AdditionalInfo = []
+        
     def is2D(self):
         if self.Data :
             if "th2" in self.Data.ClassName().lower():
@@ -200,6 +201,35 @@ class Property:
 
         return self.Stack
 
+    def CompareNormalizedDists(self , name = "", drawdata = False , signals = None, bkgs = None , option = "" ):
+        if not signals :
+            signals = range(0, len(self.Signal) )
+        if not bkgs :
+            bkgs = self.Bkg.keys()
+        canvasname = "%s_normalized_canvas_%s" % (self.Name , name)
+        if hasattr(self , canvasname):
+            raise RunTimeError( "Normalized canvas with name %s has already been drawn" % (canvasname) )
+        if len(bkgs)+len(signals)+drawdata < 2 :
+            raise RunTimeError( "To draw normalized data, at least two components are needed : data=%s, sig=%s , bkg=%s" % ( drawdata , signals, bkgs) )
+        setattr( self, canvasname , TCanvas( canvasname) )
+        canvas = getattr( self, canvasname )
+        canvas.cd()
+
+        if drawdata:
+            self.Data.DrawNormalized( option )
+            option += " same"
+        for sig in signals:
+            self.Signal[sig].DrawNormalized(option)
+            if not "same" in option :
+                option += " same"
+        for bkg in bkgs:
+            self.Bkg[bkg].DrawNormalized(option)
+            if not "same" in option :
+                option += " same"
+        canvas.BuildLegend()
+        self.AdditionalInfo.append( canvas )
+        return canvas
+        
     def GetSignalCanvas(self):
         canvasname = "%s_signal_canvas" % (self.Name)
         if not hasattr(self , "SignalCanvas" ):
@@ -425,10 +455,15 @@ class Property:
         for ss in self.Samples:
             ss.Write()
 
-        propdir.cd()
+        additionaldir = propdir.mkdir("AdditionalInfo")
+        additionaldir.cd()
+        for add in self.AdditionalInfo:
+            add.Write()
         self.Draw(normtodata)
         self.GetStack(normtodata).Write()
         self.GetLegend().Write()
         self.GetRatioPlot().Write()
+        
+        propdir.cd()
         self.GetCanvas(0).Write()
 

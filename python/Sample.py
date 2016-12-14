@@ -54,7 +54,10 @@ class JobInformation:
 class Sample :
     WD = './'
 
-    def __init__(self , name , xsection , lheW , datasetname , appendix = "" , dbsInstance = "phys03"  ):
+    def __str__(self):
+        return self.Name
+    
+    def __init__(self , name , xsection , lheW , datasetname , appendix = "" , dbsInstance = "phys03" , info_from_json = None ):
         self.Jobs = []
         self.Name = name
         self.XSection = xsection
@@ -74,6 +77,8 @@ class Sample :
         if not datasetname == "" :
             self.InitiateFilesFromListOrDAS( datasetname , appendix )
 
+        self.JSONInfo = info_from_json
+            
     def AddFiles( self , directory ):
         files = [join(directory, f) for f in listdir(directory) if isfile(join(directory, f))]
         self.Files.extend( files )
