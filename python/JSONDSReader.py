@@ -48,12 +48,26 @@ SamplePyFile = imp.load_source( oldSamplesName , baseSampleFile )
 _oldsamples = getattr( SamplePyFile , oldSamplesName )
 
 samples = []
+alls = {}
 f = open(jsonFile, 'r' )
+
+f2 = open( 'datasets2.json' , 'r' )
+
 a = json.load(f)
+
+a2 = json.load( f2 )
+
 for _sample in a:
     sample = JSONSample(_sample , a[_sample] , jsonFile)
     samples.append(sample)
     sample.FindOldSample(_oldsamples)
+
+    if sample.OldSample :
+        sample2 = JSONSample( _sample , a2[_sample] , jsonFile )
+        alls[_sample] = (sample , sample2)
+        if not len(sample.Files) == len(sample2.Files) :
+            print _sample
+exit()
 
 #write the output file
 print "from tHqAnalyzer.HaNaMiniAnalyzer.Sample import *"

@@ -17,6 +17,8 @@ class ExtendedSample: #extend the sample object to store histograms
         self.Prefix = sample.Prefix
         self.IsData = sample.IsData
 
+        self.JSONInfo = sample.JSONInfo
+        
         self.Files = sample.Files
         self.Jobs = sample.Jobs
 
@@ -142,8 +144,16 @@ class ExtendedSample: #extend the sample object to store histograms
                 selectedHistos = {}
                 for index in indices:
                     if dircontents.GetEntries() <= index:
-                        continue
-                    thehisto = dir_.Get( dircontents.At(index).GetName() )
+                        continue                    
+                    thehisto = None
+                    for dirindex in range( 0,dircontents.GetEntries() ):
+                        dircont = dircontents.At(dirindex).GetName()
+                        searchfor = "_%d" % (index)
+                        isitthat = dircont.endswith( searchfor  )
+                        #print "%s.endswith( %s ) = %r" % (dircont , searchfor , isitthat )
+                        if isitthat:
+                            thehisto = dir_.Get( dircont )
+                            break
                     if thehisto.ClassName().startswith("TH"):
                         selectedHistos[index] = thehisto 
 

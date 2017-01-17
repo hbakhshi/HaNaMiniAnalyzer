@@ -198,6 +198,10 @@ void tHqAnalyzer::beginJob()
 {
   if( SampleName == "Signal" )
     nHistos = 51;
+
+  if( !IsData && nHistos==1 ){
+    nHistos = 2;
+
   W = std::valarray<double>( 1.0 , nHistos);
   Weight = new float[nHistos];
 
@@ -271,8 +275,7 @@ void tHqAnalyzer::beginJob()
     resetTreeVals();
   }
 
-  if( !IsData && nHistos==1 )
-    nHistos = 2;
+
   hCutFlowTable = new Histograms( SampleName , "CutFlowTable" , 15 , 0.5 , 15.5 , nHistos );
   M_GG = new Histograms( SampleName , "M_GG" , 10 , 50 , 250 , nHistos );
   Ph1PtRatio = new Histograms(SampleName , "Ph1PtRatio" , 100 , 0 , 10 , nHistos );

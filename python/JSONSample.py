@@ -45,8 +45,10 @@ class JSONSample :
             if j == "vetted":
                 self.Vetted =  allinfo[j]
             if j == "files":
+                #print allinfo[j]
                 for file in allinfo[j]:
                     name = file["name"]
+                    #print name
                     bad = file["bad"]
                     if not bad:
                         events = file["events"]
