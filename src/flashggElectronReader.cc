@@ -108,7 +108,7 @@ flashggElectronReader::SelectionStep flashggElectronReader::Read( const edm::Eve
 	  if( fabs( elep.M() - Zmass_ ) < DeltaMassElectronZ ) photon_veto=true;   
       }
   
-      if(!photon_veto) goodEles.push_back( ele );
+      if(!photon_veto) goodEles.emplace_back( ele );
   }
 
   switch( goodEles.size() )

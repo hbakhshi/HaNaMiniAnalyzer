@@ -3,7 +3,7 @@
 runOnOutsOfAnotherJob = False
 
 nFilesPerJob=3
-CheckFailedJobs=False
+CheckFailedJobs=True
 hname = "tHq/CutFlowTable/CutFlowTable"
 prefix = "tree"
 
@@ -67,6 +67,12 @@ if CheckFailedJobs:
             outfile = job_.Output
             job = job_.Index + 1
             if isfile( outfile ) :
+                fsize = os.path.getsize( outfile )
+                if fsize < 10 :
+                    print outfile + " : Exists, size is %d" % fsize
+                    ListOfFailedJobs.append( str(job) )
+                    continue
+
                 ff = TFile.Open(outfile)
                 h = ff.Get("%s_%s_0"% ( hname , sample.Name) )
                 if not h == None :
