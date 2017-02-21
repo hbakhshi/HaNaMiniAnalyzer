@@ -199,7 +199,7 @@ void tHqAnalyzer::beginJob()
   if( SampleName == "Signal" )
     nHistos = 51;
 
-  if( !IsData && nHistos==1 ){
+  if( !IsData && nHistos==1 )
     nHistos = 2;
 
   W = std::valarray<double>( 1.0 , nHistos);
@@ -328,6 +328,7 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       W *= diPhoton->W();
       if( !IsData && nHistos==2 )
 	W[1] = 1.0;
+
 
       hCutFlowTable->Fill( ++SelectionStep , W );
       DiG.set( diPhoton->diPhoton->pt() ,
@@ -504,6 +505,7 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   if( nMuons == 1 && nElesVeto == 0 ){
     LeptonType = 1 ;
 
+
     W *= (flashggmuonreader->W);
     lepton.set( flashggmuonreader->goodMus[0].pt() ,
 		flashggmuonreader->goodMus[0].eta() ,
@@ -520,9 +522,11 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 		flashggelectronreader->goodEles[0].phi() ,
 		flashggelectronreader->goodEles[0].energy() ,
 		flashggelectronreader->W ,
-		flashggelectronreader->goodEles[0].charge() );    
+		flashggelectronreader->goodEles[0].charge() );
+
   }else if( nMuons == 100 ){
     LeptonType = 3;
+
 
     W *= (flashggmuonreader->W);
     lepton.set( flashggmuonreader->goodMus[0].pt() ,
@@ -531,7 +535,7 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 		flashggmuonreader->Iso ,
 		flashggmuonreader->W ,
 		flashggmuonreader->goodMus[0].charge() );
-  }else if( nJets > 1){
+  }else if( nJets > 1 && false){
     const flashgg::Jet* theBJet = &(flashggjetreader->selectedJets[ jetsIndex[0] ]) ;
     const flashgg::Jet* theFJet = &(flashggjetreader->selectedJets[ jetsIndex[oneB.index_forward] ]) ;
     flashggjetreader_lowpt->Read( iEvent , diPhoton->diPhoton , {theBJet, theFJet} );
@@ -554,6 +558,7 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   if( lepton.isSet ){
 
+
     for(int i=0 ; i < nJets ; i++){
       float dri = reco::deltaR( jetsEta[i] , jetsPhi[i] , lepton.eta , lepton.phi );
       if( dri < closest_jet_dr ){
@@ -562,12 +567,17 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       }
     }
 
-
+    //fprintf (stderr, "l%d.", __LINE__);
     TLorentzVector g1,g2,higgs;
-    g1.SetPtEtaPhiM( G1.pt , G1.eta , G1.phi , 0 );
-    g2.SetPtEtaPhiM( G2.pt , G2.eta , G2.phi , 0 );
+
+
+    g1.SetPtEtaPhiM( G1.eta , G1.phi , G1.other , 0 );
+    g2.SetPtEtaPhiM( G2.eta , G2.phi , G2.other , 0 );
+
     higgs = (g1+g2);
 
+
+    
     TLorentzVector muL,metL ;
     muL.SetPtEtaPhiM( lepton.pt, lepton.eta, lepton.phi , 0 );
     metL.SetPtEtaPhiM( met.pt , 0 , met.eta , 0 );
@@ -590,8 +600,7 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     for(auto p : particles_)
       HT += p.Pt();
 
-    FoxWolfram fwam( particles_ );
-
+    FoxWolfram fwam( particles_ );	
     std::vector< particleinfo*> allfoxwolfs = {&foxwolf1 , &foxwolf2 };
     for(uint ifw = 1 ; ifw < allfoxwolfs.size()+1 ; ifw++)
       allfoxwolfs[ifw-1]->set( fwam.getMoment( FoxWolfram::SHAT , ifw ),
@@ -600,14 +609,12 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 			       fwam.getMoment( FoxWolfram::PSUM , ifw ),
 			       fwam.getMoment( FoxWolfram::PZ , ifw ),
 			       fwam.getMoment( FoxWolfram::ONE , ifw ) );
-    
-
     std::vector< math::RhoEtaPhiVector > particles;
     if( LeptonType != 4 )
       particles.push_back( math::RhoEtaPhiVector(lepton.pt, lepton.eta , lepton.phi) );
-    
-    particles.push_back( math::RhoEtaPhiVector(G1.pt, G1.eta , G1.phi) );
-    particles.push_back( math::RhoEtaPhiVector(G2.pt, G2.eta , G2.phi) );
+
+    particles.push_back( math::RhoEtaPhiVector(G1.eta, G1.phi , G1.other) );
+    particles.push_back( math::RhoEtaPhiVector(G2.eta, G2.phi , G2.other) );
     for(unsigned int i = 0 ; i < jetsPhi.size() ; i++)
       particles.push_back( math::RhoEtaPhiVector( jetsPt[i] , jetsEta[i] , jetsPhi[i] ) );
     
@@ -641,6 +648,7 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       jprimev3.SetPtEtaPhi( jetsPt[ jpIndex ] , 
 			    jetsEta[ jpIndex ] ,
 			    jetsPhi[ jpIndex ] );
+
       TVector3 htopcross = hv3.Cross( tv3 );
       double costhetajprime = htopcross.Dot( jprimev3 ) / ( htopcross.Mag() * jprimev3.Mag() );
       THReco.set( (topRec+higgs).M() , 
@@ -649,11 +657,13 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       //"THDEta:CosTheta:JPrime:WM:topM:CosThetaStar:nLoops/s:goodEvent/O"
       Top.set( topRec.Eta() - higgs.Eta() , costheta , costhetajprime ,
 	       singletop.W().M() , topRec.M() , singletop.cosThetaStar() );
+
       Top.number = singletop.nLoopsToSolve;
       Top.isSet = singletop.goodEvent;
     }
 
     particles.emplace_back( metL.Pt() ,  metL.Eta() , metL.Phi() );
+
     EventShapeVariables shapeVars2(particles);
     eventshapesMet.set( shapeVars2.aplanarity() ,
 			shapeVars2.C() ,
@@ -676,7 +686,6 @@ bool tHqAnalyzer::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 			       fwam2.getMoment( FoxWolfram::ONE , ifw ) );
     
   }
-
 
   FillTree();
   return true;

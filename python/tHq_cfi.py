@@ -91,6 +91,6 @@ tHq = cms.EDFilter('tHqAnalyzer',
                                         ),
                    sample = cms.string("WJetsMG"),
                    isData = cms.bool( False ),
-                   SetupDir = cms.string("SetupMoriond17"),
+                   SetupDir = cms.string("Setup80"), #SetupMoriond17
                    StoreEventNumbers = cms.bool( True )
                    )

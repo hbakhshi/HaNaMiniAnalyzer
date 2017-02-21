@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 import FWCore.Utilities.FileUtils as FileUtils
 
-process = cms.Process("tHq")
+process = cms.Process("tHq2")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 10000
@@ -77,7 +77,8 @@ else:
         theSample.Files = ['/store/group/phys_higgs/cmshgg/ferriff/flashgg/RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2/2_2_0/DoubleEG/RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2-2_2_0-v0-Run2016C-PromptReco-v2/160707_143223/0000/myMicroAODOutputFile_320.root']
     else :
         theSample = Sample( "SyncMC" , 100 , False , "")
-        theSample.Files = ['/store/group/phys_higgs/cmshgg/ferriff/flashgg/RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2/2_2_0/GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/RunIISpring16DR80X-2_2_0-25ns_ICHEP16_MiniAODv2-2_2_0-v0-RunIISpring16MiniAODv2-PUSpring16_80X_mcRun2_asymptotic_2016_miniAODv2_v0-v1/160707_143944/0000/myMicroAODOutputFile_316.root']
+        theSample.DSName = "_reHLT_"
+        theSample.Files = ['root://eoscms.cern.ch//eos/cms/store/user/hbakhshi/ICHEPTaggedFiles/thqTreeFW2/edm_output_tree_Signal_myMicroAODOutputFile_7_3.root']
     options.nFilesPerJob = 1
     options.output = "out" 
     options.job = 0
