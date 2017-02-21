@@ -20,7 +20,8 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 class HistInfo:
-    def __init__(self , name , varname = None , nbins = None , _from = None , to = None , title = "" ):
+    def __init__(self , name , varname = None , nbins = None , _from = None , to = None , title = "" , Auto = False , dirName = None):
+        self.DirName = dirName
         self.Title = title
         self.TwoD = False
         if isinstance(name, HistInfo) and type(varname) == str and nbins == None and _from == None and to == None :
@@ -33,8 +34,10 @@ class HistInfo:
             self.nBins = name.nBins
             self.From = name.From
             self.To = name.To
+            self.Auto = name.Auto
 
-        elif type(name) == str and type(varname) == str and type(nbins) == int and ( type(_from) or type(_from) == int ) and ( type(to) == float or type(to) == int ) :
+            self.DirName = name.DirName
+        elif type(name) == str and type(varname) == str and type(nbins) == int and ( type(_from) == float or type(_from) == int ) and ( type(to) == float or type(to) == int ) :
        
             self.Name = name
             self.VarName = varname
@@ -42,6 +45,17 @@ class HistInfo:
             self.nBins = nbins
             self.From = float(_from)
             self.To = float(to)
+            self.Auto = False
+        elif type(name) == str and type(varname) == str and type(nbins) == int and Auto :
+            self.Name = name
+                
+            self.VarName = varname
+
+            self.nBins = nbins
+            self.From = float(0)
+            self.To = float(0)
+            self.Auto = True
+            
         elif isinstance(name, HistInfo) and isinstance(varname, HistInfo) and type(nbins) == str  and _from == None and to == None : #2d
             s = name.Name
             if len(name.Name.split("_")) > 1 :
@@ -57,6 +71,8 @@ class HistInfo:
             self.H1 = name
             self.H2 = varname
             self.TwoD = True
+            self.Auto = False
+
         else:
             print "Initiate histinfo correctly, the given parameters are not allowd"
 
@@ -65,9 +81,9 @@ class HistInfo:
         if hasattr(self, "emptyhist" ):
             return self.emptyhist
         elif self.TwoD:
-            self.emptyhist = TH2D( hname , self.Title , self.H2.nBins , self.H2.From , self.H2.To , self.H1.nBins , self.H1.From , self.H1.To )
+            self.emptyhist = TH2D( hname , self.Title , self.H2.nBins , float( "{0:.2g}".format(self.H2.From)) , float( "{0:.2g}".format(self.H2.To)) , self.H1.nBins , float( "{0:.2g}".format(self.H1.From)) , float( "{0:.2g}".format(self.H1.To)) )
         else:
-            self.emptyhist = TH1D( hname , self.Title , self.nBins , self.From , self.To)
+            self.emptyhist = TH1D( hname , self.Title , self.nBins , float( "{0:.2g}".format(self.From) ) , float( "{0:.2g}".format(self.To)) )
 
         return self.emptyhist
         
@@ -75,7 +91,7 @@ class HistInfo:
         if self.TwoD:
             return "%s,%s" % (self.H2.Bins() , self.H1.Bins())
         else:
-            return "%d,%.2f,%.2f" % (self.nBins , self.From , self.To)
+            return "%d,%.2g,%.2g" % (self.nBins , self.From , self.To)
             
     def MakeName(self , sName , index = 0 ):
         return "%s_%s_%d" % (sName , self.Name , index )
@@ -92,13 +108,22 @@ class CutInfo:
 
         self.Title = name if title == "" else title
         
-    def AddHist(self, name , varname = None , nbins = None , _from = None , to = None , Title = "" ):
+    def AddHist(self, name , varname = None , nbins = None , _from = None , to = None , Title = "" , Auto = False , dirName = None ):
+        Title = self.Title + ";" + Title 
         if isinstance(name , HistInfo) and varname == None and nbins == None and _from == None and to == None :
-            self.ListOfHists.append( HistInfo(name , self.Name , title = Title ) )
+            OrigTitle = name.Title.split(";")
+            if len(OrigTitle) > 1 :
+                Title = ";".join( [ self.Title ] + OrigTitle[1:] )
+            else :
+                Title = self.Title
+            self.ListOfHists.append( HistInfo(name , self.Name , title = Title , dirName = dirName ) )
         elif type(name) == str and type(varname) == str and type(nbins) == int and ( type(_from) == float or type(_from) == int ) and ( type(to) == float or type(to) == int ) :
-            self.ListOfHists.append( HistInfo( self.Name + "_" + name , varname , nbins , _from , to , title = Title ) )
+            self.ListOfHists.append( HistInfo( self.Name + "_" + name , varname , nbins , _from , to , title = Title , dirName = dirName) )
+        elif type(name) == str and type(varname) == str and type(nbins) == int and Auto :
+            name = name.replace("_" , "")
+            self.ListOfHists.append( HistInfo( self.Name + "_" + name , varname , nbins , title = Title , Auto = True , dirName = dirName ) )
         elif isinstance(name , HistInfo) and isinstance(varname , HistInfo) and nbins == None and _from == None and to == None : #2d histogram
-            self.ListOfHists.append( HistInfo(name , varname , self.Name , title = Title) )
+            self.ListOfHists.append( HistInfo(name , varname , self.Name , title = Title , dirName = dirName) )
         else:
             print "Initiate histinfo correctly, the given parameters to AddHists are not allowd(%s=%s,%s=%s,%s=%s,%s=%s,%s=%s)" % (type(name),name,type(varname),varname,type(nbins),nbins,type(_from),_from,type(to),to)
 
@@ -107,24 +132,35 @@ class CutInfo:
     def SetWeight(self, w):
         self.Weight = w
         
-    def Weights(self, index = 0):
+    def Weights(self, index = 0 , samplename = "" , isdata = False):
         if hasattr( self , "Weight"):
-            #print self.Weight
-            return (self.Weight  % (index) )
+            if type(self.Weight) == str:
+                return self.Weight
+            elif type( self.Weight) == dict:
+                if samplename in self.Weight:
+                    return self.Weight[ samplename ]
+                elif isdata and "data" in self.Weight:
+                    return self.Weight["data"]
+                else:
+                    return self.Weight["all"]
         else:
             return ("Weight.W%d" % (index) )
 
-    def LoadHistos( self , samplename , isdata , tree , indices=[0] ):
+    def LoadHistos( self , samplename , isdata , tree , indices=[0] , additionalCut = None ):
         tree.SetEventList( None )
-        nLoaded = tree.Draw( ">>list_%s_%s"%(samplename, self.Name) , self.Cut ) # , "entrylist" )
+        cut_ = self.Cut
+        if(additionalCut):
+            cut_ += " && " + additionalCut
+            
+        nLoaded = tree.Draw( ">>list_%s_%s"%(samplename, self.Name) , cut_ ) # , "entrylist" )
         #gDirectory.ls()
         lst = gDirectory.Get( "list_%s_%s"%(samplename, self.Name) )
-        print "%s\t\tEvents from tree are loaded (%s , %s), %d" % (bcolors.UNDERLINE, self.Name , self.Cut , nLoaded )
+        print "%s\t\tEvents from tree are loaded (%s , %s), %d" % (bcolors.UNDERLINE, self.Name , cut_ , nLoaded )
         print "\t\tHistograms from tree are being created" + bcolors.ENDC
         if nLoaded < 0:
-            print "Error in loading events with cut (%s) from dataset (%s), nLoaded = %d" % (self.Cut,samplename , nLoaded)
+            print "Error in loading events with cut (%s) from dataset (%s), nLoaded = %d" % (cut_,samplename , nLoaded)
         if nLoaded < 1 :
-            self.ListOfEvents[samplename] = TEventList( "list_%s" % (samplename) , self.Cut ) # , tree ) #TEntryList(
+            self.ListOfEvents[samplename] = TEventList( "list_%s" % (samplename) , cut_ ) # , tree ) #TEntryList(
         else:
             self.ListOfEvents[samplename] = lst
 
@@ -147,15 +183,26 @@ class CutInfo:
                         print "%s : %d , %.2f , %.2f" % (hist.Name , hist.nBins , hist.From , hist.To)
 
                 if nLoaded > 0:
+                    if hist.Auto :
+                        hist.From = tree.GetMinimum( hist.VarName )
+                        hist.To = tree.GetMaximum( hist.VarName )
+                        if hist.nBins < 1 :
+                            hist.nBins = 10
+                        hist.Auto = False
+                        import __main__ as main
+                        with open(main.__file__ , "a") as f:
+                            f.write("#{0:s}:[{1:d},{2:.2g},{3:.2g}]".format( hist.VarName , hist.nBins , hist.From , hist.To ) )
+                        
+
                     tree.Draw( "%s>>cloned_%s(%s)" % ( hist.VarName , hname , hist.Bins() ) ,
-                               "" if isdata else self.Weights( n ) )
+                               "" if isdata else self.Weights( n , samplename , isdata) )
                     setattr( self , hname , gDirectory.Get( "cloned_"+hname ).Clone( hname ) )
                 else :
                     hcloned_empty = hist.MakeEmptyHist( samplename , n )
                     setattr( self , hname , hcloned_empty )
                 hhh = getattr( self , hname )
                 hhh.SetTitle( hist.Title )
-                hhh.SetTitle( self.Title )
+                #hhh.SetTitle( self.Title )
                 rebined = False
                 correct = True
                 color = bcolors.OKBLUE
@@ -174,7 +221,7 @@ class CutInfo:
                     
                 hhh.SetLineColor( 1 )
                 hhh.SetLineWidth( 2 )
-                hhh.SetBit(TH1.kNoTitle)
+                #hhh.SetBit(TH1.kNoTitle)
                 if not isdata :
                     hhh.SetFillStyle( 1001 )
                 else:
@@ -191,6 +238,20 @@ class Plotter:
         self.Props = {}
         self.TreePlots = []
 
+    def FindGRE(self, histname):
+        #print "In Find method: %s" %histname
+        found = False
+        gre = True
+        for i in range(0, len(self.TreePlots)):
+            for j in range(0, len(self.TreePlots[i].ListOfHists)):
+                #print "%s" %self.TreePlots[i].ListOfHists[j].Name
+                if self.TreePlots[i].ListOfHists[j].Name == histname:
+                    gre = self.TreePlots[i].GREs[j]
+                    found = True
+                    break;
+            if(found):
+                break
+        return gre	        
 
     def AddTreePlots( self , selection ):
         self.TreePlots.append( selection )
@@ -218,7 +279,13 @@ class Plotter:
             for prop in st.AllHists:
                 if not prop in self.Props:
                     self.Props[prop] = Property( prop , OrderedDict() , None, None , [] )
-                self.Props[prop].Samples += [ s.AllHists[prop][0] for s in st.Samples ]
+                append = []
+                for s in st.Samples:
+                    if prop in s.AllHists:
+                        append.append( s.AllHists[prop][0] )
+                    else:
+                        print "prop %s doesn't exist in %s!" % (prop , s.Name )
+                self.Props[prop].Samples += append #[ s.AllHists[prop][0] for s in st.Samples ]
                 if st.IsData():
                     self.Props[prop].Data = st.AllHists[prop]
                 elif st.IsSignal:
@@ -233,6 +300,19 @@ class Plotter:
 
     def GetProperty(self , propname):
         return self.Props[propname]
+
+    def CalcSignificances(self, method=1):
+	print ("Significance calculation with method %d" % method)
+	if method > 4:
+	    print "Illigal method!"
+	    return
+	for prop in self.Props:
+	    self.Props[prop].SetSignificances(method)    
+    		
+    def CalcExpLimits(self):
+	print "Limit calculation"    
+	for prop in self.Props:
+            self.Props[prop].SetExpectedLimits()
     
     def Write(self, fout , normtodata ):
         print "%sStarted writing the plots to the output file (%s)...%s" % (bcolors.BOLD, fout.GetPath() , bcolors.ENDC)
@@ -245,10 +325,17 @@ class Plotter:
                         seldir = fout.GetDirectory(seldirname)
                         if not seldir:
                             seldir = fout.mkdir( seldirname )
+                        subdir = seldir
+                        if t.DirName and not seldir.GetDirectory(t.DirName) :
+                            subdir = seldir.mkdir( t.DirName )
+                        elif t.DirName :
+                            subdir = seldir.GetDirectory(t.DirName)
                         propdirname = propname
                         if len(propname.split("_")) > 1 :
                             propdirname = propname.split("_")[-1]
-                        propdir = seldir.mkdir( propdirname )
+                        propdir = subdir.GetDirectory( propdirname )
+                        if not propdir :
+                            propdir = subdir.mkdir( propdirname )
             if not propdir :
                 propdir = fout.mkdir( propname )
             self.Props[propname].Write(propdir, normtodata)

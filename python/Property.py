@@ -1,23 +1,60 @@
-from ROOT import TDirectory, TFile, TCanvas , TH1D , TH1, TH2D , TH2 , THStack, TList, gROOT, TLegend, TPad, TLine, gStyle, TTree , TObject , gDirectory, gPad, TObject, TRatioPlot, TLatex
-#from ROOT import RooFit,RooDataHist, RooHistPdf,RooAddPdf,RooFitResult, RooRealVar, RooArgSet, RooArgList
+from ROOT import TDirectory, TFile, TCanvas , TH1D , TH1 , THStack, TList, gROOT, TLegend, TPad, TLine, gStyle, TTree , TObject , gDirectory, gPad, TLimit, Double, TLimitDataSource, TString, TObject, TRatioPlot, TLatex, TH2D , TH2
+from ROOT import RooFit,RooDataHist, RooHistPdf,RooAddPdf,RooFitResult, RooRealVar, RooArgSet, RooArgList
 
-from math import sqrt
+from math import sqrt, log
 import os
 import sys
 import Sample
 from array import array
 import string
-
+from collections import OrderedDict
+ 
 class Property:
-    def __init__(self , name , bkg_hists , data_hist , signal_hists , sample_hists):
-        self.Name = name
-        self.Bkg = bkg_hists
-        self.Data = data_hist
-        self.Signal = signal_hists
-        self.Samples = sample_hists
+    @staticmethod
+    def FromDir( dir , GRE = True ):
+        name = dir.GetName()
+        ret = Property( name , OrderedDict() , None , [] , [] , GRE )
+        
+        cats_dir = dir.GetDirectory("cats")
+        for cat_ in cats_dir.GetListOfKeys() :
+            cat = cat_.GetName()
+            if cat.endswith("_Data"):
+                gROOT.cd()
+                ret.Data = cats_dir.Get( cat ).Clone()
+            elif cat != "SumMC" :
+                gROOT.cd()
+                ret.Bkg[cat.split("_")[-1]] =  cats_dir.Get( cat ).Clone()
+
+        sigs_dir = dir.GetDirectory("signals")
+        for sig_ in sigs_dir.GetListOfKeys() :
+            sig = sig_.GetName()
+            gROOT.cd()
+            ret.Signal.append( sigs_dir.Get(sig).Clone() )
+
+        samples_dir = dir.GetDirectory("samples")
+        for sam_ in samples_dir.GetListOfKeys() :
+            sam = sam_.GetName()
+            gROOT.cd()
+            ret.Samples.append( samples_dir.Get(sam).Clone() )
+            
+        return ret
+    
+    def __init__(self , name , bkg_hists , data_hist , signal_hists , sample_hists, GRE = True):
+	self.Name = name
+	self.Bkg = bkg_hists
+	self.Data = data_hist
+	self.Signal = signal_hists
+	self.Samples = sample_hists
+	self.greater = GRE
+	self.isSoB = False
+	self.isSoSqrtB = False
+	self.isSoSqrtBdB2 = False
+	self.isLnSoSqrtSB = False
+	self.isLnSoSqrtSBdB = False
+	self.SigSignificance = []
 
         self.AdditionalInfo = []
-        
+                
     def is2D(self):
         if self.Data :
             if "th2" in self.Data.ClassName().lower():
@@ -315,6 +352,7 @@ class Property:
         rationame = "%s_Ratio" % (self.Name)
         if not hasattr(self, "Ratio"):
             self.Ratio = self.Data.Clone( rationame )
+            self.Ratio.SetBit(TH1.kNoTitle) 
             self.Ratio.SetStats(0)
             self.Ratio.Divide( self.GetStack().GetStack().Last() )
             for i in range(1 , self.Data.GetNbinsX()+1 ):
@@ -339,6 +377,7 @@ class Property:
         if not hasattr(self, "RatioUncert"):
             mc = self.GetStack().GetStack().Last()
             self.RatioUncert = mc.Clone( rationame )
+            self.RatioUncert.SetBit(TH1.kNoTitle) 
             self.RatioUncert.SetStats(0)
             self.RatioUncert.Divide(mc)
             for i in range(1 , self.Data.GetNbinsX()+1 ):
@@ -426,6 +465,7 @@ class Property:
             self.GetLineOne().Draw()
 
     def Write(self , propdir , normtodata , mkdir=False ):
+        #print self.greater
         if mkdir:
             propdir = propdir.mkdir( self.Name )
         propdir.cd()
@@ -434,8 +474,6 @@ class Property:
 
         self.Data.GetXaxis().SetTitleSize(0.05) 
         self.Data.GetXaxis().SetTitleOffset(0.95)
-        # self.Data.GetYaxis().SetLabelSize(0.1)
-        # self.Data.GetYaxis().SetLabelSize(0.1)
         self.Data.GetYaxis().SetTitleSize(0.07)
         self.Data.GetYaxis().SetTitleOffset(0.72)
         
@@ -449,7 +487,7 @@ class Property:
             sigdir.cd()
             for i in range(0 , len(self.Signal) ):
                 self.Signal[i].Write()
-        
+
         sampledir = propdir.mkdir( "samples" )
         sampledir.cd()
         for ss in self.Samples:
@@ -459,11 +497,174 @@ class Property:
         additionaldir.cd()
         for add in self.AdditionalInfo:
             add.Write()
-        self.Draw(normtodata)
-        self.GetStack(normtodata).Write()
-        self.GetLegend().Write()
-        self.GetRatioPlot().Write()
-        
+
+        if self.Data :
+            self.Draw(normtodata)
+            self.GetStack(normtodata).Write()
+            self.GetLegend().Write()
+            self.GetRatioPlot().Write()
+                    
         propdir.cd()
-        self.GetCanvas(0).Write()
+        if self.Data is not None:
+            self.Draw(normtodata)
+            self.GetCanvas(0).Write()
+
+        if hasattr(self, "SignalROC"):
+            roc = propdir.mkdir( "ROCs" )
+            roc.cd()
+            self.DataROC.Write()
+            self.BkgROC.Write()
+            for iSig in range(0, len(self.SignalROC)):
+                self.SignalROC[iSig].Write()
+            propdir.cd()
+
+        if hasattr(self, "SigSignificance"):	
+            sigdir = propdir.mkdir( "Significances" )
+            sigdir.cd()
+            if self.isSoB:
+                sob = sigdir.mkdir("SoB")
+                sigdir.cd()
+            if self.isSoSqrtB:
+                sosqrtb = sigdir.mkdir("SoSqrtB")
+                sigdir.cd()
+            if self.isSoSqrtBdB2:
+                sosqrtbdb2 = sigdir.mkdir("SoSqrtBdB2")
+                sigdir.cd()
+            if self.isLnSoSqrtSB:
+                lnsosqrtb = sigdir.mkdir("LnSoSqrtSB")
+                sigdir.cd()
+            if self.isLnSoSqrtSBdB:
+                lnsosqrtbdb = sigdir.mkdir("LnSoSqrtSBdB")
+                sigdir.cd()				
+
+            for iSig in range(0, len(self.SigSignificance)):
+                if TString(self.SigSignificance[iSig].GetName()).Contains("_SoB"):
+                    sob.cd()
+                elif TString(self.SigSignificance[iSig].GetName()).Contains("_LnSoSqrtSBdB"):
+                    lnsosqrtbdb.cd()
+                elif TString(self.SigSignificance[iSig].GetName()).Contains("_LnSoSqrtSB"):
+                    lnsosqrtb.cd()
+                elif TString(self.SigSignificance[iSig].GetName()).Contains("_SoSqrtBdB2"):
+                    sosqrtbdb2.cd()
+                elif TString(self.SigSignificance[iSig].GetName()).Contains("_SoSqrtB"):
+                    sosqrtb.cd()
+                self.SigSignificance[iSig].Write()
+                sigdir.cd()
+            propdir.cd()
+
+        if hasattr(self, "ExpLimits"):		
+            expdir = propdir.mkdir( "ExpLimits" )
+            expdir.cd()
+            for iSig in range(0, len(self.ExpLimits)):
+                self.ExpLimits[iSig].Write()
+            propdir.cd()		
+            
+
+
+    def ROCMaker(self, inputHist):
+        tmp = inputHist.Clone("ROC_%s" %inputHist.GetName())
+        tmp.Sumw2()
+        for iBin in range(0, inputHist.GetXaxis().GetNbins()):
+            n = 0
+            nError = Double(-1.)
+            if self.greater:
+                n = inputHist.IntegralAndError(iBin,-1,nError)
+            else:
+                n = inputHist.IntegralAndError(0, iBin, nError)
+            tmp.SetBinContent(iBin, n)
+            tmp.SetBinError(iBin, nError)
+        return tmp
+
+    def SetPropertyROCs(self):
+        self.SignalROC = []
+        for iSig in range(0, len(self.Signal)):
+            self.SignalROC.append(self.ROCMaker(self.Signal[iSig]))
+        self.BkgROC = self.ROCMaker(self.GetStack().GetStack().Last().Clone("AllBkgs") )
+        self.DataROC = self.ROCMaker(self.Data)
+
+    def Significance(self, signal, bkg, method=1):
+        signame = "SoB"
+        if method == 2:
+            signame = "SoSqrtB"
+        elif method == 3:
+            signame = "SoSqrtBdB2"
+        elif method == 4:
+            signame = "LnSoSqrtSB"
+        elif method == 5:
+            signame = "LnSoSqrtSBdB"			
+        elif method > 5:
+            print "Significance method not defined! Null histogram is returned!!!"
+            return
+        significance = signal.Clone("%s_%s" %(signal.GetName(),signame))
+        significance.Sumw2(False)
+        for iBin in range(0, signal.GetXaxis().GetNbins()):
+            u = 0
+            if bkg.GetBinContent(iBin) <= 0:
+                u = -1.
+                continue
+            if method == 1:
+                u = signal.GetBinContent(iBin) / bkg.GetBinContent(iBin)
+            elif method == 2:
+                u = signal.GetBinContent(iBin) / sqrt(bkg.GetBinContent(iBin))
+            elif method == 3:
+                u = signal.GetBinContent(iBin) / sqrt(bkg.GetBinContent(iBin) + (bkg.GetBinError(iBin)*bkg.GetBinError(iBin)))
+            elif method == 4:
+                u = sqrt(2)*sqrt((signal.GetBinContent(iBin)+bkg.GetBinContent(iBin))*log(1+(signal.GetBinContent(iBin)/bkg.GetBinContent(iBin))) - signal.GetBinContent(iBin))
+            elif method == 5:
+                s =  signal.GetBinContent(iBin) 
+                b = bkg.GetBinContent(iBin)
+                sigb =  bkg.GetBinError(iBin)
+                ln1 = ((s+b)*(b+(sigb*sigb)))/((b*b)+((s+b)*sigb*sigb))
+                ln2 = 1+ (sigb*sigb*s)/(b*(b+(sigb*sigb)))
+                Sum = ((s+b)*ln1) - ((b*b/(sigb*sigb))*ln2)
+                if Sum >= 0:
+                    u = sqrt(2*Sum)
+                    u = -1
+
+            significance.SetBinContent(iBin, u)
+        return significance
+
+    def SetSignificances(self,method = 1):
+        if not (hasattr(self,"BkgROC") and hasattr(self,"DataROC") and hasattr(self,"SignalROC")):
+            self.SetPropertyROCs()
+        if method == 1:
+            self.isSoB = True
+        elif method == 2:
+            self.isSoSqrtB = True
+        elif method == 3:
+            self.isSoSqrtBdB2 = True
+        elif method == 4:
+            self.isLnSoSqrtSB = True
+        elif method == 5:
+            self.isLnSoSqrtSBdB = True		
+        for iSig in range(0, len(self.Signal)):
+            self.SigSignificance.append(self.Significance(self.SignalROC[iSig], self.BkgROC, method))
+
+    def ExpectedLimits(self, signal, bkg_, data_):
+        sig = TH1D(("sig_%s" %signal.GetName()),"sig",1,0,1)
+        bkg = TH1D(("bkg_%s" %signal.GetName()),"bkg",1,0,1)
+        data = TH1D(("data_%s" %signal.GetName()),"data",1,0,1)
+        limits = signal.Clone("%s_ExpLimit" %signal.GetName())
+        limits.Sumw2(False)
+        for iBin in range(1, signal.GetXaxis().GetNbins()+1):
+            sig.SetBinContent(1, signal.GetBinContent(iBin))
+            sig.SetBinError(1, signal.GetBinError(iBin))
+            bkg.SetBinContent(1, bkg_.GetBinContent(iBin))
+            bkg.SetBinError(1, bkg_.GetBinError(iBin))
+            data.SetBinContent(1, data_.GetBinContent(iBin))
+            data.SetBinError(1, data_.GetBinError(iBin))
+            mydatasource = TLimitDataSource(sig,bkg,data)
+            myconfidence = TLimit.ComputeLimit(mydatasource,50000);
+            limits.SetBinContent(iBin, myconfidence.GetExpectedCLs_b(0))
+        del sig
+        del bkg
+        del data
+        return limits
+
+    def SetExpectedLimits(self):
+        self.ExpLimits = []
+        if not (hasattr(self,"BkgROC") and hasattr(self,"DataROC") and hasattr(self,"SignalROC")):
+            self.SetPropertyROCs()
+        for iSig in range(0, len(self.Signal)):
+            self.ExpLimits.append(self.ExpectedLimits(self.SignalROC[iSig], self.BkgROC, self.BkgROC))
 

@@ -3,7 +3,7 @@
 # Code   : Example usage for TMVA analyses                           #
 ###################################################################### 
 CXX = g++
-CCFLAGS = -O0 -ggdb -std=c++11 
+CCFLAGS = -O0 -std=c++11 #-ggdb -g
 
 
 LD = g++
@@ -17,7 +17,7 @@ default : bin/TMVAClassification bin/MakeFriendTrees.so
 
 bin/TMVAClassification : src/TMVAClassification.C
 	@echo -n "Building $@ ... "
-	$(CXX) $(CCFLAGS) $<  $(addprefix -I, $(INCS))  $(shell root-config --libs) -lMLP -lMinuit -lTreePlayer -lTMVA -lTMVAGui -lXMLIO  -lMLP -lm  -g -o $@
+	$(CXX) $(CCFLAGS) $<  $(addprefix -I, $(INCS))  $(shell root-config --libs) -lMLP -lMinuit -lTreePlayer -lTMVA -lTMVAGui -lXMLIO  -lMLP -lm  -o $@
 	@echo "Done"
 
 bin/MakeFriendTrees.o : src/MakeFriendTrees.C
@@ -27,7 +27,7 @@ bin/MakeFriendTrees.o : src/MakeFriendTrees.C
 
 bin/MakeFriendTrees.so : bin/MakeFriendTrees.o
 	@echo -n "Building $@ ... "
-	$(CXX) -shared $(CCFLAGS) $<  $(addprefix -I, $(INCS))  $(shell root-config --libs) -lMLP -lMinuit -lTreePlayer -lTMVA -lTMVAGui -lXMLIO  -lMLP -lm  -g -o $@
+	$(CXX) -shared $(CCFLAGS) $<  $(addprefix -I, $(INCS))  $(shell root-config --libs) -lMLP -lMinuit -lTreePlayer -lTMVA -lTMVAGui -lXMLIO  -lMLP -lm  -o $@
 	@echo "Done"
 
 clean: 

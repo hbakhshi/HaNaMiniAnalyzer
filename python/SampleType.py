@@ -7,13 +7,13 @@ import Sample
 from ExtendedSample import *
 
 class SampleType:
-    def __init__(self , name , color , samples = [] , LoadJobDir = "" , signal = False ):
+    def __init__(self , name , color , samples = [] , LoadJobDir = "" , signal = False , additionalCut = None ):
         self.Name = name
         if type(color) is int:
             self.Color = color
             self.MultiPlot = False
             
-        self.Samples = [ExtendedSample(s) for s in samples]
+        self.Samples = [ExtendedSample(s , additionalCut) for s in samples]
         if not LoadJobDir == "":
             Dirs = LoadJobDir.split(";")
             for ss in self.Samples:
@@ -77,13 +77,13 @@ class SampleType:
                         color = self.Color
                         if i==0:
                             hnew = s.AllHists[propname][0].Clone("%s_%s" % ( propname , self.Name ) )
-                            hnew.SetTitle( self.Name )
+                            #hnew.SetTitle( self.Name )
                         else:
                             hnew = s.AllHists[propname][i].Clone("%s_%s_%d" % ( propname , self.Name , i) )
                             color = self.Colors[i][0]
                             hnew.SetTitle( self.Colors[i][2] )
 
-                        hnew.SetBit(TH1.kNoTitle) 
+                        #hnew.SetBit(TH1.kNoTitle) 
                         setattr( self , "%s_%d" % (propname,i) , hnew )
                         hhh = getattr( self , "%s_%d" % (propname,i) )
                         if self.IsSignal:

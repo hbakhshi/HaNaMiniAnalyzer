@@ -58,11 +58,11 @@ class Sample :
     def __str__(self):
         return self.Name
     
-    def __init__(self , name , xsection , lheW , datasetname , appendix = "" , dbsInstance = "phys03" , info_from_json = None ):
+    def __init__(self , name , xsection , lheW , datasetname , appendix = "" , dbsInstance = "phys03" , info_from_json = None , treeName = None ):
         self.Jobs = []
         self.Name = name
         self.XSection = xsection
-        self.IsData = (self.XSection <= 0)
+        self.IsData = (self.XSection == 0)
         self.LHEWeight = lheW
         
         self.Files = []
@@ -87,6 +87,8 @@ class Sample :
         if not datasetname == "" :
             self.InitiateFilesFromListOrDAS( datasetname , appendix )
 
+        if treeName :
+            self.TreeName = treeName
             
     def AddFiles( self , directory ):
         files = [join(directory, f) for f in listdir(directory) if isfile(join(directory, f))]

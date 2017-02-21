@@ -40,6 +40,17 @@ void MakeFriendTrees(TTree* tree , TString outfname , TString inname , bool dott
   tree->SetBranchAddress("lepton" , &lepton);
   tree->SetBranchAddress( "foxwolf1" , &foxwolf1 );
 
+  // ========================= FOR A SIMPLE TREE GEORGIOS : ===========================
+  // double nJetsD, metD, jprimeetaD , chargeD,aplanD, foxD ;
+  // float nJets_F, met_F, jprimeeta_F , charge_F,aplan_F, fox_F , absJeta;
+  // tree->SetBranchAddress("njets" , &nJetsD );
+  // tree->SetBranchAddress("jprime_eta"   , &jprimeetaD   );
+  // tree->SetBranchAddress("met" , &(metD) );
+  // tree->SetBranchAddress("charge" , &chargeD );
+  // tree->SetBranchAddress("aplanarity" , &aplanD);
+  // tree->SetBranchAddress( "fox_one" , &foxD );
+  // ========================= SIMPLE TREE =============================================
+  
   TMVA::Reader* readertth = NULL;
   TMVA::Reader* readerdig = NULL;
   TMVA::Reader* readertg = NULL;
@@ -54,8 +65,20 @@ void MakeFriendTrees(TTree* tree , TString outfname , TString inname , bool dott
     readertth->AddVariable( "eventshapes.aplanarity" , &aplanarity );
     readertth->AddVariable( "foxwolf1.ONE" , &fwf1ONE );
 
+    // ========================= FOR A SIMPLE TREE GEORGIOS : ===========================
+    // readertth->AddVariable( "nJets", &nJets_F );
+    // readertth->AddVariable( "Max$( abs(jetsEta) )", &absJeta );
+    // readertth->AddVariable( "met.pt", &met_F );
+    // //readertth->AddVariable( "lepton.charge", &(lepton.another) );
+    // readertth->AddVariable( "lepton.charge", &(charge_F) );
+    // readertth->AddVariable( "eventshapes.aplanarity" , &aplan_F );
+    // readertth->AddVariable( "foxwolf1.ONE" , &fox_F );
+    // ========================= SIMPLE TREE =============================================
+        
 
-    readertth->BookMVA( inname , "ttH/weights/" + inname + "_BDT_TTH.weights.xml" );
+    //readertth->BookMVA( inname , "ttH/weights/" + inname + "_BDT_TTH0.weights.xml" );
+    readertth->BookMVA( "LowNT" , "ttH/FinalWeights/w10_10_3_15_10.weights.xml" );
+    readertth->BookMVA( "HighNT" , "ttH/FinalWeights/w400_30_2_30_10.weights.xml" );
   }
 
   if(dodig){
@@ -95,9 +118,11 @@ void MakeFriendTrees(TTree* tree , TString outfname , TString inname , bool dott
   fout->cd();
   TTree FTree("friend", "the friend tree");
 
-  float BDTValTTH, BDTValDiG , BDTValTTGX;
-  if(dotth)
-    FTree.Branch( "BDT" , &BDTValTTH );
+  float BDTValTTH_1, BDTValTTH_2, BDTValDiG , BDTValTTGX;
+  if(dotth){
+    FTree.Branch( "BDT_LowNT" , &BDTValTTH_1 );
+    FTree.Branch( "BDT_HighNT" , &BDTValTTH_2 );
+  }
   if(dodig)
     FTree.Branch( "BDTDiG" , &BDTValDiG );
   if(dotg)
@@ -112,7 +137,7 @@ void MakeFriendTrees(TTree* tree , TString outfname , TString inname , bool dott
       i = listofevents->GetEntry( ii );
 
     tree->GetEntry(i);    
-    BDTValDiG = BDTValTTH = BDTValTTGX = -1000;
+    BDTValDiG = BDTValTTH_1 = BDTValTTH_2 = BDTValTTGX = -1000;
 
     nJetsF = int(nJets);
     aplanarity = eventshapes.pt;
@@ -131,10 +156,20 @@ void MakeFriendTrees(TTree* tree , TString outfname , TString inname , bool dott
       minGmva = G2.other;
     else
       minGmva = G1.other;
-    
+
+    // ========================= FOR A SIMPLE TREE GEORGIOS : ===============================
+    // absJeta = ( jprimeetaD );
+    // nJets_F = nJetsD;
+    // met_F = metD;
+    // charge_F = charge_F;
+    // aplan_F = aplanD;
+    // fox_F = foxD;
+    // ========================= SIMPLE TREE (Comment jetsEta->size() > 0 if needed ) =======
     if( dotth ){
-      if(jetsEta->size() > 0 )
-	BDTValTTH = readertth->EvaluateMVA(inname);
+      if(jetsEta->size() > 0 ){
+	BDTValTTH_1 = readertth->EvaluateMVA("LowNT");
+	BDTValTTH_2 = readertth->EvaluateMVA("HighNT");
+      }
     }
 
     if( dodig )
@@ -144,7 +179,7 @@ void MakeFriendTrees(TTree* tree , TString outfname , TString inname , bool dott
       BDTValTTGX = readertg->EvaluateMVA(inname);
 
     if( cut != ""){
-      if( BDTValTTH > 0 )
+      if( BDTValTTH_1 > 0 )
 	FTree.Fill();
     }else
       FTree.Fill();

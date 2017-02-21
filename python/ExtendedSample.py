@@ -8,7 +8,7 @@ import fnmatch
 from Sample import *
 
 class ExtendedSample: #extend the sample object to store histograms
-    def __init__( self , sample ):
+    def __init__( self , sample , additionalCut = None  ):
         self.Name = sample.Name 
         self.XSection = sample.XSection 
         self.XSections = {0:self.XSection}
@@ -27,18 +27,26 @@ class ExtendedSample: #extend the sample object to store histograms
         else :
             self.ParentSample = None
 
+        if hasattr(sample, "TreeName") :
+            self.TreeName = sample.TreeName
+
+        self.AdditionalCut = additionalCut
+        
     def LoadJobs(self , Dir , pattern_ = "%s.root" ):
         Dirs = Dir.split(";")            
         self.JobFilesDir = Dirs[0]
         self.Jobs = []
         pattern = ( pattern_ % (self.Name) )
         for fn, ff in [("%s/%s" % ( Dirs[0] , f) , f) for f in os.listdir(Dirs[0])]:
+            #print fn
             if os.path.isfile(fn):
                 if fnmatch.fnmatch(ff , pattern):
                     self.Jobs.append( JobInformation( self , 0 , self.Files , fn ) )
         if self.ParentSample and (len(Dirs) == 2):
             self.ParentSample.LoadJobs( Dirs[1] , pattern_)
-            
+        print self.Name
+        #print self.Jobs
+        
     def GetCFT(self , index = 0):
         if not hasattr( self, "CutFlowTableName" ):
             return None
@@ -67,19 +75,23 @@ class ExtendedSample: #extend the sample object to store histograms
     def NormalizeHistos(self, lumi):
         if self.IsData :
             return
-        self.nTotal = self.GetNTotal()
-        if self.nTotal == 0:
-            print "\tSample %s has no entries" % (self.Name)
-            return
-
         for index in self.LoadedIndices:
-            self.XSFactor = lumi*self.XSections[index]/self.nTotal
+            if self.XSection < 0 :
+                self.XSFactor = lumi
+            else:
+                self.nTotal = self.GetNTotal()
+                if self.nTotal == 0:
+                    print "\tSample %s has no entries" % (self.Name)
+                    return
+                self.XSFactor = lumi*self.XSections[index]/self.nTotal
             print "\t\tXSFactor[%d] for lumi %d is : %.4f" % (index , lumi , self.XSFactor)
             #print "%s factor : (%.2f*%.2f)/%.0f = %.3f" % (sample , lumi , self.XSections[sample] , ntotal  , factor)
             for h in self.AllHists :
                 if len(self.AllHists[h]):
+                    before = self.AllHists[h][index].Integral()
                     self.AllHists[h][index].Scale(self.XSFactor)
-
+                    after = self.AllHists[h][index].Integral()
+                    #print "\t\tBefore : %f , after : %f" % (before, after)
 
     def SetFriendTreeInfo(self , friendsDir , friendTreeName ):
         self.FriendsDir = friendsDir
@@ -88,7 +100,7 @@ class ExtendedSample: #extend the sample object to store histograms
     def LoadTree(self , treeName ):
         if hasattr(self,"Tree"):
             return
-        
+
         self.Tree = TChain( treeName )
         for Job in self.Jobs:
             self.Tree.Add( Job.Output )
@@ -97,21 +109,25 @@ class ExtendedSample: #extend the sample object to store histograms
             self.FriendFile = TFile.Open( "%s/%s.root" % (self.FriendsDir , self.Name ) )
             self.FriendTree = self.FriendFile.Get( self.FriendTreeName )
             self.Tree.AddFriend( self.FriendTree )
-            
+        
     def DrawTreeHistos( self , treeselections ,  treeName = "tHq/Trees/Events"):
+        if hasattr(self, "TreeName" ):
+            treeName = self.TreeName
+            print "Tree Name is : %s" % (treeName)
         self.LoadTree(treeName)
         
         if not hasattr( self, "LoadedIndices" ):
             print "call DrawTreeHistos after LoadHistos"
 
         for selection in treeselections:
-            treehists = selection.LoadHistos( self.Name , self.IsData , self.Tree , self.LoadedIndices )
+            treehists = selection.LoadHistos( self.Name , self.IsData , self.Tree , self.LoadedIndices , self.AdditionalCut )
             for hist in treehists :
                 if not hist in self.AllHists:
                     self.AllHists[hist] = {}
                 for n in treehists[hist]:
                     self.AllHists[hist][n] = treehists[hist][n]
 
+        self.Tree.GetFile().Close()
                     
     def LoadHistos(self , dirName = "tHq" , cftName = "CutFlowTable" , loadonly = [] , indices = [0]):
         self.LoadedIndices = indices
@@ -154,7 +170,8 @@ class ExtendedSample: #extend the sample object to store histograms
                         if isitthat:
                             thehisto = dir_.Get( dircont )
                             break
-                    if thehisto.ClassName().startswith("TH"):
+                    #print [propname , index]
+                    if thehisto and thehisto.ClassName().startswith("TH"):
                         selectedHistos[index] = thehisto 
 
                 if propname in self.AllHists.keys() :

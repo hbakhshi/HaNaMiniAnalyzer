@@ -29,7 +29,7 @@ for s in MicroAOD80Samples:
     es.LoadJobs( nTuples )
     es.LoadTree("tHq/Trees/Events")
 
-    MakeFriendTrees( es.Tree , "trees/" + inname + "/" + s.Name , inname , True , True , True )
+    MakeFriendTrees( es.Tree , "trees/" + inname + "/" + s.Name , inname , True , False , False )
     continue
     
     fnew = TFile.Open( "4Dec/" + s.Name + ".root" )
