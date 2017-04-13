@@ -1,0 +1,8 @@
+cd /home/hbakhshi/Desktop/tHq/HiggsAnalysis/CombinedLimit
+source env_standalone.sh
+cd -
+text2workspace.py ${1}.txt
+combine -M Asymptotic ${1}.root --run=blind -m 125.5
+#combine -M Asymptotic hamed.root -t 100 --expectSignal=1 --saveToys -m 125.5
+#combine -M ProfileLikelihood hamed.root -t 100 --expectSignal=1 --saveToys -m 125.5
+#combine -M ProfileLikelihood hamed.root --run=blind -m 125.5

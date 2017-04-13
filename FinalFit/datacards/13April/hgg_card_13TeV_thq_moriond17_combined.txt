@@ -1,0 +1,50 @@
+Combination of hgg_card_13TeV_thq_moriond17_InvertedMVACut.txt  hgg_card_13TeV_thq_moriond17.txt
+imax 2 number of bins
+jmax 3 number of processes minus 1
+kmax 24 number of nuisance parameters
+----------------------------------------------------------------------------------------------------------------------------------
+shapes bkg_mass  ch1       ../../bkg/CMS-HGG_multipdf_HggAnalysis_2016_THQ_InvertedTHMVACut_2.root multipdf_inverted:CMS_hgg_THQLeptonicTag_inverted_13TeV_bkgshape
+shapes data_obs  ch1       ../../bkg/CMS-HGG_multipdf_HggAnalysis_2016_THQ_InvertedTHMVACut_2.root multipdf_inverted:roohist_data_mass_THQLeptonicTag
+shapes thq_hgg   ch1       ../../signals/13April.root testws:RVthq_mh125
+shapes thw_hgg   ch1       ../../signals/13April.root testws:RVthw_mh125
+shapes tth_hgg   ch1       ../../signals/13April.root testws:RVtth_mh125
+shapes bkg_mass  ch2       ../../bkg/CMS-HGG_multipdf_HggAnalysis_2016_THQ_THMVACut.root multipdf:CMS_hgg_THQLeptonicTag_13TeV_bkgshape
+shapes data_obs  ch2       ../../bkg/CMS-HGG_multipdf_HggAnalysis_2016_THQ_THMVACut.root multipdf:roohist_data_mass_THQLeptonicTag
+shapes thq_hgg   ch2       ../../signals/13April.root testws:RVthq_mh125
+shapes thw_hgg   ch2       ../../signals/13April.root testws:RVthw_mh125
+shapes tth_hgg   ch2       ../../signals/13April.root testws:RVtth_mh125
+----------------------------------------------------------------------------------------------------------------------------------
+bin          ch1    ch2  
+observation  -1.0   -1.0 
+----------------------------------------------------------------------------------------------------------------------------------
+bin          ch1       ch1       ch1       ch1       ch2       ch2       ch2       ch2     
+process      thq_hgg   tth_hgg   thw_hgg   bkg_mass  thq_hgg   tth_hgg   thw_hgg   bkg_mass
+process      0         1         2         3         0         1         2         3       
+rate         0.2600    1.7200    1.7500    1.0000    1.0000    1.0000    1.0000    1.0000  
+----------------------------------------------------------------------------------------------------------------------------------
+CMS_hgg_nuisance_ShowerShapeLowR9EE_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCSmearLowR9EEPhi_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCSmearHighR9EBRho_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_ShowerShapeHighR9EB_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCSmearLowR9EERho_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCSmearLowR9EBRho_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_ShowerShapeLowR9EB_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCSmearHighR9EEPhi_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_metJerUncertainty_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MaterialCentral_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_FNUFEB_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCSmearHighR9EERho_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCSmearHighR9EBPhi_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_metJecUncertainty_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_FNUFEE_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MaterialForward_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCSmearLowR9EBPhi_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_ShowerShapeHighR9EE_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_JER_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_JEC_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MvaShift_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_metUncUncertainty_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_SigmaEOverEShift_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_metPhoUncertainty_13TeV  param  0.0 1.0
+pdfindex_THQLeptonicTag_13TeV  discrete
+pdfindex_THQLeptonicTag_inverted_13TeV  discrete
