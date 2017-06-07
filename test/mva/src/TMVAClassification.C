@@ -359,14 +359,18 @@ BDTOptimizer::BDTOptimizer( TString dsname , TString MVATitle_ , string options_
   vector<int> maxdepth ;
   vector<double> adaboostbeta ;
   vector<int> ncuts ;
-    
+
+  cout << options_ <<endl;
+  
   vector<string> options =  split( options_ , ':' );
   for(auto opt_ : options){
+    cout << opt_ <<endl;
     vector<string> opt =  split( opt_ , '=' ) ;
     if(opt.size() != 2 ){
       cout << opt_ << " is a wrong word" << endl;
       continue;
     }
+    cout << opt[0] << opt[1] << endl;
     vector<string> range_info = {opt[1]};
     if(opt[1].find( ',' ) != string::npos)
       range_info = split( opt[1] , ',' );
@@ -383,6 +387,8 @@ BDTOptimizer::BDTOptimizer( TString dsname , TString MVATitle_ , string options_
       FillRange( range_info , ncuts);
     else
       cout << opt[0] << " is a wrong word " << endl;
+
+    cout << ntrees.size() << " " << minnodesize.size() << " " << maxdepth.size() << " " << adaboostbeta.size() << " " << ncuts.size() << endl;
   }
 
   for(auto nt : ntrees)
@@ -391,6 +397,9 @@ BDTOptimizer::BDTOptimizer( TString dsname , TString MVATitle_ , string options_
 	for(auto adabb : adaboostbeta)
 	  for(auto nc : ncuts)
 	    this->emplace_back( MVATitle + to_string( this->size() ) ,  nt , mns , md , adabb , nc );
+	    
+  for(auto i : *this)
+    i.PrintAll(cout);
 	    
 }
 
@@ -511,6 +520,8 @@ int main( int argc, char** argv )
     if( regMethod=="--tth"){
       i++;
       tth_bdt_options = new BDTOptimizer("ttH" , "BDT_TTH" , string(argv[i] ) );
+      for( auto i : *tth_bdt_options)
+	i.PrintAll(cout);
       methodList += "ttH";
       continue;
     }
@@ -527,5 +538,6 @@ int main( int argc, char** argv )
       continue;
     }
   }
+  
   return TMVAClassification(methodList , ext , tth_bdt_options , ttgj_bdt_options , dig_bdt_options);
 }

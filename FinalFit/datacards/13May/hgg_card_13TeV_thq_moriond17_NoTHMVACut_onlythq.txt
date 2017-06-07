@@ -1,0 +1,18 @@
+Combination of CMS-HGG_mva_13TeV_datacard.txt
+imax 1 number of bins
+jmax 1 number of processes minus 1
+kmax 0 number of nuisance parameters
+----------------------------------------------------------------------------------------------------------------------------------
+shapes bkg_mass                  THQLeptonicTag2_13TeV  ../../bkg/CMS-HGG_multipdf_HggAnalysis_2016_THQ.root multipdf:CMS_hgg_THQLeptonicTag_13TeV_bkgshape
+shapes data_obs                  THQLeptonicTag2_13TeV  ../../bkg/CMS-HGG_multipdf_HggAnalysis_2016_THQ.root multipdf:roohist_data_mass_THQLeptonicTag
+shapes thq_hgg                   THQLeptonicTag2_13TeV  ../../signals/13May/out_ctcv_thq_syst.root ctcv:RVthq_mh125
+----------------------------------------------------------------------------------------------------------------------------------
+bin          THQLeptonicTag2_13TeV
+observation  -1.0
+----------------------------------------------------------------------------------------------------------------------------------
+bin	THQLeptonicTag2_13TeV	THQLeptonicTag2_13TeV
+process	thq_hgg	bkg_mass
+process	0	1
+rate	1	1
+----------------------------------------------------------------------------------------------------------------------------------
+pdfindex_THQLeptonicTag_13TeV discrete

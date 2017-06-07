@@ -1,9 +1,11 @@
-from ROOT import RooWorkspace, RooDataSet, RooPlot, RooRealVar, RooFit, RooExtendPdf, RooAbsPdf, RooFitResult, RooFormulaVar , RooGaussian, RooArgList, RooAddPdf, RooConstVar , RooArgSet
-from ROOT import TFile, gSystem, TH1D, TCanvas,  kRed, kGreen, kBlack , TMath , TLegend, TGraphErrors, kBlue, kGray 
+from ROOT import RooWorkspace, RooDataSet, RooPlot, RooRealVar, RooFit, RooExtendPdf, RooAbsPdf, RooFitResult, RooFormulaVar , RooGaussian, RooArgList, RooAddPdf, RooConstVar , RooArgSet ,  Roo2DMomentMorphFunction
+from ROOT import TFile, gSystem, TH1D, TCanvas,  kRed, kGreen, kBlack , TMath , TLegend, TGraphErrors, kBlue, kGray, TMatrixD, TH2D, gROOT
 import re
 from math import sqrt
-
+from array import array
+        
 AllSystParams = []
+LUMI = 35.9
 
 class KappaFramework:
     def __init__(self):
@@ -15,8 +17,8 @@ class KappaFramework:
             self.BR_Coeffs_List.append( coeff )
             self.BR_Coeffs.add( coeff )
 
-        self.CV = RooRealVar("CV" , "CV" , 1 , -2 , 2 )
-        self.CT = RooRealVar("CT" , "CT" , 1 , -2 , 2 )
+        self.CV = RooRealVar("CV" , "CV" , 1 , 0.5 , 2 )
+        self.CT = RooRealVar("CT" , "CT" , -1 , -3 , 4 )
         
         self.KGamma2 = RooFormulaVar( "KGamma2" , "KGamma2" , "1.59*@0*@0+0.07*@1*@1-0.66*@0*@1" , RooArgList(  self.CV , self.CT ) )
         self.TotalWidth = RooFormulaVar("TotalWidth" , "TotalWidth" , "0.57+0.22*@0*@0+0.09+0.06+0.03+0.03+0.0016+0.0001+0.00022+0.0023*@1" , RooArgList( self.CV , self.KGamma2 ) )
@@ -29,6 +31,10 @@ class KappaFramework:
         self.tHqXSectionTimesBR = RooFormulaVar( "tHqXSectionTimesBR" , "tHqXSectionTimesBR" , "@0*@1" , RooArgList( self.tHqXSection , self.BRGammaGamma ) )
         self.tHWXSectionTimesBR = RooFormulaVar( "tHWXSectionTimesBR" , "tHWXSectionTimesBR" , "@0*@1" , RooArgList( self.tHWXSection , self.BRGammaGamma ) )
 
+        self.SMtHqXSec = RooRealVar("SMtHqXSec" , "SMtHqXSec" , 0.07425 )
+        self.SMtHWXSec = RooRealVar("SMtHWXSec" , "SMtHWXSec" , 0.01517 )
+        self.SMHggBR   = RooRealVar("SMHggBR"   , "SMHggBR"   , 0.00227 )
+        
     def SetCtCv(self, ct, cv ):
         self.CT.setVal( ct )
         self.CV.setVal( cv )
@@ -41,7 +47,30 @@ class KappaFramework:
         print "BRGammaGamma : " , self.BRGammaGamma.getVal()
         print "tHqXSection : " , self.tHqXSection.getVal()
         print "tHwXSection : " , self.tHWXSection.getVal()
-        
+
+    def GetThqGGXSecBR(self, ct , cv ):
+        self.SetCtCv( ct , cv )
+        return self.tHqXSectionTimesBR.getVal()
+
+    def GetThWGGXSecBR(self, ct , cv ):
+        self.SetCtCv( ct , cv )
+        return self.tHWXSectionTimesBR.getVal()
+
+    def GetXSecBR(self, process , ct , cv , ratio = True ):
+        if "thq" in process:
+            sm = 1 if ratio else (self.SMtHqXSec.getVal()*self.SMHggBR.getVal())
+            return self.GetThqGGXSecBR( ct , cv )*sm
+        elif "thw" in process:
+            sm = 1 if ratio else (self.SMtHWXSec.getVal()*self.SMHggBR.getVal())
+            return self.GetThWGGXSecBR( ct , cv )*sm
+        elif "tth" in process or "vbf" in process or "vh" in process or "ggh" in process :
+            sm = 1 if ratio else self.SMHggBR.getVal()
+            self.SetCtCv( ct, cv )
+            return self.BRGammaGamma.getVal()*sm
+        else :
+            print "GetXSecBR : Error in the process name"
+            return 1.0
+    
     def PlotIt(self):
         self.FrameCV = self.CV.frame( RooFit.Title("CV") , RooFit.Name("CVPlot") )
         self.TotalWidth.plotOn(self.FrameCV , RooFit.LineColor( kBlack) )
@@ -68,7 +97,222 @@ class KappaFramework:
     def Write(self, ws ):
         getattr( ws , "import")( self.tHWXSectionTimesBR , RooFit.RecycleConflictNodes() )
         getattr( ws , "import")( self.tHqXSectionTimesBR , RooFit.RecycleConflictNodes() )
+
+class CtCvCpInfo :
+    def __init__(self , name):
+        self.Name = name
         
+        self.Kvs = [1.0 , 1.5 , 0.5]
+        self.KvKfs = {
+            1.0:[3. , 2. , 1.5 , 1.25 ,  1.0, .75 , .5 , .25 , 0.0 , -0.25 , -0.5 , -0.75     , -1.25 , -1.5 , -2. , -3. ],
+            1.5:[3. , 2. , 1.5 , 1.25 ,  1.0, .75 , .5 , .25 , 0.0 , -0.25 , -0.5 , -0.75 ,-1 , -1.25 , -1.5 , -2. , -3. ],
+            .5:[3. , 2. , 1.5 , 1.25 ,  1.0, .75 , .5 , .25 , 0.0 , -0.25 , -0.5 , -0.75 ,-1 , -1.25 , -1.5 , -2. , -3. ]
+        }
+        self.AllCtCVs = []
+        for Kv in self.Kvs:
+            for Kf in self.KvKfs[Kv]:
+                self.AllCtCVs.append( (Kv, Kf) )
+
+        self.AllCpVals = [ l/10. for l in range(-9 , 10 ) ]
+                
+        self.CtVar = RooRealVar("CT" , "CT" , -1 , -3 , 4 )
+        self.CvVar = RooRealVar("CV" , "CV" , 1 , 0.5 , 2 )
+        self.CpVar = RooRealVar("CP" , "CP" , 0 , -1 , 1 )
+
+        self.CtBins = array( 'd' ,  [-3. , -2. , -1.5 , -1.25 , -1.0 , -.75 , -.5 , -.25 , 0.0 , 0.25 , 0.5 , 0.75 ,1.0 , 1.25 , 1.5 , 2. , 3. , 4. ] )
+
+        self.hCtCv = TH2D( "h%s_CtCv" % (name) , "CtCv " + name , 3 , 0.5 , 2.0 , len(self.CtBins)-1 , self.CtBins )
+        self.hCp = TH1D("h%s_Cp" % (name)  , "Cp " + name , 19 , -.9 , 1 )
+
+        self.ValuesCtCv = {}
+        self.ValuesCp = {}
+        self.mCtCv = TMatrixD( 95 , 3 )        
+        
+
+    def GetCanvas( self ):
+        if not hasattr( self , "Canvas" ):
+            self.Canvas = TCanvas( "Canvas_" + self.Name )
+            self.hCtCv.Draw("COLZ TEXT")
+        return self.Canvas
+        
+    def GetCValues(self, weight_id):
+        Ct = 0
+        Cv = 0
+        Cp = -2
+
+        if weight_id == -1 :
+            Ct = -1
+            Cv =  1
+        elif weight_id < 50 :
+            Ct = self.AllCtCVs[ weight_id ][1]
+            Cv = self.AllCtCVs[ weight_id ][0]
+        elif weight_id < 69 :
+            cpbin = weight_id-50
+            Cp = self.AllCpVals[cpbin]
+        else :
+            Cp = -3
+
+        return Ct,Cv,Cp
+    
+    def GetValue(self, weight_id):
+        Ct, Cv, Cp = self.GetCValues(weight_id)
+        if Cp == -2 :
+            return self.ValuesCtCv[(Ct,Cv)]
+        elif Cp == -3 :
+            return -100
+        else :
+            return self.ValuesCp[ Cp ]
+    
+    def SetValue(self, weight_id , value):
+        Ct, Cv, Cp = self.GetCValues(weight_id)
+        if weight_id == -1:
+            weight_id = 50
+            
+        if Cp == -2 :
+            self.ValuesCtCv[( Ct , Cv ) ] = value
+            self.hCtCv.SetBinContent( self.hCtCv.FindBin( Cv, Ct ) , value )
+            self.mCtCv[ weight_id ][ 0 ] = Cv
+            self.mCtCv[ weight_id ][ 1 ] = Ct
+            self.mCtCv[ weight_id ][ 2 ] = value
+        elif Cp > -2 :
+            self.ValuesCp[ Cp ] = value
+            self.hCp.SetBinContent( self.hCp.FindBin( Cp +0.001)  , value )
+        else :
+            print weight_id, "is not set"
+            
+    def FillFrom1DHisto(self, fname, hname ):
+        file_ = TFile.Open(fname)
+        gROOT.cd()
+        self.Histo = file_.Get(hname).Clone("hAll_%s" % self.Name)
+        file_.Close()
+
+        nTotal_Orig = self.Histo.GetBinContent( 2 )
+        Bin = 2
+        self.SetValue( -1 , nTotal_Orig )
+
+
+        for b in range(3 , self.Histo.GetNbinsX()+1 ):
+            self.SetValue( b-3 , self.Histo.GetBinContent( b ) ) #/nTotal_Orig 
+        
+
+    def Make2dMomentMorphFunction(self):
+        #print self.Name, self.ValuesCtCv
+        
+        bin = 51
+        for cv in [0 , 2 ]:
+            near_cv = 0.5 if cv==0 else 1.5
+            for ct in self.KvKfs[.5] :
+                self.mCtCv[ bin ][0] = cv
+                self.mCtCv[ bin ][1] = ct
+                self.mCtCv[ bin ][2] = self.ValuesCtCv[ (ct , near_cv ) ]
+                bin += 1
+        for ct in [-4 , 4]:
+            near_ct = -3. if ct == -4 else 3.
+            for cv in [0.5,1.,1.5]:
+                self.mCtCv[bin][0] = cv
+                self.mCtCv[bin][1] = ct
+                self.mCtCv[bin][2] = self.ValuesCtCv[ (near_ct , cv ) ]
+                bin += 1
+            for cv in [0,2]:
+                near_cv = 0.5 if cv==0 else 1.5
+                self.mCtCv[bin][0] = cv
+                self.mCtCv[bin][1] = ct
+                self.mCtCv[bin][2] = self.ValuesCtCv[ (near_ct , near_cv ) ]
+                bin += 1
+
+        self.FuncCtCv = Roo2DMomentMorphFunction( "FuncCtCv_%s" % (self.Name) , "FuncCtCv" , self.CvVar , self.CtVar , self.mCtCv )
+        self.FuncCtCv.setMode( Roo2DMomentMorphFunction.Linear ) #LinearPosFractions
+
+        return self.FuncCtCv
+
+    def Validate1(self):
+        self.FuncCtCv.Summary()
+        self.hCtCv2 = TH2D( "hCtCvTemp" , "hCtCvTemp" , 3 , 0.5 , 2.0 , len(self.CtBins)-1 , self.CtBins )
+        self.Comp = {}
+        for CvValue in self.Kvs :
+            self.CvVar.setVal( CvValue )
+            kfs = self.KvKfs[CvValue]
+            if CvValue == 1.0:
+                kfs.append( -1 )
+            for CtValue in kfs:
+                self.CtVar.setVal( CtValue )
+
+                val =  self.FuncCtCv.getVal(RooArgSet(self.CvVar , self.CtVar) ) #self.ValuesCtCv[ (CtValue , CvValue) ]
+                self.hCtCv2.Fill( CvValue , CtValue , val )
+                self.Comp[ (CtValue , CvValue) ] = val #(self.ValuesCtCv[ (CtValue , CvValue) ]-val)/val
+                print CtValue, CvValue, val, self.ValuesCtCv[ (CtValue , CvValue) ]
+
+        self.hCom = self.hCtCv2.Clone("hCompare")
+        self.hCom.Add( self.hCtCv , -1 )
+        self.hCom.Divide( self.hCtCv )
+            
+    def Write(self, ws ):
+        if not hasattr( self, FuncCtCv ):
+            self.Make2dMomentMorphFunction()
+        getattr( ws , "import")( self.FuncCtCv , RooFit.RecycleConflictNodes() )
+        
+
+class Variable2D:
+    def GetCanvas( self ):
+        return self.Central.GetCanvas()
+
+    def Draw(self):
+        return self.Central.GetCanvas()
+    
+    def __init__(self, name   ,title = None):
+        self.Name = name
+        self.Central = CtCvCpInfo( self.Name + "_Central")
+        self.Stat = CtCvCpInfo( self.Name + "_StatUncert")
+        self.Systs = {}
+        self.Title = title if title else name
+
+    def SetValue(self, weight_id, value , stat):
+        self.Central.SetValue( weight_id , value )
+        self.Stat.SetValue( weight_id , stat )
+
+    def SetSyst(self , systname , nuisancename , valueup, valuedown ):    
+        central = self.Central.GetValue( -1 )
+        up = abs(valueup-central)/central
+        down = abs(valuedown-central)/central
+        Max = max(up , down )
+        if Max > 0.01 :
+            self.Systs[systname] = {}
+            self.Systs[systname]["value"] = CtCvCpInfo( self.Name + "_value_" + systname)
+            self.Systs[systname]["nuisancename"] = nuisancename
+            for weight_id in range(-1 , 50):
+                self.Systs[systname]["value"].SetValue( weight_id , Max )
+    
+    def Write(self, ws):
+        self.Central.Write(ws)
+        self.Stat.Write(ws)
+        for syst in self.Systs:
+            self.Systs[syst]["value"].Write(ws)
+
+    def MakeVariable(self,finalname = None , lowerlimit = -99999.):
+        formulaText = "(@0)*(1"
+        varindex = 1
+        self.ListOfVars = RooArgList(self.Central.Make2dMomentMorphFunction())
+        for syst in self.Systs :
+            if self.Systs[syst]["nuisancename"] :
+                self.Systs[syst]["nuisance"] = RooRealVar( self.Systs[syst]["nuisancename"] , self.Title , 0 , -1 , 1 )
+            else:
+                self.Systs[syst]["nuisance"] = RooRealVar( "nuisance_" + self.Name + "_" + syst , self.Title , 0 , -1 , 1 )
+            
+            self.ListOfVars.add( self.Systs[syst]["nuisance"] )
+            self.ListOfVars.add( self.Systs[syst]["value"].Make2dMomentMorphFunction() )
+            formulaText += "+@%d@%d"%(varindex , varindex+1)
+            varindex += 2
+            if not self.Systs[syst]["nuisance"].GetName() in AllSystParams :
+                AllSystParams.append(self.Systs[syst]["nuisance"].GetName())
+        formulaText += ")"
+
+        name = finalname if finalname else "formula_" + self.Name
+        self.Formula = RooFormulaVar( name , self.Title , formulaText , self.ListOfVars )
+        return self.Formula
+
+
+        
+    
 class Uncertainty:
     def __init__(self, name , valueUp , central ,  valueDown , Type , nuisancename = None , title = None):
         self.Name = name
@@ -305,6 +549,8 @@ class SignalModel:
         self.RV = self.RV_.SumOfGaussians
             
     def fitTo( self, DS , DSRV , DSWV , RVFraction , DSName , Print = False , verbose = -1 , doFit = True ):
+        self.DSRV = DSRV
+        self.DSWV = DSWV
         self.DS = DS
         self.DSName = DSName
         if self.NWV == 0 :
@@ -321,7 +567,7 @@ class SignalModel:
             self.WV = self.WV_.SumOfGaussians
 
             
-            rvfracnames = self.RV_MakeName("RVFrac")
+            rvfracnames = self.RV_.MakeName("RVFrac")
             self.Coeff = self.RV_.GetParam( rvfracnames , RVFraction , 0.8*RVFraction , 1.0)
             self.Signal = RooAddPdf( "SignalModel_" + self.Name , "SignalModel " + self.Name , self.RV, self.WV, self.Coeff )
 
@@ -332,13 +578,15 @@ class SignalModel:
 
         if doFit :
             if self.NWV == 0 :
+                DS.Print()
                 self.Res = self.Signal.fitTo( DS , RooFit.Minimizer("Minuit","minimize"),RooFit.SumW2Error(True),RooFit.Save(True) ,RooFit.PrintLevel(verbose) )
+                print self.Res
             else :
                 self.ResRV = self.RV.fitTo( DSRV , RooFit.Minimizer("Minuit","minimize"),RooFit.SumW2Error(True),RooFit.Save(True), RooFit.PrintLevel(verbose) )
                 self.ResWV = self.WV.fitTo( DSWV , RooFit.Minimizer("Minuit","minimize"),RooFit.SumW2Error(True),RooFit.Save(True), RooFit.PrintLevel(verbose) )
 
-                self.Res = self.Signal.fitTo( DS , RooFit.Minimizer("Minuit","minimize"),RooFit.SumW2Error(True),RooFit.Save(True), RooFit.PrintLevel(verbose) )
-            self.NLL = self.Res.minNll()
+                # self.Res = self.Signal.fitTo( DS , RooFit.Minimizer("Minuit","minimize"),RooFit.SumW2Error(True),RooFit.Save(True), RooFit.PrintLevel(verbose) )
+            #self.NLL = self.Res.minNll()
 
         if Print:
             for param_ in self.FitParams:
@@ -348,6 +596,22 @@ class SignalModel:
                 print "========================================================="
                 print ""
 
+    def DrawRvWv( self ):
+        self.PlotRvWv = TCanvas("PlotRvWv")
+        self.PlotRvWv.Divide( 2, 1 )
+
+        self.PlotRvWv.cd(1)
+        self.FrameRv = self.Mass.frame( RooFit.Title(self.DSName + ", RV" ) , RooFit.Name(self.DSName + "_RV") , RooFit.Bins(50) )
+        self.DSRV.plotOn( self.FrameRv , RooFit.Name(self.DSName + ", RV") )
+        self.RV.plotOn( self.FrameRv , RooFit.LineColor( self.Color ) , RooFit.Name(self.DSName + ", RV Fitted")  )
+        self.FrameRv.Draw()
+        
+        self.PlotRvWv.cd(2)
+        self.FrameWv = self.Mass.frame( RooFit.Title(self.DSName + ", WV" ) , RooFit.Name(self.DSName + "_WV") , RooFit.Bins(50) )
+        self.DSWV.plotOn( self.FrameWv , RooFit.Name(self.DSName + ", WV") )
+        self.WV.plotOn( self.FrameWv , RooFit.LineColor( self.Color ) , RooFit.Name(self.DSName + ", WV Fitted")  )
+        self.FrameWv.Draw()
+        
     def Draw( self, plot = None  ):
         oldLL = 0.
         if plot == None :
@@ -385,28 +649,107 @@ class SignalModel:
 class Dataset :
     def Write(self, ws , dir_):
         self.FinalSignal.Write( ws )
-        getattr(ws , "import")( self.Norm.MakeSimpleVariable( self.FinalSignal.Signal.GetName() + "_norm" , 0.5  ) , RooFit.RecycleConflictNodes() )
+        if self.CTCVRW :
+            getattr(ws , "import")( self.CTCVRWParams["norm"].MakeVariable( self.FinalSignal.Signal.GetName() + "_norm" , 0.5  ) , RooFit.RecycleConflictNodes() )
+        elif self.DOSysts :
+            self.NormHggBRFormulaList = RooArgList( self.Norm.MakeSimpleVariable( self.FinalSignal.Signal.GetName() + "_norm_base" , 0.5  ) , self.KappaFW.BRGammaGamma )
+            self.NormHggBRFormula = RooFormulaVar( self.FinalSignal.Signal.GetName() + "_norm" , self.Name + " Norm formula" , "@0*@1" , self.NormHggBRFormulaList )
+            getattr(ws , "import")( self.NormHggBRFormula , RooFit.RecycleConflictNodes() )
         dir_.mkdir( self.Name ).cd()
         for c in self.Canvases:
             c.Write()
         dir_.cd()
+
+    def AddCtCvCpDS(self, index ):
+        mass = RooRealVar("CMS_hgg_mass" , "CMS_hgg_mass" , 0 , 0 , 1000 )
+        dZ = RooRealVar("dZ" , "dZ" , 0 , -1000 , 1000 )
+
+        Ct, Cv, Cp = self.SumOfWeights.GetCValues(index)
+        if index == -1:
+            index = 50
+        xsecBr_factor = self.KappaFW.GetXSecBR( self.Name , Ct, Cv )
+        totalN_factor = self.TotalRatios.ValuesCtCv[ ( -1 , 1 ) ]/self.TotalRatios.ValuesCtCv[ ( Ct , Cv ) ]
         
-    def __init__(self, ds, name , ws , DOSysts):
+        newWeight = RooRealVar("neww"+str(index),"neww", 1.0 , -10 , 10 ) #"@0*@1", RooArgList(weight , var ) ) ;
+        varsToKeep = RooArgSet( mass , dZ ,  newWeight )
+        self.CTCVDS[ index ] = {"ds":RooDataSet( self.DS.GetName() + "_" + str(index) , self.DS.GetName() + "_" + str(index) , varsToKeep ,  newWeight.GetName() ),
+                                "CtCvCp":(Ct,Cv,Cp) }
+
+        for jj in range(0 , self.DS.numEntries()):
+            vals = self.DS.get( jj )
+            weight = self.DS.weight()
+            
+            w_ctcv = 1 if index == 50 else vals["ctcv_%d"%(index)].getValV()
+            
+            neww = w_ctcv*weight*xsecBr_factor*totalN_factor*LUMI
+            newWeight.setVal( neww )
+            vals.add( newWeight )
+            self.CTCVDS[ index ]["ds"].add( vals , neww )
+
+        return self.KappaFW.GetXSecBR( self.Name , Ct, Cv , False )*LUMI*1000.0
+
+    def Print(self):
+        print self.Name, self.DSRV.numEntries()+ self.DSWV.numEntries() , self.RVFraction, self.DSRV.sumEntries() , self.DSRV.numEntries() , self.DSWV.sumEntries() , self.DSWV.numEntries() 
+    
+    def __init__(self, ds, name , ws , whatToDo , TotalRatios = None): #whatToDo 0:nothing, 1:syst , 2:ct_cv
         self.Name = name
         self.DS = ds
         self.WS = ws
-        
+
         self.DSWV = self.DS.reduce( RooFit.Cut("dZ > 1.0") )
         self.DSRV = self.DS.reduce( RooFit.Cut("dZ < 1.0") )
         dsrv = self.DSRV.sumEntries()
         dswv = self.DSWV.sumEntries()
         self.RVFraction = dsrv / (dsrv + dswv )
         #self.DS.Print()
+        self.KappaFW = KappaFramework()
 
-        self.DOSysts = DOSysts
-        if DOSysts:
-            self.SystDS = {}
-            format_=r'^'+self.DS.GetName() + "_(.*)(Up|Down)(.*)"
+        self.DOSysts = (whatToDo == 1 or whatToDo == 3)
+        self.CTCVRW = (whatToDo == 2 or whatToDo == 3)
+        print whatToDo, self.DOSysts, self.CTCVRW
+        self.CTCVDS = {}
+        if self.CTCVRW :
+            self.TotalRatios = TotalRatios
+
+            format_=r'^ctcv_'  "(\d*)"
+            allvars = ws.allVars()
+            iter_ = allvars.iterator()
+            var = iter_.Next()
+
+            self.SumOfWeights = CtCvCpInfo("SumOfWeights_" + self.Name)
+            self.TotalLumiWeighted = CtCvCpInfo("TotalLumiWeighted_" + self.Name)
+            self.EfficiencyCtCv = CtCvCpInfo("Efficiency_" + self.Name )
+            
+            for i in range(0 , ws.allVars().getSize() ):
+                matchObj= re.match( format_ ,  var.GetName() , re.M|re.I)
+                if matchObj and len( matchObj.groups() ) == 1 and matchObj.groups()[0].isdigit() :
+                    index = int( matchObj.groups()[0] )
+
+                    total_lumiw = self.AddCtCvCpDS( index )
+                    self.TotalLumiWeighted.SetValue( index , total_lumiw )
+                    
+                    #self.CTCVDS[ index ]["ds"].Print()
+                    #print var.GetName(), index, self.CTCVDS[index]["CtCvCp"] , matchObj.groups()[0], self.CTCVDS[ index ]["ds"].sumEntries()
+                    passed_weighted = self.CTCVDS[ index ]["ds"].sumEntries() 
+                    self.SumOfWeights.SetValue( index , passed_weighted )
+                    self.EfficiencyCtCv.SetValue( index ,100.* passed_weighted/total_lumiw )
+                    
+                var = iter_.Next()
+
+
+            total_lumiw = self.AddCtCvCpDS(-1)
+            self.TotalLumiWeighted.SetValue( -1 , total_lumiw)
+            self.DS = self.CTCVDS[50]["ds"] #self.DS.reduce( RooFit.SelectVars( selectedvarstokeep ) )
+            passed_weighted = self.DS.sumEntries() 
+            self.SumOfWeights.SetValue( -1 , passed_weighted)
+            self.EfficiencyCtCv.SetValue( -1 , 100.*passed_weighted/total_lumiw )
+            #self.DS.Print()
+
+
+        
+        self.SystDS = {}
+        if self.DOSysts:
+            format_=r'^'+ ds.GetName() + "_(.*)(Up|Down)(.*)"
             for ds_ in ws.allData():
                 matchObj = re.match(format_ , ds_.GetName() , re.M|re.I)
                 if matchObj:
@@ -428,7 +771,12 @@ class Dataset :
             for syst in self.SystDS :
                 for variation in {"Up", "Down"}:
                     self.SystDS[syst][variation]["signal"].Draw( self.Plot ) # , RooFit.LineColor( kBlack ) , RooFit.Name( syst + variation ) )
-        
+
+        if self.CTCVRW:
+            for i in self.CTCVDS:
+                self.CTCVDS[i]["signal"].Draw( self.Plot ) # , RooFit.LineColor( kBlack ) , RooFit.Name( syst + variation ) )
+            
+                    
         c = TCanvas( self.Name + "Canvas_All" )
         setattr(self, "Canvas_All" , c )
         c.cd()
@@ -439,73 +787,32 @@ class Dataset :
         self.Legend.SetName("legend_%s" % (self.Name) )
         self.Legend.AddEntry( "Data" , "Simulation" , "l" )
         self.Legend.AddEntry( "Central" , self.Central.GetTitle() , "l" )
+
+        for i in self.CTCVDS:
+            name = "ctcv" + str(i)
+            self.Legend.AddEntry( name , str(i) , "l" )
+            
         for syst in self.SystDS :
             name = "%sUp" % ( syst )
             self.Legend.AddEntry( name , syst , "l" )
+            
         self.Legend.Draw()
 
 
-        if self.DOSysts:
+        if self.DOSysts :
             for param in self.Params :
                 self.Canvases.append( self.Params[param].Draw() )
-            # nPoints = len( self.SystDS )
-            # for param in self.Central.FitParams :
-            #     cname = "Canvas_" + param
-            #     c = TCanvas( cname , cname )
-            #     self.Canvases.append( c )
-            #     setattr( self , cname , c )
-
-            #     gname = "GraphSyst_" + param
-            #     gSystem = TGraphErrors( nPoints )
-            #     gSystem.SetName( gname )
-            #     gSystem.SetTitle( param )
-            #     setattr( self , gname , gSystem )
-
-            #     gname = "GraphCentral_" + param
-            #     gCentral = TGraphErrors( nPoints )
-            #     gCentral.SetName( gname )
-            #     gCentral.SetTitle( param )
-            #     setattr( self , gname , gCentral )
-
-            #     centralval = self.Central.FitParams[param].getVal()
-            #     #centralErr = self.Central.FitParams[param].getAsymErrorHi()
-            #     centralErr = self.Central.FitParams[param].getError()
-            #     counter = 0
-            #     labels = []
-            #     for syst in self.SystDS :
-            #         systUp = self.SystDS[syst]["Up"]["signal"].FitParams[param].getVal()
-            #         systLo = self.SystDS[syst]["Down"]["signal"].FitParams[param].getVal()
-            #         mean = (systUp+systLo)/2.0
-            #         err = abs( systUp - systLo ) /2.0
-            #         gSystem.SetPoint( counter , counter , mean )
-            #         gSystem.SetPointError( counter , 0.5 , err )
-
-            #         gCentral.SetPoint( counter , counter , centralval )
-            #         gCentral.SetPointError( counter , 0.5 , centralErr )
-            #         labels.append( syst )
-            #         counter += 1
-
-            #     c.cd()
-            #     gCentral.SetFillColor( kGreen )
-            #     gCentral.SetFillStyle( 3005 )
-            #     gCentral.Draw("A3*")
-            #     xax = gCentral.GetHistogram().GetXaxis()
-            #     minXax = xax.GetBinLowEdge(1)
-            #     maxXax = xax.GetBinUpEdge( xax.GetNbins() )
-            #     xax.Set( len(labels) , minXax , maxXax )
-            #     i = 1
-            #     for lbl in labels:
-            #         xax.SetBinLabel(i, lbl)
-            #         i+=1
-
-            #     gSystem.SetLineWidth( 2 )
-            #     gSystem.Draw("P")
-
-                
-                
-                    
+        if  self.CTCVRW:
+            for param in self.Params :
+                self.Canvases.append( self.CTCVRWParams[param].GetCanvas() )
+            self.Canvases.append( self.SumOfWeights.GetCanvas() )
+            self.Canvases.append( self.TotalLumiWeighted.GetCanvas() )
+            self.Canvases.append( self.EfficiencyCtCv.GetCanvas() )
+            self.Canvases.append( self.TotalRatios.GetCanvas() )
+            
     def fit(self, rv , wv , mass):
-        normcentral = 35.9*self.DS.sumEntries()
+        normcentral = LUMI*self.DS.sumEntries()
+        print normcentral
         self.Central = SignalModel( rv , wv , self.Name  , mass , kBlack ,  "Central" )
         self.Central.fitTo( self.DS , self.DSRV , self.DSWV, self.RVFraction , "Central" , False , -1 , True )
         self.Central.Signal.Print()
@@ -516,7 +823,39 @@ class Dataset :
         for param in self.Central.FitParams :
             var = self.Central.FitParams[ param ]
             self.Params[ param ] = Variable( param , var.getVal() , var.getError() , [] )
-            
+
+        if self.CTCVRW:
+            color = 1
+            self.CTCVRWParams = {}
+            self.CTCVRWParams["norm"] = Variable2D( "Norm_%s" % (self.Name) ) #CtCvCpInfo
+            self.CTCVRWParams["norm"].SetValue( -1 , normcentral , 0 )
+            for param in self.Central.FitParams :
+                var = self.Central.FitParams[ param ]
+                self.CTCVRWParams[ param  ] = Variable2D( param + "_%s" % (self.Name) ) #CtCvCpInfo
+                self.CTCVRWParams[ param  ].SetValue( -1 , var.getVal() , var.getError() )
+                
+            for i in self.CTCVDS:
+                color += 1
+                ds = self.CTCVDS[i]["ds"]
+                self.CTCVDS[i]["signal"] = SignalModel( rv , wv , self.Name , mass ,  color ,  "ctcv" + str(i) )
+                signal = self.CTCVDS[i]["signal"]
+                signal.fitTo( ds , self.DSRV , self.DSWV , self.RVFraction , "ctcv" + str(i)  , False , -1 , True)
+                #signal.Signal.Print()
+
+                norm = ds.sumEntries()
+                self.Norm.Systs.append( Uncertainty( "norm_ctcv_"+str(i)+"_"+self.Name , norm , norm , norm , 0  ) )
+                
+                self.CTCVRWParams[ "norm" ].SetValue( -1 if i==50 else i , norm , 0 )
+                
+                print self.Name, i, signal
+                
+                for param in signal.FitParams :
+                    var = signal.FitParams[ param ]
+                    val = var.getVal()
+                    self.Params[ param ].Systs.append( Uncertainty( param+"_ctcv_"+str(i) , val , val , val  , 0  ) )
+                    self.CTCVRWParams[ param ].SetValue( -1 if i==50 else i , val , var.getError() )
+                    
+       
         if self.DOSysts:
             color = 1
             for syst in self.SystDS :
@@ -535,23 +874,34 @@ class Dataset :
                         var = self.SystDS[syst][variation]["signal"].FitParams[ param ]
                         if variation == "Up" :
                             up[ param ] = var.getVal()
-                            normup = 35.9*ds.sumEntries()
+                            normup = ds.sumEntries()
                         else :
                             low[ param ] = var.getVal()
-                            normlow = 35.9*ds.sumEntries()
+                            normlow = ds.sumEntries()
 
                 
                 nuisancename = "CMS_hgg_nuisance_%s_13TeV"%(syst)
                 self.Norm.Systs.append( Uncertainty( "norm"+syst+"_"+self.Name , normup , normcentral , normlow , 0 , nuisancename ) )
                 for param_ in up :
-                    param = self.Params[ param_ ]
-                    param.Systs.append( Uncertainty( param_+syst , up[param_] , param.Value , low[param_] , 0 , nuisancename ) )
+                    if self.CTCVRW :
+                        param = self.CTCVRWParams[param_]
+                        param.SetSyst( syst , nuisancename , up[param_] , low[param_] )
+                    else:
+                        param = self.Params[ param_ ]
+                        param.Systs.append( Uncertainty( param_+syst , up[param_] , param.Value , low[param_] , 0 , nuisancename ) )
 
-        self.FinalSignal = SignalModel( rv , wv , self.Name  , mass , kBlack ,  "" , self.Params )
-        self.FinalSignal.fitTo( self.DS , self.DSRV , self.DSWV, self.RVFraction , "Final" , False , -1 , False )
-        self.Params["norm"] = self.Norm
-        return self.FinalSignal.Signal
 
+        if self.CTCVRW :
+            self.FinalSignal = SignalModel( rv , wv , self.Name  , mass , kBlack ,  "" , self.CTCVRWParams )
+            self.FinalSignal.fitTo( self.DS , self.DSRV , self.DSWV, self.RVFraction , "Final" , False , -1 , False )
+            self.Params["norm"] = self.CTCVRWParams["norm"]
+            return self.FinalSignal.Signal
+        else :
+            self.FinalSignal = SignalModel( rv , wv , self.Name  , mass , kBlack ,  "" , self.Params )
+            self.FinalSignal.fitTo( self.DS , self.DSRV , self.DSWV, self.RVFraction , "Final" , False , -1 , False )
+            self.Params["norm"] = self.Norm
+            return self.FinalSignal.Signal
+            
     def makeScaledPDF(self, lumi , uncert = 0.02):
         self.CoeffLumiCoefff = RooRealVar("Lumi"+self.Name , "Lumi"+self.Name , lumi , lumi*(1-uncert) , lumi*(1+uncert) )
 

@@ -3,8 +3,15 @@ from ROOT import TFile, gSystem, TH1D, TCanvas,  kRed, kGreen, kBlack , TMath , 
 import re
 
 
-f = TFile.Open("out.root")
-ws = f.Get("testws")
+f = TFile.Open("~/Downloads/tHq_Georgios/output/24_04_17/signal/WS_THQ.root")
+ws = f.Get("tagsDumper/cms_hgg_13TeV")
+ds = ws.data("thq_125_13TeV_THQLeptonicTag")
+for i in range(0 , ds.numEntries()) :
+    vals = ds.get(i)
+    dz = vals["dZ"]
+    print ds.weight()
+
+exit()
 
 vars = ws.allVars()
 iter = vars.createIterator()
