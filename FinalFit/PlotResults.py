@@ -1,8 +1,12 @@
-from SignalFit import CtCvCpInfo
+from SignalFit import CtCvCpInfo, KappaFramework
 from ROOT import TFile, TTree, TObject
 import os
+import stat
 import math
-from ROOT import RooWorkspace, TCanvas , RooFit, TColor, kBlue, kRed, kGreen, gROOT,  TObjArray, TList, TGraph, Double, gPad
+from ROOT import RooWorkspace, TCanvas , RooFit, TColor, kBlue, kRed, kGreen, gROOT,  TObjArray, TList, TGraph, Double, gPad, RooWorkspace
+import array
+
+kappa = KappaFramework()
 
 def PlotDS():
     CtCvCpIndex = CtCvCpInfo("temp")
@@ -106,35 +110,88 @@ class vGraph:
             self.g[i].Draw("P")
             
 vg = None
-def PlotLimits():
-    DIR = "./datacards/13May/ct%gcv%g/higgsCombineTest.Asymptotic.mH125.5.cv%g.ct%g.root"
-    out = CtCvCpInfo("Results")
+wrongFiles = {}
+limits = {}
+def PlotLimits(Bin, color , style , canvas = None , dx = 0):
+    DIR = "./datacards/15June/ct%gcv%g/higgsCombine" + Bin + ".Asymptotic.mH125.5.root"
+    INPUT_FILE = "./datacards/15June/ct%gcv%g/input.root"
+    out = CtCvCpInfo("ResultsMedian%s" % Bin)
+    out1sigmaP = CtCvCpInfo("Results1sigmaP%s" % Bin)
+    out1sigmaM = CtCvCpInfo("Results1sigmaM%s" % Bin)
 
-    for index in range( -1, 50):
+    for index in range( -1 , 50):
         ct,cv,cp = out.GetCValues( index )
-        path = DIR % (ct, cv , cv, ct )
+        #if not ct/cv == -1 :
+        #    continue
+        CT = ct #0 if ct == 0 else -ct
+        input_file = TFile.Open( INPUT_FILE%( CT , cv) )
+        wsPreselection = input_file.Get("WSTHQLeptonicTag")
+        xsec2 = 1*(kappa.GetXSecBR( "thq" , ct, cv , False )+0.5071*kappa.GetXSecBR( "tth" , ct, cv , False )+kappa.GetXSecBR( "thw" , ct, cv , False ))
+
+        kappa.SetCtCv( ct , cv )
+        xsec = (wsPreselection.var("RVvh_mh125_norm").getVal() + wsPreselection.var("RVthq_mh125_norm").getVal() + wsPreselection.var("RVtth_mh125_norm").getVal() + wsPreselection.var("RVthw_mh125_norm").getVal()) / (xsec2*35900 )
+        input_file.Close()
+        path = DIR % (CT, cv)
         if os.path.exists( path ) :
             f = TFile.Open( path )
             limit = f.Get("limit")
             val = -100
+            val1sigmap = -100
+            val1sigmam = -100
             if not type(limit) == TTree :
                 val = -200
+                val1sigmap = -200
+                val1sigmam = -200
             else :
                 for i in limit :
                     if i.quantileExpected == 0.5 :
                         val = i.limit
+                    elif i.quantileExpected == 0.16 :
+                        val1sigmam = i.limit
+                    elif i.quantileExpected == 0.84 :
+                        val1sigmap = i.limit
             f.Close()
         else:
             val = -300
+            val1sigmap = -300
+            val1sigmam = -300
 
+        if val < 0 :
+            if (ct , cv) in wrongFiles :
+                wrongFiles[ (ct,cv) ].append( Bin )
+            else :
+                wrongFiles[ (ct,cv) ]=[Bin]
+        else :
+            if (ct , cv) in limits :
+                limits[ (ct,cv) ][ Bin ] = val
+            else :
+                limits[ (ct,cv) ]= { Bin: val}
+            
+        if val <= 0 :
+            continue
+        
         print cv,ct, path, val
-        out.SetValue( index , val )
+        out.SetValue( index , val*xsec )
+        out1sigmaM.SetValue( index , val1sigmam*xsec )
+        out1sigmaP.SetValue( index , val1sigmap*xsec )
 
-    canvas = TCanvas()
-    #out.hCtCv.SetContour(1)
-    #out.hCtCv.SetContourLevel(0, 1)
-    out.hCtCv.Draw("COLZ TEXT")
-    return canvas, out.hCtCv
+    options = "P SAME"
+    if canvas == None :
+        canvas = TCanvas()
+        options = "AP"
+    #canvas.Divide(2,1)
+    #canvas.cd(1)
+    out.GetCtOverCv(color , style , dx=dx).Draw(options)
+    #canvas.cd(2)
+    #out.hCtCv.Draw("COLZ text")
+    canvas.Update()
+
+    return canvas, out.CtOverCvGraph, out.hCtCv
+
+    arr = array.array('d' , [1,2,3] )
+    out.hCtCv.SetContour(3 , arr)
+    out.hCtCv.SetContourLevel(0,1)
+
     out.hCtCv.Draw("CONT Z LIST")
     canvas.Update()
     gPad.Update()
@@ -143,10 +200,14 @@ def PlotLimits():
     TotalConts = 0
     if conts:
         TotalConts = conts.GetSize()
+    else :
+        print "contours is not set"
+        
     vg = vGraph( out.hCtCv )
     print TotalConts
     for i in range( 0 ,  TotalConts ) :
         contLevel = conts.At(i)
+        print contLevel.GetSize()
         for j in range(0 , contLevel.GetSize() ) :
             curv = contLevel.At(j)
             np = curv.GetN()
@@ -155,10 +216,10 @@ def PlotLimits():
             y0 = Double()
             for k in range(0,  np):
                 curv.GetPoint(k, x0, y0)
-                vg.AddPoint( j , k, x0 , y0 )
-            # vg.g[j]->SetLineColor(h->GetLineColor());
-            # vg.g[j]->SetLineStyle(h->GetLineStyle());
-            # vg.g[j]->SetLineWidth(h->GetLineWidth());
+                vg.AddPoint( -1 , k, x0 , y0 )
+            vg.g[-1].SetLineColor(out.hCtCv.GetLineColor())
+            vg.g[-1].SetLineStyle(out.hCtCv.GetLineStyle())
+            vg.g[-1].SetLineWidth(out.hCtCv.GetLineWidth())
     vg.draw( out.hCtCv )
     print vg.h
     return vg, canvas
@@ -194,4 +255,75 @@ def PlotHiggsBkgs():
     canvas = TCanvas()
     out.hCtCv.Draw("COLZ TEXT")
     return canvas, out.hCtCv
-a,b = PlotHiggsBkgs()
+#a,b = PlotHiggsBkgs()
+
+bins = {"Preselection":(2, 23 , 0) ,
+        "THQLeptonicTHQTag":(3, 22 , 0.005 ) , 
+        "THQLeptonic":(3 , 21 , 0.01) ,
+        "MVATHQ":(9,47 , 0.015) , 
+        "MVA":(9,46 , 0.02) ,
+        "EtaNJetTHQTag":( 8 , 29 , 0.025 ) , 
+        "EtaNJet":( 8 , 30 , 0.03) ,
+        "EtaNbJetTHQTag":( 46, 25 , 0.035 ) , 
+        "EtaNbJet":( 46 , 21 , 0.04) ,
+        "NJetNbJetTHQTag":( 30 , 2 , 0.045 ) , 
+        "NJetNbJet":( 30 , 5 , 0.05 ) }
+canvas = None
+graphs = []
+for bin in bins :
+    canvas, b, c = PlotLimits( bin , bins[bin][0] , bins[bin][1] , canvas , bins[bin][2] )
+    graphs.append( b )
+    graphs.append( c )
+
+
+class BinDatacard:
+    def __init__(self, binName):
+        self.BinName = binName
+
+def ProduceSubmitFileForMissingJobs ():        
+    Preselection = BinDatacard( "THQLeptonicTag" )
+    AllBins = {}
+    AllBins["THQLeptonic"] = {"THQ":BinDatacard( "THQLeptonicTHQTag" ) ,
+                              "TTH":BinDatacard( "THQLeptonicTTHTag" ) }
+    AllBins["MVA"] = { "THQ":BinDatacard("MVATHQ"),
+                       "TTH":BinDatacard("MVATTH") }
+    AllBins["EtaNJet"] = {"THQ":BinDatacard("EtaNJetTHQTag"),
+                          "TTH":BinDatacard("EtaNJetTTHTag") }
+    AllBins["EtaNbJet"] = {"THQ":BinDatacard("EtaNbJetTHQTag"),
+                           "TTH":BinDatacard("EtaNbJetTTHTag") }
+    AllBins["NJetNbJet"] = {"THQ":BinDatacard("NJetNbJetTHQTag"),
+                            "TTH":BinDatacard("NJetNbJetTTHTag") }
+    
+    submitLx = open( "./datacards/15June/submit2.sh" , "w")
+    for kf,kv in wrongFiles :
+        dirname = "./datacards/15June/ct%gcv%g" % (kf, kv)
+        
+        fRun = open( dirname + "/run2.sh" , "w" )
+        fRun.write("cd /afs/cern.ch/user/h/hbakhshi/work/tHq/CMSSW_7_4_7/src/FinalFit\n")
+        fRun.write("eval `scramv1 runtime -sh`\n")
+        fRun.write("cd %s\n" % (dirname) )
+
+        if "Preselection" in wrongFiles[(kf,kv)]:
+            fRun.write("text2workspace.py Bin%s.txt\n" % (Preselection.BinName))
+            fRun.write("combine -n Preselection  -M  Asymptotic Bin%s.root --run=blind -m 125.5 --ct=%g --cv=%g\n" % (Preselection.BinName, kf,kv) )
+
+        for Bin in AllBins:
+            fRun.write("text2workspace.py Bin%s.txt\n" % (AllBins[Bin]["THQ"].BinName) )
+            if AllBins[Bin]["THQ"].BinName in wrongFiles[(kf,kv)]:
+                fRun.write("combine -n %s  -M  Asymptotic Bin%s.root --run=blind -m 125.5 --ct=%g --cv=%g\n" % (AllBins[Bin]["THQ"].BinName,AllBins[Bin]["THQ"].BinName,kf,kv) )
+            
+            fRun.write("combineCards.py Bin%s.txt Bin%s.txt > Combined%s.txt\n" % (AllBins[Bin]["THQ"].BinName, AllBins[Bin]["TTH"].BinName, Bin) )
+            fRun.write("text2workspace.py Combined%s.txt\n" % (Bin) )
+            if Bin in wrongFiles[(kf,kv)]:
+                fRun.write("combine -n %s -M Asymptotic Combined%s.root --run=blind -m 125.5 --ct=%g --cv=%g\n" % (Bin , Bin , kf,kv) )
+
+        fRun.close()
+        st = os.stat(dirname + "/run2.sh")
+        os.chmod(dirname + "/run2.sh", st.st_mode | stat.S_IEXEC)
+
+        submitLx.write( "cd %s\n" % ("ct%gcv%g" % (kf, kv)) )
+        submitLx.write( "bsub -J %s -o out -q 1nd run2.sh\n" % "ct%gcv%g" % (kf, kv) )
+        submitLx.write( "cd ..\n" )
+    
+        submitLx.close()
+

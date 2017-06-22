@@ -8,57 +8,39 @@ gROOT.SetBatch(True)
 gSystem.Load("~/Desktop/tHq/HiggsAnalysis/CombinedLimit/lib/libHiggsAnalysisCombinedLimit.so")
 
 import sys
-# file = TFile.Open("outdir_THQAllMergedWVPre/CMS-HGG_sigfit_THQAllMergedWVPre.root")
-# ws = file.Get("wsig_13TeV")
-# dsMrg = ws.data("sig_mrg_mass_m125_THQLeptonicTag")
-# dsGgh = ws.data("sig_gghpre_mass_m125_THQLeptonicTag")
-# dsToLoop = Dataset( dsMrg , "Merged")
-# MH = ws.var("MH")
-# rvFrac = ws.function("hggpdfsmrel_13TeV_mrg_THQLeptonicTag_rvFrac")
-# rvFrac.Print()
-# MH.Print()
-# MH.setVal(125.0)
-# MH.Print()
 
+MakeFinalModel = False
 DOFTest=False
-DOSysts=3
-
 #WSDIR = "/home/hbakhshi/Downloads/tHq_Georgios/output/03_17_17/signals"
-#WSFiles = {"thq":"WS_THQ_HToGG_13TeV-madgraph-pythia8_TuneCUETP8M1.root" ,"tth":"WS_ttHToGG_M125_13TeV_powheg_pythia8_v2.root" ,  "thw":"WS_THW_HToGG_13TeV-madgraph-pythia8_TuneCUETP8M1.root" }
 WSDIR = "/home/hbakhshi/Downloads/tHq_Georgios/output/24_04_17/signal"
 WSName = "tagsDumper/cms_hgg_13TeV"
 DSName = "%s_125_13TeV_THQLeptonicTag"
 WSFiles = {}
-#if sys.argv[1] == "thq":
-WSFiles["thq"] ="WS_THQ.root"
-DOSysts = 0
-# elif sys.argv[1] == "thw":
-# WSFiles["thw"] = "WS_THW.root"
-# DOSysts = 3
-# DOSysts = 1
-# elif sys.argv[1] == "tth":
-# WSFiles["tth"] = "WS_TTH.root"
-#     DOSysts = 1
-# elif sys.argv[1] == "vbf":
-# WSFiles["vbf"] = "WS_VBF.root"
-#     DOSysts = 1
-# elif sys.argv[1] == "ggh":
-# WSFiles["ggh"] = "WS_GGH.root"
-#     DOSysts = 1
-# elif sys.argv[1] == "vh":
-# WSFiles["vh"] = "WS_VH.root"
-#     DOSysts = 1
+if sys.argv[1] == "thq":
+    WSFiles["thq"] ="WS_THQ.root"
+    DOSysts = 3
+elif sys.argv[1] == "thw":
+    WSFiles["thw"] = "WS_THW.root"
+    DOSysts = 0
+elif sys.argv[1] == "tth":
+    WSFiles["tth"] = "WS_TTH.root"
+    DOSysts = 1
+elif sys.argv[1] == "vbf":
+    WSFiles["vbf"] = "WS_VBF.root"
+    DOSysts = 1
+elif sys.argv[1] == "ggh":
+    WSFiles["ggh"] = "WS_GGH.root"
+    DOSysts = 1
+elif sys.argv[1] == "vh":
+    WSFiles["vh"] = "WS_VH.root"
+    DOSysts = 1
     
-#"ggh":"WS_GluGluHToGG_M125_13TeV_amcatnloFXFX_pythia8.root" ,  "vbf":"WS_VBFHToGG_M-125_13TeV_powheg_pythia8.root"}
 Datasets = {}
 for wsf in WSFiles:
     f = TFile.Open( "%s/%s" % (WSDIR , WSFiles[wsf] ) )
     #f.ls()
     ws_= f.Get( WSName )
-    #ws_.Print()
-    #print DSName % (wsf )
     ds_ = ws_.data( DSName % (wsf ) )
-    #ds_.Print()
 
     TotalRatios = None
     if DOSysts > 1 :
@@ -67,27 +49,28 @@ for wsf in WSFiles:
         
     dss_ = Dataset( ds_ , wsf , ws_ , DOSysts , TotalRatios)
     print dss_.Print()
+    dss_.DS.Print()
     Datasets[ wsf ] = [ dss_ , ds_, ws_ , f , 0 ]
 
 
-mass_ = Datasets["thq"][2].var("CMS_hgg_mass")
-mass_.setRange( 115 , 135 )
+# gROOT.SetBatch(False)
+# print Datasets["thq"][0].EfficiencyCtCv.AllCtOverCVs
+# g = Datasets["thq"][0].EfficiencyCtCv.GetCtOverCv()
+# c = Datasets["thq"][0].EfficiencyCtCv.GetCanvas()
+# a = Datasets["thq"][0].EfficiencyCtCv.CtOverCvHisto
+# #b = RooDataHist("test" , "test" , Datasets["thq"][0].EfficiencyCtCv.ArgListCtOverCv , RooFit.Import(a) )
+# exit()
 
-Datasets["thq"][0].fit( 3, 3 , mass_ )
-gROOT.SetBatch(False)
-Datasets["thq"][0].Central.DrawRvWv()
-exit()
+# fout = TFile.Open("out.root", "recreate")
+# ws = RooWorkspace("ws")
 
-fout = TFile.Open("out.root", "recreate")
-ws = RooWorkspace("ws")
+# for ds in Datasets:
+#     for ds_ in Datasets[ds][0].CTCVDS :
+#         getattr( ws , "import")( Datasets[ds][0].CTCVDS[ds_]["ds"] , RooFit.RecycleConflictNodes() )
 
-for ds in Datasets:
-    for ds_ in Datasets[ds][0].CTCVDS :
-        getattr( ws , "import")( Datasets[ds][0].CTCVDS[ds_]["ds"] , RooFit.RecycleConflictNodes() )
-
-ws.Write()
-fout.Close()
-exit()
+# ws.Write()
+# fout.Close()
+# exit()
 
 if DOFTest:
     allPlots = []
@@ -111,64 +94,47 @@ for ds in Datasets:
     if ds == "tth" or ds == "vbf" or ds == "ggh" or ds == "vh":
         order = 3
     elif ds == "thw" :
-        order = 3
+        order = 2
     elif ds == "thq" :
         order = 3
 
     Datasets[ds][-1] = order
 
-if DOSysts > 1 :
-    fout = TFile.Open("out_ctcv_%s_syst.root" % (sys.argv[1]) , "recreate")
-    ws = RooWorkspace("ctcv")
-    for ds in Datasets:
-        mass_ = Datasets[ds][2].var("CMS_hgg_mass")
-        mass_.setRange( 115 , 135 )
+signal = None
+allHiggs = []
+fOutName = "out_ctcv_%s_syst.root" % (sys.argv[1]) if DOSysts > 1 else "out_%s_syst.root" % (sys.argv[1])
+wsName = "ctcv" if DOSysts > 1 else "cms_hgg_13TeV"
+
+fout = TFile.Open(fOutName , "recreate")
+ws = RooWorkspace(wsName)
+for ds in Datasets:
+    mass_ = Datasets[ds][2].var("CMS_hgg_mass")
+    mass_.setRange( 115 , 135 )
         
-        dsToLoop = Datasets[ds][0]
-        order = Datasets[ds][-1]
-        print ds, order
-
-        dsToLoop.fit( order , 0 , mass_ )
-        dsToLoop.Plot( mass_ )
-
-        dsToLoop.Write( ws , fout )
-
-    fout.cd()
-    ws.Write()
-    fout.Close()
+    dsToLoop = Datasets[ds][0]
+    order = Datasets[ds][-1]
+    print ds, order
     
-if DOSysts == 1:
-    signal = None
-    allHiggs = []
+    if ds == "thq" :
+        signal = dsToLoop
+    else:
+        allHiggs.append( dsToLoop )
 
-    fout = TFile.Open("out_%s_syst.root" % (sys.argv[1]) , "recreate")
-    ws = RooWorkspace("cms_hgg_13tev")
     
-    for ds in Datasets:
-        mass_ = Datasets[ds][2].var("CMS_hgg_mass")
-        mass_.setRange( 115 , 135 )
-        
-        dsToLoop = Datasets[ds][0]
-        order = Datasets[ds][-1]
-        print ds, order
+    dsToLoop.fit( order , 0 , mass_ )
+    dsToLoop.Plot( mass_ )
 
-        if ds == "thq" :
-            signal = dsToLoop
-        else:
-            allHiggs.append( dsToLoop )
-        
-        dsToLoop.fit( order , 0 , mass_ )
-        #fitres.Print()
-        dsToLoop.Plot( mass_ )
+    dsToLoop.Write( ws , fout )
 
-        dsToLoop.Write( ws , fout )
-
-    #fullModel = FullModel( signal , allHiggs , 35.9 )
-    #fullModel.Write("out" , "testws")
-    ws.Write()
-    fout.Close()
-    for sys in AllSystParams:
-        print sys, "param" , "0.0" , "1.0"
+if MakeFinalModel :
+    fullModel = FullModel( signal , allHiggs , 35.9 )
+    fullModel.Write("out" , "testws")
+    
+fout.cd()
+ws.Write()
+fout.Close()
+for sys in AllSystParams:
+    print sys, "param" , "0.0" , "1.0"
     
 gROOT.SetBatch(False)
 
