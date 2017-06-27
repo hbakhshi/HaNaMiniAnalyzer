@@ -3,7 +3,6 @@ from SignalFit import KappaFramework, CtCvCpInfo
 kappa = KappaFramework()
 LUMI = 35.9
 
-
 class EfficiencyCalculator :
     def __init__(self, sample , tree , cuts , vars , color , outDir  ):
         if sample == "thq" or sample == "thw" :
@@ -62,9 +61,12 @@ class EfficiencyCalculator :
                 dir_ = self.OutDir.mkdir( bin )
             dir_.cd()
             
-            self.Purity[ bin ] = self.Results[ bin ]["yield"].hCtCv.Clone( "%s_%s_purity" % (self.Sample , bin ) )
-            self.Purity[ bin ].Divide( Totals[ bin ] )
-            self.Purity[ bin ].Write()
+            self.Purity[ bin ] = CtCvCpInfo( "%s_%s_purity" % (self.Sample , bin ) )
+            h = self.Results[ bin ]["yield"].hCtCv.Clone( "%s_%s_purity_histo" % (self.Sample , bin ) )
+            h.Divide( Totals[ bin ] )
+            self.Purity[ bin ].FillFrom2DHisto( h )
+            self.Purity[ bin ].GetCanvas().Write()
+            self.Purity[ bin ].hCtCv.Write()
             
     def CalcEffs(self, ct = -1 , cv = 1 ):
         nTotal = self.Count( "1==1" , ct , cv )
@@ -72,6 +74,8 @@ class EfficiencyCalculator :
         self.NTot.SetValue( w_id , nTotal )
         for bin in self.Bins :
             nBin = self.Count( self.Bins[bin] , ct , cv )
+            if nTotal == 0 :
+                nTotal = 0.0001
             effBin = nBin/nTotal
             self.Results[ bin ]["eff"].SetValue( w_id , effBin )
             self.Results[ bin ]["yield"].SetValue( w_id , nBin )

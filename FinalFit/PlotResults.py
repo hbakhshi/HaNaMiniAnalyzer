@@ -3,7 +3,7 @@ from ROOT import TFile, TTree, TObject
 import os
 import stat
 import math
-from ROOT import RooWorkspace, TCanvas , RooFit, TColor, kBlue, kRed, kGreen, gROOT,  TObjArray, TList, TGraph, Double, gPad, RooWorkspace
+from ROOT import RooWorkspace, TCanvas , RooFit, TColor, kBlue, kRed, kGreen, gROOT,  TObjArray, TList, TGraph, Double, gPad, RooWorkspace, RooArgList , RooAddPdf, TGraphAsymmErrors
 import array
 
 kappa = KappaFramework()
@@ -30,6 +30,58 @@ def PlotDS():
     c = TCanvas()
     frame.Draw()
 
+objsToKeep = []
+def PlotSignalShapes(Selection):
+    f__ = TFile.Open( "datacards/22June/2dPlots.root")
+    signal_fname_1 = ("signals/22June/out_{sample:s}_syst.root", "cms_hgg_13TeV" )
+    signal_fname_2 = ("signals/22June/out_ctcv_{sample:s}_syst.root" , "ctcv" )
+    samples = {"thw":signal_fname_2, "thq":signal_fname_2, "tth":signal_fname_1 , "vh":signal_fname_1 }
+    purity_h_name = "{sample:s}/"+Selection+"/h{sample:s}_"+Selection+"_purity_CtCv"
+    purities = RooArgList()
+    signalshapes = RooArgList()
+
+    ctOverCvs = []
+
+    mVar = None
+    ctovercv_vals = None
+    for sample in samples :
+        purity = CtCvCpInfo("purity_" + sample)
+        ctovercv_vals = sorted(purity.AllCtOverCVs.keys())
+        purity.FillFrom2DHisto( f__.Get( purity_h_name.format( sample=sample ) ) )
+        purity.GetCtOverCv()
+        purities.add( purity.CtOverCvDataHistFunc )
+        objsToKeep.append( purity )
+
+        sFile = TFile.Open( samples[sample][0].format( sample=sample ) )
+        ws = sFile.Get( samples[sample][1] )
+        pdf = ws.pdf("RV{sample:s}_mh125".format( sample=sample) )
+        objsToKeep.append(sFile)
+        objsToKeep.append(ws)
+        objsToKeep.append(pdf)
+        signalshapes.add( pdf )
+
+        ctOverCvs.append( ws.var( "CtOverCv" ) )
+        mVar = ws.var("CMS_hgg_mass")
+        
+    ret = RooAddPdf("signal" , "signal" , signalshapes , purities )
+    objsToKeep.append( ret )
+    plot = mVar.frame()
+    options = ""
+    for ctovercv in ctovercv_vals :
+        for var in ctOverCvs:
+            var.setVal( ctovercv )
+        name = "name%g" % ctovercv
+        ret.plotOn( plot , RooFit.DrawOption(options) , RooFit.Name(name) )
+        
+        c = TCanvas()
+        plot.Draw()
+        c.SaveAs("a.gif")
+
+        if not "same" in options :
+            options += " same"
+
+    return c
+    
 def PlotPDFs():
     fIn = TFile.Open("./hgg_card_13TeV_thq_moriond17_NoTHMVACut_onlythq.root")
     ws = fIn.Get("w")
@@ -108,49 +160,76 @@ class vGraph:
         self.h.Draw("COLZ TEXT")
         for i in range(0, len(self.g) ):
             self.g[i].Draw("P")
-            
+
+
 vg = None
 wrongFiles = {}
 limits = {}
-def PlotLimits(Bin, color , style , canvas = None , dx = 0):
-    DIR = "./datacards/15June/ct%gcv%g/higgsCombine" + Bin + ".Asymptotic.mH125.5.root"
-    INPUT_FILE = "./datacards/15June/ct%gcv%g/input.root"
-    out = CtCvCpInfo("ResultsMedian%s" % Bin)
-    out1sigmaP = CtCvCpInfo("Results1sigmaP%s" % Bin)
-    out1sigmaM = CtCvCpInfo("Results1sigmaM%s" % Bin)
+def PlotLimits(Bin, color , style , date , canvas = None , dx = 0 ):
+    DIR = "./datacards/"+date+"/ctcv%g/higgsCombine" + Bin + ".Asymptotic.mH125.5.root"
+    INPUT_FILE = "./datacards/"+date+"/ctcv%g/input.root"
 
-    for index in range( -1 , 50):
-        ct,cv,cp = out.GetCValues( index )
-        #if not ct/cv == -1 :
+    x = array.array('d')
+    y = array.array('d')
+    ex = array.array('d')
+    ey1sigmap = array.array('d')
+    ey1sigman = array.array('d')
+    ey2sigmap = array.array('d')
+    ey2sigman = array.array('d')
+    
+    out = CtCvCpInfo("ResultsMedian%s%s" % (date, Bin ) )
+    out1sigmaP = CtCvCpInfo("Results1sigmaP%s%s" % (date,Bin) )
+    out1sigmaM = CtCvCpInfo("Results1sigmaM%s%s" % (date,Bin) )
+
+    for ctcv in sorted(out.AllCtOverCVs):
+        #ct,cv,cp = out.GetCValues( index )
+        # if ctcv != -1 :
         #    continue
-        CT = ct #0 if ct == 0 else -ct
-        input_file = TFile.Open( INPUT_FILE%( CT , cv) )
+        #CT = ct #0 if ct == 0 else -ct
+        ct = ctcv
+        cv = 1.
+        
+        input_file = TFile.Open( INPUT_FILE%( ctcv) )
         wsPreselection = input_file.Get("WSTHQLeptonicTag")
-        xsec2 = 1*(kappa.GetXSecBR( "thq" , ct, cv , False )+0.5071*kappa.GetXSecBR( "tth" , ct, cv , False )+kappa.GetXSecBR( "thw" , ct, cv , False ))
+        xsec = 1*(kappa.GetXSecBR( "thq" , ct, cv , False )+kappa.GetXSecBR( "tth" , ct, cv , False )+kappa.GetXSecBR( "thw" , ct, cv , False )+kappa.GetXSecBR( "vh" , ct, cv , False ))
 
         kappa.SetCtCv( ct , cv )
-        xsec = (wsPreselection.var("RVvh_mh125_norm").getVal() + wsPreselection.var("RVthq_mh125_norm").getVal() + wsPreselection.var("RVtth_mh125_norm").getVal() + wsPreselection.var("RVthw_mh125_norm").getVal()) / (xsec2*35900 )
+        nevents = (wsPreselection.var("RVvh_mh125_norm").getVal() + wsPreselection.var("RVthq_mh125_norm").getVal() + wsPreselection.var("RVtth_mh125_norm").getVal() + wsPreselection.var("RVthw_mh125_norm").getVal())
+        xsec2 = nevents / (35900. )
         input_file.Close()
-        path = DIR % (CT, cv)
+        path = DIR % (ctcv)
         if os.path.exists( path ) :
             f = TFile.Open( path )
-            limit = f.Get("limit")
-            val = -100
-            val1sigmap = -100
-            val1sigmam = -100
-            if not type(limit) == TTree :
-                val = -200
-                val1sigmap = -200
-                val1sigmam = -200
+            if f :
+                limit = f.Get("limit")
+                val = -100
+                val1sigmap = -100
+                val1sigmam = -100
+                val2sigmap = -100
+                val2sigmam = -100
+                if not type(limit) == TTree :
+                    val = -200
+                    val1sigmap = -200
+                    val1sigmam = -200
+                else :
+                    for i in limit :
+                        if i.quantileExpected == 0.5 :
+                            val = i.limit
+                        elif int(100*i.quantileExpected) in [15,16,17] :
+                            val1sigmam = i.limit
+                        elif int(100*i.quantileExpected) in [83,84,85] :
+                            val1sigmap = i.limit
+                        elif int(100*i.quantileExpected) in [2,3,4]:
+                            val2sigmam = i.limit
+                        elif int(100*i.quantileExpected) in [97,98,99]:
+                            val2sigmap = i.limit
+                        else :
+                            print int(100*i.quantileExpected)
+                f.Close()
             else :
-                for i in limit :
-                    if i.quantileExpected == 0.5 :
-                        val = i.limit
-                    elif i.quantileExpected == 0.16 :
-                        val1sigmam = i.limit
-                    elif i.quantileExpected == 0.84 :
-                        val1sigmap = i.limit
-            f.Close()
+                val = -400
+                val1sigmap = -400
+                val1sigmam = -400
         else:
             val = -300
             val1sigmap = -300
@@ -168,25 +247,58 @@ def PlotLimits(Bin, color , style , canvas = None , dx = 0):
                 limits[ (ct,cv) ]= { Bin: val}
             
         if val <= 0 :
-            continue
+            val /= 1000
         
-        print cv,ct, path, val
-        out.SetValue( index , val*xsec )
-        out1sigmaM.SetValue( index , val1sigmam*xsec )
-        out1sigmaP.SetValue( index , val1sigmap*xsec )
+        #print cv,ct, path, val
+        cv_ = out.AllCtOverCVs[ctcv].keys()[0]
+        index = out.AllCtCVs.index( ( cv_ , ctcv*cv_) )
+        if val < 0 :
+            out.SetValue( index , val )
+        else :
+            #print Bin, "%.2f" % val, "+" , "%.2f" % abs(val2sigmap-val) , "-" , "%.2f" % abs(val2sigmam-val)
+            out.SetValue( index , val )
+            out1sigmaM.SetValue( index , val1sigmam )
+            out1sigmaP.SetValue( index , val1sigmap )
+            if val > 0 :
+                x.append( ctcv )
+                y.append( val )
+                ex.append(0)
+                ey1sigmap.append( abs(val1sigmap-val) )
+                ey1sigman.append( abs(val1sigmam-val) )
+                ey2sigmap.append( abs(val2sigmap-val) )
+                ey2sigman.append( abs(val2sigmam-val) )
 
+
+    graph_2sigma = TGraphAsymmErrors( len(x) , x , y , ex , ex , ey2sigman , ey2sigmap )
+    graph_2sigma.SetName( "GraphAsym_%s_2SigmaBand_%s" % (date , Bin ))
+    graph_2sigma.SetTitle( Bin+ "(" +date+ ")" )
+    graph_2sigma.SetLineColor( color )
+    graph_2sigma.SetMarkerStyle( style )
+    graph_2sigma.SetMarkerColor( color )
+    graph_2sigma.SetFillColor( color )
+    graph_2sigma.SetFillStyle( 3005 )
+
+    graph_1sigma = TGraphAsymmErrors( len(x) , x , y , ex , ex , ey1sigman , ey1sigmap )
+    graph_1sigma.SetName( "GraphAsym_%s_1SigmaBand_%s" % (date , Bin ) )
+    graph_1sigma.SetTitle( Bin + "(" +date+ ")" )
+    graph_1sigma.SetLineColor( color )
+    graph_1sigma.SetMarkerStyle( style )
+    graph_1sigma.SetMarkerColor( color )
+    graph_1sigma.SetFillColor( color )
+    graph_1sigma.SetFillStyle( 3005 )
+    
     options = "P SAME"
     if canvas == None :
         canvas = TCanvas()
         options = "AP"
     #canvas.Divide(2,1)
     #canvas.cd(1)
-    out.GetCtOverCv(color , style , dx=dx).Draw(options)
+    out.GetCtOverCv(color , style , dx=dx , IgnoreNegatives = False).Draw(options)
     #canvas.cd(2)
     #out.hCtCv.Draw("COLZ text")
     canvas.Update()
 
-    return canvas, out.CtOverCvGraph, out.hCtCv
+    return canvas, out.CtOverCvGraph, out.hCtCv , graph_1sigma , graph_2sigma
 
     arr = array.array('d' , [1,2,3] )
     out.hCtCv.SetContour(3 , arr)
@@ -257,24 +369,39 @@ def PlotHiggsBkgs():
     return canvas, out.hCtCv
 #a,b = PlotHiggsBkgs()
 
-bins = {"Preselection":(2, 23 , 0) ,
-        "THQLeptonicTHQTag":(3, 22 , 0.005 ) , 
-        "THQLeptonic":(3 , 21 , 0.01) ,
-        "MVATHQ":(9,47 , 0.015) , 
-        "MVA":(9,46 , 0.02) ,
-        "EtaNJetTHQTag":( 8 , 29 , 0.025 ) , 
-        "EtaNJet":( 8 , 30 , 0.03) ,
-        "EtaNbJetTHQTag":( 46, 25 , 0.035 ) , 
-        "EtaNbJet":( 46 , 21 , 0.04) ,
-        "NJetNbJetTHQTag":( 30 , 2 , 0.045 ) , 
-        "NJetNbJet":( 30 , 5 , 0.05 ) }
+bins = {#"Preselection":(2, 23 , 0),
+        #"THQLeptonicTHQTag":(3, 22 , 0.0005 ) , 
+        #"THQLeptonic":(3 , 21 , 0.001) ,
+        #"MVATHQ":(9,47 , 0.015) , 
+        #"MVA":(9,46 , 0.02) ,
+        #"EtaNJetTHQTag":( 8 , 29 , 0.0025 ) , 
+        #"EtaNJet":( 8 , 30 , 0.03) ,
+        #"EtaNbJetTHQTag":( 46, 25 , 0.0035 ) , 
+        "EtaNbJet":( 46 , 21 , 0.004) 
+        #"NJetNbJetTHQTag":( 30 , 2 , 0.0045 ) , 
+        #"NJetNbJet":( 30 , 5 , 0.005 )
+}
 canvas = None
 graphs = []
+graphs_sigma_bands = {}
 for bin in bins :
-    canvas, b, c = PlotLimits( bin , bins[bin][0] , bins[bin][1] , canvas , bins[bin][2] )
+    canvas, b, c , onesigma , twosigma = PlotLimits( bin , bins[bin][0] , bins[bin][1] , "25June" , canvas , bins[bin][2] )
     graphs.append( b )
     graphs.append( c )
+    graphs_sigma_bands[(bin,"25June")] = ( onesigma , twosigma )
 
+    canvas, b, c , onesigma , twosigma = PlotLimits( bin , bins[bin][0] , bins[bin][1] , "22June" , canvas , bins[bin][2] )
+    graphs.append( b )
+    graphs.append( c )
+    graphs_sigma_bands[(bin, "22June")] = ( onesigma , twosigma )
+    
+
+canvas2 = TCanvas("sigma_bands")
+options = "p a4"
+for bin in graphs_sigma_bands :
+    graphs_sigma_bands[bin][0].Draw( options )
+    if not "same" in options :
+        options = "p 4 same"
 
 class BinDatacard:
     def __init__(self, binName):

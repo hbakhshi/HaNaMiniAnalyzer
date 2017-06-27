@@ -18,10 +18,10 @@ DSName = "%s_125_13TeV_THQLeptonicTag"
 WSFiles = {}
 if sys.argv[1] == "thq":
     WSFiles["thq"] ="WS_THQ.root"
-    DOSysts = 3
+    DOSysts = 4
 elif sys.argv[1] == "thw":
     WSFiles["thw"] = "WS_THW.root"
-    DOSysts = 0
+    DOSysts = 4
 elif sys.argv[1] == "tth":
     WSFiles["tth"] = "WS_TTH.root"
     DOSysts = 1
@@ -43,7 +43,7 @@ for wsf in WSFiles:
     ds_ = ws_.data( DSName % (wsf ) )
 
     TotalRatios = None
-    if DOSysts > 1 :
+    if sys.argv[1] in ["thq", "thw"] :
         TotalRatios = CtCvCpInfo("TotalRatios_"+wsf)
         TotalRatios.FillFrom1DHisto( "signals/13May/All_%s.root" % (wsf) , "writer/hAll" )
         
@@ -54,10 +54,10 @@ for wsf in WSFiles:
 
 
 # gROOT.SetBatch(False)
-# print Datasets["thq"][0].EfficiencyCtCv.AllCtOverCVs
-# g = Datasets["thq"][0].EfficiencyCtCv.GetCtOverCv()
-# c = Datasets["thq"][0].EfficiencyCtCv.GetCanvas()
-# a = Datasets["thq"][0].EfficiencyCtCv.CtOverCvHisto
+# print Datasets[ sys.argv[1] ][0].EfficiencyCtCv.AllCtOverCVs
+# g = Datasets[ sys.argv[1] ][0].EfficiencyCtCv.GetCtOverCv()
+# c = Datasets[ sys.argv[1] ][0].EfficiencyCtCv.GetCanvas()
+# a = Datasets[ sys.argv[1] ][0].EfficiencyCtCv.CtOverCvHisto
 # #b = RooDataHist("test" , "test" , Datasets["thq"][0].EfficiencyCtCv.ArgListCtOverCv , RooFit.Import(a) )
 # exit()
 
@@ -92,11 +92,11 @@ if DOFTest:
 for ds in Datasets:
     order = 0
     if ds == "tth" or ds == "vbf" or ds == "ggh" or ds == "vh":
-        order = 3
+        order = 4
     elif ds == "thw" :
-        order = 2
+        order = 4
     elif ds == "thq" :
-        order = 3
+        order = 4
 
     Datasets[ds][-1] = order
 
