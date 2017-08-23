@@ -1,4 +1,4 @@
-from ROOT import TDirectory, TFile, TCanvas , TH1D , TH1 , THStack, TList, gROOT, TLegend, TPad, TLine, gStyle, TTree , TObject , gDirectory
+from ROOT import TDirectory, TFile, TCanvas , TH1D , TH1 , THStack, TList, gROOT, TLegend, TPad, TLine, gStyle, TTree , TObject , gDirectory, TColor
 
 import os
 import sys
@@ -6,12 +6,35 @@ import Sample
 
 from ExtendedSample import *
 
+
+colors=[]
+def hex2rgb(value):
+    """Return (red, green, blue) for the color given as #rrggbb."""
+    value = value.lstrip('#')
+    lv = len(value)
+    return tuple(int(value[i + lv // 3], 16)/255.0 for i in range(0, lv, lv // 3))
+
+def newColor(red,green,blue):
+    newColor.colorindex+=1
+    color=TColor(newColor.colorindex,red,green,blue)
+    colors.append(color)
+    return color
+    
+newColor.colorindex=301
+
+def getDarkerColor(color):
+    darkerColor=newColor(color.GetRed()*0.6,color.GetGreen()*0.6,color.GetBlue()*0.6)
+    return darkerColor
+
 class SampleType:
     def __init__(self , name , color , samples = [] , LoadJobDir = "" , signal = False , additionalCut = None ):
         self.Name = name
         if type(color) is int:
             self.Color = color
             self.MultiPlot = False
+            color__ = color if type(color)==TColor else gROOT.GetColor(color)
+            getDarkerColor( color__ )
+            self.linecolor = newColor.colorindex
             
         self.Samples = [ExtendedSample(s , additionalCut) for s in samples]
         if not LoadJobDir == "":
@@ -33,6 +56,22 @@ class SampleType:
             
         self.IsSignal = signal
 
+    def LoadDataset(self, cut = None , ws = "tagsDumper/cms_hgg_13TeV" , Name=None ):
+        if cut == None :
+            self.AllDatasets = []
+            print "Loading dataset for " , self.Name
+            for s in self.Samples :
+                if hasattr( self , "Dataset" ) :
+                    self.Dataset.append( s.LoadDataset( cut , ws ) )
+                else :
+                    self.Dataset = s.LoadDataset( cut , ws).Clone( self.Name )
+            print "Loaded..., nEntries ", self.Dataset.sumEntries()
+            return self.Dataset
+
+        self.AllDatasets.append( self.Dataset.reduce( RooFit.Cut( cut ) , RooFit.SelectVars(self.Samples[0].varsToKeep ) , RooFit.Name(Name if Name else self.Name) ) )
+        print "For dataset: ", self.Name, "after cut", cut , self.AllDatasets[-1].sumEntries() , "events are selected"
+        return self.AllDatasets[-1]
+        
     def IsData(self):
         if len(self.Samples) == 0 :
             return False
@@ -87,7 +126,7 @@ class SampleType:
                         setattr( self , "%s_%d" % (propname,i) , hnew )
                         hhh = getattr( self , "%s_%d" % (propname,i) )
                         if self.IsSignal:
-                            hhh.SetLineColor( color )
+                            hhh.SetLineColor( self.linecolor )
                             hhh.SetLineWidth( 3 )
                             hhh.SetLineStyle( 1 )
                             hhh.SetFillColor(0)
@@ -98,11 +137,12 @@ class SampleType:
                             hhh.SetLineStyle( 1 )
                             if not self.IsData() :
                                 hhh.SetFillColor( color )
-                                hhh.SetLineColor( color )
+                                hhh.SetLineColor( self.linecolor )
                                 hhh.SetFillStyle( 1001 )
                                 hhh.SetLineWidth( 2 )
-                                hhh.SetLineStyle( 2 )
+                                hhh.SetLineStyle( 1 )
                             else:
+                                hhh.SetMarkerStyle(20)
                                 hhh.SetStats(0)
 
                         if i==0:

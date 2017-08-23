@@ -26,10 +26,11 @@ class Property:
                 ret.Bkg[cat.split("_")[-1]] =  cats_dir.Get( cat ).Clone()
 
         sigs_dir = dir.GetDirectory("signals")
-        for sig_ in sigs_dir.GetListOfKeys() :
-            sig = sig_.GetName()
-            gROOT.cd()
-            ret.Signal.append( sigs_dir.Get(sig).Clone() )
+        if sigs_dir :
+            for sig_ in sigs_dir.GetListOfKeys() :
+                sig = sig_.GetName()
+                gROOT.cd()
+                ret.Signal.append( sigs_dir.Get(sig).Clone() )
 
         samples_dir = dir.GetDirectory("samples")
         for sam_ in samples_dir.GetListOfKeys() :
@@ -39,10 +40,12 @@ class Property:
             
         return ret
     
-    def __init__(self , name , bkg_hists , data_hist , signal_hists , sample_hists, GRE = True):
+    def __init__(self , name , bkg_hists , data_hist , signal_hists , sample_hists, GRE = True  , MCOnly = False):
+        self.MCOnly = MCOnly
 	self.Name = name
 	self.Bkg = bkg_hists
 	self.Data = data_hist
+  
 	self.Signal = signal_hists
 	self.Samples = sample_hists
 	self.greater = GRE
@@ -56,8 +59,9 @@ class Property:
         self.AdditionalInfo = []
                 
     def is2D(self):
-        if self.Data :
-            if "th2" in self.Data.ClassName().lower():
+        h = self.Data if self.Data else self.Bkg.items()[0][1]
+        if h :
+            if "th2" in h.ClassName().lower():
                 return True
             else :
                 return False
@@ -301,6 +305,7 @@ class Property:
                 
             self.Pad1 =  TPad(pad1name ,pad1name,0,0.25,1,1)
             self.Pad1.SetBottomMargin(0.1)
+            self.Pad1.SetRightMargin(0.22)
             self.Pad1.Draw()
 
             self.Canvas.cd()
@@ -308,6 +313,7 @@ class Property:
             self.Pad2 = TPad( pad2name,pad2name,0,0,1,0.24)
             self.Pad2.SetTopMargin(0.1)
             self.Pad2.SetBottomMargin(0.1)
+            self.Pad2.SetRightMargin(0.22)
             self.Pad2.Draw()
 
         if self.is2D() or padOrCanvas==2:
@@ -327,7 +333,7 @@ class Property:
     def GetLegend(self):
         legendname = "%s_legend" % (self.Name)
         if not hasattr(self , "Legend"):
-            self.Legend = TLegend(0.9,0.5,1.,0.89,"","brNDC") 
+            self.Legend = TLegend(0.8,0.1,1.,0.89,"","brNDC") 
             self.Legend.SetName( legendname )
             self.Legend.AddEntry( self.Data , "Data" , "lp" )
             for st in reversed( self.Bkg.keys() ):
@@ -415,10 +421,10 @@ class Property:
             self.TitleBox = TLatex()
             self.TitleBox.SetNDC()
             self.TitleBox.SetTextSize(0.06)
-            self.TitleBox.DrawLatex(0.6,0.943,title)
+            self.TitleBox.DrawLatex(0.15,0.943,title)
         return self.TitleBox
 
-    def Draw(self, normalizetodata = False , padOrCanvas = 0 ):
+    def Draw(self, normalizetodata = False , padOrCanvas = 0  , plotNormalizedOfAll=False):
         istwo = self.is2D()
         optionData0 = "E"
         optionStack = "" if istwo else "HIST SAME"
@@ -426,7 +432,27 @@ class Property:
         optionRatioPlot = "COLZ" if istwo else "ep same"
         gStyle.SetOptTitle(0)
         #self.AddOF_UF_Bins()
-        self.GetCanvas(1, padOrCanvas)        
+        self.GetCanvas(1, padOrCanvas)
+
+        if plotNormalizedOfAll :
+            options = "E"
+            allHists = [ self.Data ]
+            if self.Bkg :
+                for s,h in self.Bkg.items() :
+                    h.SetTitle( s )
+                    h.SetLineStyle( 1 )
+                    h.SetMarkerStyle( 20 )
+                    h.SetMarkerColor( h.GetLineColor() )
+                    allHists.append( h )
+            if self.Signal :
+                allHists.extend( self.Signal )
+            for h in [ histo for histo in allHists if histo ]:
+                h.DrawNormalized( options )
+                if "same" not in options :
+                    options += " same"
+
+            return
+        
         if padOrCanvas == 2:
             self.Ratio = TRatioPlot( self.GetStack(normalizetodata) ,
                                      self.Data )
@@ -464,20 +490,25 @@ class Property:
         if not istwo :
             self.GetLineOne().Draw()
 
-    def Write(self , propdir , normtodata , mkdir=False ):
+    def Write(self , propdir , normtodata , mkdir=False , plotNormalizedOfAll = False ):
         #print self.greater
         if mkdir:
             propdir = propdir.mkdir( self.Name )
+
         propdir.cd()
+        #propdir.pwd()
         catdir = propdir.mkdir( "cats" )
+        if not catdir :
+            catdir = propdir.GetDirectory( "cats" )
         catdir.cd()
 
-        self.Data.GetXaxis().SetTitleSize(0.05) 
-        self.Data.GetXaxis().SetTitleOffset(0.95)
-        self.Data.GetYaxis().SetTitleSize(0.07)
-        self.Data.GetYaxis().SetTitleOffset(0.72)
+        if self.Data :
+            self.Data.GetXaxis().SetTitleSize(0.05) 
+            self.Data.GetXaxis().SetTitleOffset(0.95)
+            self.Data.GetYaxis().SetTitleSize(0.07)
+            self.Data.GetYaxis().SetTitleOffset(0.72)
         
-        self.Data.Write()
+            self.Data.Write()
         for bkg in self.Bkg :
             self.Bkg[bkg].Write()
         self.GetStack(normtodata).GetStack().Last().Write("SumMC")
@@ -499,14 +530,14 @@ class Property:
             add.Write()
 
         if self.Data :
-            self.Draw(normtodata)
+            self.Draw(normtodata , plotNormalizedOfAll=plotNormalizedOfAll)
             self.GetStack(normtodata).Write()
             self.GetLegend().Write()
             self.GetRatioPlot().Write()
                     
         propdir.cd()
-        if self.Data is not None:
-            self.Draw(normtodata)
+        if self.Data is not None or plotNormalizedOfAll:
+            self.Draw(normtodata , plotNormalizedOfAll=plotNormalizedOfAll)
             self.GetCanvas(0).Write()
 
         if hasattr(self, "SignalROC"):
@@ -582,7 +613,7 @@ class Property:
         self.BkgROC = self.ROCMaker(self.GetStack().GetStack().Last().Clone("AllBkgs") )
         self.DataROC = self.ROCMaker(self.Data)
 
-    def Significance(self, signal, bkg, method=1):
+    def Significance(self, signal, bkg, method=1 , breg=0):
         signame = "SoB"
         if method == 2:
             signame = "SoSqrtB"
@@ -591,8 +622,11 @@ class Property:
         elif method == 4:
             signame = "LnSoSqrtSB"
         elif method == 5:
-            signame = "LnSoSqrtSBdB"			
-        elif method > 5:
+            signame = "LnSoSqrtSBdB"
+        elif method == 6:
+            signame = "LnSoSqrtSBRegularized%g" % (breg)
+            print "FOM", signame , "with reg_B=", breg , "will be calculated"
+        elif method > 6:
             print "Significance method not defined! Null histogram is returned!!!"
             return
         significance = signal.Clone("%s_%s" %(signal.GetName(),signame))
@@ -610,6 +644,8 @@ class Property:
                 u = signal.GetBinContent(iBin) / sqrt(bkg.GetBinContent(iBin) + (bkg.GetBinError(iBin)*bkg.GetBinError(iBin)))
             elif method == 4:
                 u = sqrt(2)*sqrt((signal.GetBinContent(iBin)+bkg.GetBinContent(iBin))*log(1+(signal.GetBinContent(iBin)/bkg.GetBinContent(iBin))) - signal.GetBinContent(iBin))
+            elif method == 6:
+                u = sqrt(2)*sqrt((signal.GetBinContent(iBin)+bkg.GetBinContent(iBin)+breg)*log(1+(signal.GetBinContent(iBin)/(bkg.GetBinContent(iBin)+breg))) - signal.GetBinContent(iBin))
             elif method == 5:
                 s =  signal.GetBinContent(iBin) 
                 b = bkg.GetBinContent(iBin)

@@ -47,7 +47,26 @@ class DatasetInfo :
         self.CT.setVal( self.CT_Default )
         self.CV.setVal( self.CV_Default )
 
+        for vname in ["frac", "dm", "sigma"]:
+            for gnumber in range(0,4) :
+                varname = "RV%s_%s_mh125_g%d" % (self.Sample , vname , gnumber )
+                var = self.ws.var( varname )
+                if var :
+                    var.Print()
+                    var.removeRange()
+                    var.setConstant()
+                    var.Print()
+                else :
+                    var = self.ws.arg( varname )
+                    if vname == "frac" and gnumber == 3 :
+                        continue
+                    elif var :
+                        continue
+                    else:
+                        print varname, "wasn't found in ws"
+                    
         getattr( newws , "import")( self.pdf , RooFit.RecycleConflictNodes() , RooFit.Silence() )
+
         
         self.CT.setVal( ct )
         self.CV.setVal( cv )
@@ -76,11 +95,11 @@ class BinDatacard :
             
         self.BinName = BinName
         self.HiggsSamples = {}
-        #self.HiggsSamples["thq"] = DatasetInfo("thq" , "../../signals/25June/out_ctcv_thq_syst.root", "ctcv", "RVthq_mh125" , "2dPlots.root" ,   EffPlotName, 0.99999 , 1.00001 )
-        self.HiggsSamples["thq"] = DatasetInfo("thq" , "../../out_ctcv_thq_syst.root", "ctcv", "RVthq_mh125" , "2dPlots.root" ,   EffPlotName, 0.99999 , 1.00001 )
-        self.HiggsSamples["thw"] = DatasetInfo("thw" , "../../signals/25June/out_ctcv_thw_syst.root", "ctcv", "RVthw_mh125" ,  "2dPlots.root" ,  EffPlotName, 0.99999 , 1.00001 )
-        self.HiggsSamples["tth"] = DatasetInfo("tth" , "../../signals/25June/out_tth_syst.root", "cms_hgg_13TeV", "RVtth_mh125",  "2dPlots.root",EffPlotName , 0.99999 , 1.00001 )
-        self.HiggsSamples["vh"]  = DatasetInfo("vh" , "../../signals/25June/out_vh_syst.root", "cms_hgg_13TeV", "RVvh_mh125" ,  "2dPlots.root" , EffPlotName, 0.99999 , 1.00001 )
+        self.HiggsSamples["thq"] = DatasetInfo("thq" , "../../signals/22June/out_ctcv_thq_syst.root", "ctcv", "RVthq_mh125" , "2dPlots.root" ,   EffPlotName, 0.99999 , 1.00001 )
+        #self.HiggsSamples["thq"] = DatasetInfo("thq" , "../../out_ctcv_thq_syst.root", "ctcv", "RVthq_mh125" , "2dPlots.root" ,   EffPlotName, 0.99999 , 1.00001 )
+        self.HiggsSamples["thw"] = DatasetInfo("thw" , "../../signals/22June/out_ctcv_thw_syst.root", "ctcv", "RVthw_mh125" ,  "2dPlots.root" ,  EffPlotName, 0.99999 , 1.00001 )
+        self.HiggsSamples["tth"] = DatasetInfo("tth" , "../../signals/22June/out_tth_syst.root", "cms_hgg_13TeV", "RVtth_mh125",  "2dPlots.root",EffPlotName , 0.99999 , 1.00001 )
+        self.HiggsSamples["vh"]  = DatasetInfo("vh" , "../../signals/22June/out_vh_syst.root", "cms_hgg_13TeV", "RVvh_mh125" ,  "2dPlots.root" , EffPlotName, 0.99999 , 1.00001 )
 
     def Write(self, kf , kv , dirname  ):
         ws = RooWorkspace("WS%s" % (self.BinName) )

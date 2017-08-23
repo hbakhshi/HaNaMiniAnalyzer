@@ -12,7 +12,8 @@ import sys
 MakeFinalModel = False
 DOFTest=False
 #WSDIR = "/home/hbakhshi/Downloads/tHq_Georgios/output/03_17_17/signals"
-WSDIR = "/home/hbakhshi/Downloads/tHq_Georgios/output/24_04_17/signal"
+#WSDIR = "/home/hbakhshi/Downloads/tHq_Georgios/output/24_04_17/signal"
+WSDIR = "/home/hbakhshi/Downloads/tHq_Georgios/output/29June/signals/"
 WSName = "tagsDumper/cms_hgg_13TeV"
 DSName = "%s_125_13TeV_THQLeptonicTag"
 WSFiles = {}
@@ -33,19 +34,19 @@ elif sys.argv[1] == "ggh":
     DOSysts = 1
 elif sys.argv[1] == "vh":
     WSFiles["vh"] = "WS_VH.root"
-    DOSysts = 1
+    DOSysts = 0
     
 Datasets = {}
 for wsf in WSFiles:
     f = TFile.Open( "%s/%s" % (WSDIR , WSFiles[wsf] ) )
     #f.ls()
-    ws_= f.Get( WSName )
+    ws_ = f.Get( WSName )
     ds_ = ws_.data( DSName % (wsf ) )
 
     TotalRatios = None
     if sys.argv[1] in ["thq", "thw"] :
         TotalRatios = CtCvCpInfo("TotalRatios_"+wsf)
-        TotalRatios.FillFrom1DHisto( "signals/13May/All_%s.root" % (wsf) , "writer/hAll" )
+        TotalRatios.FillFrom1DHisto( "signals/29June/All_%s.root" % (wsf) , "writer/hAll" )
         
     dss_ = Dataset( ds_ , wsf , ws_ , DOSysts , TotalRatios)
     print dss_.Print()
@@ -92,11 +93,11 @@ if DOFTest:
 for ds in Datasets:
     order = 0
     if ds == "tth" or ds == "vbf" or ds == "ggh" or ds == "vh":
-        order = 4
+        order = 3
     elif ds == "thw" :
-        order = 4
+        order = 3
     elif ds == "thq" :
-        order = 4
+        order = 3
 
     Datasets[ds][-1] = order
 

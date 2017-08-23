@@ -58,7 +58,7 @@ class Sample :
     def __str__(self):
         return self.Name
     
-    def __init__(self , name , xsection , lheW , datasetname , appendix = "" , dbsInstance = "phys03" , info_from_json = None , treeName = None ):
+    def __init__(self , name , xsection , lheW , datasetname , appendix = "" , dbsInstance = "phys03" , info_from_json = None , treeName = None , additionalcut = None ):
         self.Jobs = []
         self.Name = name
         self.XSection = xsection
@@ -89,6 +89,9 @@ class Sample :
 
         if treeName :
             self.TreeName = treeName
+
+        if additionalcut :
+            self.AdditionalCut = additionalcut 
             
     def AddFiles( self , directory ):
         files = [join(directory, f) for f in listdir(directory) if isfile(join(directory, f))]

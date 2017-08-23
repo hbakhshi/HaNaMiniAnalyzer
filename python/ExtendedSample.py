@@ -1,4 +1,4 @@
-from ROOT import TDirectory, TFile, TCanvas , TH1D , TH1 , THStack, TList, gROOT, TLegend, TPad, TLine, gStyle, TTree , TObject , gDirectory, TChain
+from ROOT import TDirectory, TFile, TCanvas , TH1D , TH1 , THStack, TList, gROOT, TLegend, TPad, TLine, gStyle, TTree , TObject , gDirectory, TChain , RooFit , RooWorkspace , RooDataSet, RooRealVar, RooArgSet
 
 import os
 import sys
@@ -30,13 +30,19 @@ class ExtendedSample: #extend the sample object to store histograms
         if hasattr(sample, "TreeName") :
             self.TreeName = sample.TreeName
 
-        self.AdditionalCut = additionalCut
+        if hasattr(sample , "AdditionalCut") :
+            self.AdditionalCut = sample.AdditionalCut
+        else :
+            self.AdditionalCut = additionalCut
         
     def LoadJobs(self , Dir , pattern_ = "%s.root" ):
         Dirs = Dir.split(";")            
         self.JobFilesDir = Dirs[0]
         self.Jobs = []
-        pattern = ( pattern_ % (self.Name) )
+        if pattern_.count( "%" ) == 1 :
+            pattern = ( pattern_ % (self.Name) )
+        else :
+            pattern = pattern_
         for fn, ff in [("%s/%s" % ( Dirs[0] , f) , f) for f in os.listdir(Dirs[0])]:
             #print fn
             if os.path.isfile(fn):
@@ -96,6 +102,37 @@ class ExtendedSample: #extend the sample object to store histograms
     def SetFriendTreeInfo(self , friendsDir , friendTreeName ):
         self.FriendsDir = friendsDir
         self.FriendTreeName = friendTreeName
+
+    def LoadDataset( self, cut = None , ws = "tagsDumper/cms_hgg_13TeV" ):
+        if not hasattr( self, "Workspace") :
+            if hasattr(self, "TreeName" ):
+                treeName = self.TreeName
+            else:
+                print "to load workspace you have to specify the tree name before", self.Name
+                return 
+            self.LoadTree(treeName)
+
+            treefname = self.Tree.GetFile().GetName()
+            f = os.path.basename(treefname)
+            d = os.path.dirname( treefname )
+            self.WorkspaceFile = TFile.Open( d + "/WS_" + f )
+            self.Workspace = self.WorkspaceFile.Get( ws )
+
+            self.weightVar = RooRealVar("weight", "weight", 1.0 , -1000 , 1000 )
+            self.massVar = RooRealVar("CMS_hgg_mass" , "CMS_hgg_mass" , 100, 100 , 180 )
+            #self.dZVar = RooRealVar("dZ" , "dZ" , 0 , -1000 , 1000 )
+            self.varsToKeep = RooArgSet( self.massVar ) #  , self.weightVar )
+
+            
+            self.Dataset = self.Workspace.data( os.path.basename(self.TreeName) )
+            #self.Dataset.Print()
+            print "\tDataset", self.Name , "Loaded. nEntries " , self.Dataset.sumEntries()
+            self.ReducedDatasets = []
+        if cut :
+            self.ReducedDatasets.append( getattr( self.Dataset , "reduce" )( RooFit.Cut( cut) , RooFit.SelectVars(self.varsToKeep) ) )
+            return self.ReducedDatasets[-1]
+        else :
+            return self.Dataset
         
     def LoadTree(self , treeName ):
         if hasattr(self,"Tree"):
@@ -146,7 +183,7 @@ class ExtendedSample: #extend the sample object to store histograms
                 continue
             dir = ff.GetDirectory(dirName)
             if not dir :
-                print "File %d of sample %s is not valid, skip it , %s" % (Job.Index , self.Name , finame)
+                print "File %d of sample %s is not valid, skip it , %s (%s wasn't found)" % (Job.Index , self.Name , finame , dirName)
                 continue
             for dir__ in dir.GetListOfKeys() :
                 if not dir__.IsFolder():

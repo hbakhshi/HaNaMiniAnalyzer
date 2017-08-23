@@ -20,7 +20,8 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 class HistInfo:
-    def __init__(self , name , varname = None , nbins = None , _from = None , to = None , title = "" , Auto = False , dirName = None):
+    def __init__(self , name , varname = None , nbins = None , _from = None , to = None , title = "" , Auto = False , dirName = None , MCOnly = False):
+        self.MCOnly = MCOnly
         self.DirName = dirName
         self.Title = title
         self.TwoD = False
@@ -30,13 +31,13 @@ class HistInfo:
                 s = name.Name.split("_")[-1]
             self.Name = varname + "_" + s
             self.VarName = name.VarName
-            
             self.nBins = name.nBins
             self.From = name.From
             self.To = name.To
             self.Auto = name.Auto
 
             self.DirName = name.DirName
+            self.MCOnly = name.MCOnly
         elif type(name) == str and type(varname) == str and type(nbins) == int and ( type(_from) == float or type(_from) == int ) and ( type(to) == float or type(to) == int ) :
        
             self.Name = name
@@ -72,6 +73,7 @@ class HistInfo:
             self.H2 = varname
             self.TwoD = True
             self.Auto = False
+            self.MCOnly = name.MCOnly
 
         else:
             print "Initiate histinfo correctly, the given parameters are not allowd"
@@ -108,7 +110,7 @@ class CutInfo:
 
         self.Title = name if title == "" else title
         
-    def AddHist(self, name , varname = None , nbins = None , _from = None , to = None , Title = "" , Auto = False , dirName = None ):
+    def AddHist(self, name , varname = None , nbins = None , _from = None , to = None , Title = "" , Auto = False , dirName = None , MCOnly = False ):
         Title = self.Title + ";" + Title 
         if isinstance(name , HistInfo) and varname == None and nbins == None and _from == None and to == None :
             OrigTitle = name.Title.split(";")
@@ -116,14 +118,14 @@ class CutInfo:
                 Title = ";".join( [ self.Title ] + OrigTitle[1:] )
             else :
                 Title = self.Title
-            self.ListOfHists.append( HistInfo(name , self.Name , title = Title , dirName = dirName ) )
+            self.ListOfHists.append( HistInfo(name , self.Name , title = Title , dirName = dirName , MCOnly=MCOnly ) )
         elif type(name) == str and type(varname) == str and type(nbins) == int and ( type(_from) == float or type(_from) == int ) and ( type(to) == float or type(to) == int ) :
-            self.ListOfHists.append( HistInfo( self.Name + "_" + name , varname , nbins , _from , to , title = Title , dirName = dirName) )
+            self.ListOfHists.append( HistInfo( self.Name + "_" + name , varname , nbins , _from , to , title = Title , dirName = dirName , MCOnly=MCOnly) )
         elif type(name) == str and type(varname) == str and type(nbins) == int and Auto :
             name = name.replace("_" , "")
-            self.ListOfHists.append( HistInfo( self.Name + "_" + name , varname , nbins , title = Title , Auto = True , dirName = dirName ) )
+            self.ListOfHists.append( HistInfo( self.Name + "_" + name , varname , nbins , title = Title , Auto = True , dirName = dirName , MCOnly=MCOnly ) )
         elif isinstance(name , HistInfo) and isinstance(varname , HistInfo) and nbins == None and _from == None and to == None : #2d histogram
-            self.ListOfHists.append( HistInfo(name , varname , self.Name , title = Title , dirName = dirName) )
+            self.ListOfHists.append( HistInfo(name , varname , self.Name , title = Title , dirName = dirName , MCOnly=MCOnly) )
         else:
             print "Initiate histinfo correctly, the given parameters to AddHists are not allowd(%s=%s,%s=%s,%s=%s,%s=%s,%s=%s)" % (type(name),name,type(varname),varname,type(nbins),nbins,type(_from),_from,type(to),to)
 
@@ -182,7 +184,7 @@ class CutInfo:
                     if sss in hist.Name:
                         print "%s : %d , %.2f , %.2f" % (hist.Name , hist.nBins , hist.From , hist.To)
 
-                if nLoaded > 0:
+                if nLoaded > 0 and ( (isdata and not hist.MCOnly) or not isdata ) :
                     if hist.Auto :
                         hist.From = tree.GetMinimum( hist.VarName )
                         hist.To = tree.GetMaximum( hist.VarName )
@@ -314,7 +316,7 @@ class Plotter:
 	for prop in self.Props:
             self.Props[prop].SetExpectedLimits()
     
-    def Write(self, fout , normtodata ):
+    def Write(self, fout , normtodata , plotNormalizedOfAll = False ):
         print "%sStarted writing the plots to the output file (%s)...%s" % (bcolors.BOLD, fout.GetPath() , bcolors.ENDC)
         for propname in self.Props :
             propdir = None
@@ -338,5 +340,5 @@ class Plotter:
                             propdir = subdir.mkdir( propdirname )
             if not propdir :
                 propdir = fout.mkdir( propname )
-            self.Props[propname].Write(propdir, normtodata)
+            self.Props[propname].Write(propdir, normtodata , plotNormalizedOfAll=plotNormalizedOfAll)
             fout.cd()

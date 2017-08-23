@@ -1,15 +1,125 @@
+import re
 import ROOT
-from SignalFit import KappaFramework, CtCvCpInfo
+from SignalFit import KappaFramework, CtCvCpInfo, Dataset
 kappa = KappaFramework()
 LUMI = 35.9
 
+class SimpleCounter :
+    def __init__(self, sample, tree ,basic_cut , color = ROOT.kBlack , weightName = "weight" ):
+        self.Name = sample
+        self.Tree = tree
+        self.Cut = weightName + "*(" + basic_cut
+        self.Color = color
+
+        self.h1dTemp = ROOT.TH1D("h1dTemp" + sample , sample , 1 , -10 , 10 )
+        self.h1dTemp.Sumw2()
+        self.Tree.Draw( "0>>%s" % ( self.h1dTemp.GetName() ) , self.Cut + ")"  )
+        self.NumberOfPreSelecteds = self.h1dTemp.GetBinContent( 1 )
+        self.NumberOfPreSelecteds_Uncert = self.h1dTemp.GetBinError( 1 )
+        self.Yields = {}
+        self.Errors = {}
+        
+    def Count(self, Cut , name ):
+        cut = self.Cut + " && " + Cut + ")"
+        self.h1dTemp.Reset()
+        self.Sumw2()
+        self.Tree.Draw( "0>>%s" % ( self.h1dTemp.GetName() ) , cut )
+        self.Yields[name] = self.h1dTemp.GetBinContent( 1 )
+        self.Errors[name] = self.h1dTemp.GetBinError( 1 )
+        return self.Yields[name]/self.NumberOfPreSelecteds
+
+class AllBackgrounds :
+    def __init__( self ):
+        self.DIR = "/home/hbakhshi/Downloads/tHq_Georgios/output/18_02_17/"
+        self.TreeTemN = "thqLeptonicTagDumper/trees/%s_13TeV_all"
+    
 class EfficiencyCalculator :
-    def __init__(self, sample , tree , cuts , vars , color , outDir  ):
+    def PrintSystematics(self , writeFile = False):
+        for sys in self.Systematics:
+            for var in self.Systematics[sys]:
+                print self.Sample, sys, var , "%.1f" % (100*self.Systematics[sys][var]["normalization"])
+
+        if writeFile :
+            fout = ROOT.TFile.Open("out.root", "UPDATE")
+            ws = ROOT.RooWorkspace("WS"+self.Sample)
+            for ii in self.Dataset.CTCVDS :
+                getattr( ws, "import")(self.Dataset.CTCVDS[ ii ]["ds"] , ROOT.RooFit.RecycleConflictNodes() )
+
+            ws.Write()
+            fout.Close()
+        
+    def __init__(self, sample , tree , cuts , vars , color , outDir , ws , dsTypeSystematics , weightTypeSystematics , loadFromFile = None):
+        DoSYST = 0
         if sample == "thq" or sample == "thw" :
             self.TotalRatios = CtCvCpInfo("TotalRatios_"+sample)
-            self.TotalRatios.FillFrom1DHisto( "signals/13May/All_%s.root" % (sample) , "writer/hAll" )
+            self.TotalRatios.FillFrom1DHisto( "signals/29June/All_%s.root" % (sample) , "writer/hAll" )
+            DoSYST = 2
+            
+        if loadFromFile:
+            self.FileToLoadFrom = loadFromFile
+            self.WSToLoadFrom = self.FileToLoadFrom.Get( "WS"+sample)
+
+            DoSYST = 0
+            self.MainDS = ws.data( "%s_125_13TeV_THQLeptonicTag" % sample )
+            morevarstokeep = [ "LeptonType" , "diphoMVA" , "n_jets" , "n_M_bjets" , "MET_pt" , "n_L_bjets" , "fwdjet1_eta" , "MVA_Medium"]
+            self.Dataset = Dataset( self.MainDS , sample , ws , DoSYST , self.TotalRatios if hasattr(self,"TotalRatios") else None , morevarstokeep)
+            
+            format_=r'^'+ self.MainDS.GetName() + "_(.*)"
+            for ds_ in self.WSToLoadFrom.allData():
+                matchObj = re.match(format_ , ds_.GetName() , re.M|re.I)
+                if matchObj:
+                    try :
+                        index = int( matchObj.group(1) )
+                        self.Dataset.CTCVDS[ index ] = {"ds":ds_}
+                    except ValueError:
+                        name = matchObj.group(1)
+                        splitted = name.split("_")
+                        if len(splitted) == 3 :
+                            name = splitted[1]+"_"+splitted[2]
+                        elif len(splitted) == 2 :
+                            name = name
+
+                        self.Dataset.CTCVDS[ name  ] = {"ds":ds_}
+            
+            
+        else:    
+            self.MainDS = ws.data( "%s_125_13TeV_THQLeptonicTag" % sample )
+            morevarstokeep = [ "LeptonType" , "diphoMVA" , "n_jets" , "n_M_bjets" , "MET_pt" , "n_L_bjets" , "fwdjet1_eta" , "MVA_Medium"]
+            self.Dataset = Dataset( self.MainDS , sample , ws , DoSYST , self.TotalRatios if hasattr(self,"TotalRatios") else None , morevarstokeep)
+
+
+        if sample in ["tth", "vh"]:
+            if not loadFromFile :
+                self.Dataset.AddCtCvCpDS( -1 , morevars = morevarstokeep )
+                
+        self.Dataset.DS = self.Dataset.CTCVDS[50]["ds"]
+        self.NormCentral = self.Dataset.DS.sumEntries()
+
+        self.Systematics = {}
         
-        self.Cut = "%s*weight*((CMS_hgg_mass > 100 && CMS_hgg_mass < 180)&&(LeptonType == 1 || LeptonType == 2) && (diphoMVA > -0.4)&&(n_jets >= 2) &&(n_M_bjets==1)&&(MET > 30)  && %s)"
+        for sys in dsTypeSystematics :
+            self.Systematics[sys] = {}
+            for var in dsTypeSystematics[sys] :
+                self.Systematics[sys][var] = {}
+                if not loadFromFile :
+                    dsTypeSystematics[sys][var]["ds"] = ws.data( sample + "_125_13TeV_THQLeptonicTag_" + sys + var + "01sigma" )
+                    self.Dataset.AddCtCvCpDS( -1 , sys + "_" + var , dsTypeSystematics[sys][var]["ds"]  , morevars = morevarstokeep)
+                self.Systematics[sys][var]["tree"] = dsTypeSystematics[sys][var]["tree"]
+                self.Systematics[sys][var]["normed_ds"] = self.Dataset.CTCVDS[sys + "_" + var]["ds"]
+                self.Systematics[sys][var]["normalization"] = self.Systematics[sys][var]["normed_ds"].sumEntries()/self.NormCentral
+                self.Systematics[sys][var]["total"] = self.Systematics[sys][var]["normed_ds"].sumEntries()
+                
+        for sys in weightTypeSystematics :
+            self.Systematics[sys] = {}
+            for var in ["Up" , "Down"] :
+                self.Systematics[sys][var] = {}
+                if not loadFromFile:
+                    self.Dataset.AddCtCvCpDS( -1 , sys + "_" +var , self.MainDS , sys + var + "01sigma"  , morevars = morevarstokeep)
+                self.Systematics[sys][var]["normed_ds"] = self.Dataset.CTCVDS[ sys+ "_" + var]["ds"]
+                self.Systematics[sys][var]["normalization"] = self.Systematics[sys][var]["normed_ds"].sumEntries()/self.NormCentral
+
+        self.Cut = "%s*weight*((CMS_hgg_mass > 100 && CMS_hgg_mass < 180)&&(LeptonType == 1 || LeptonType == 2) && (diphoMVA > -0.4)&&(n_jets >= 2) &&(n_M_bjets==1)&&(MET_pt > 30)  && %s)"
+        self.CutForWS = "( (CMS_hgg_mass > 100 && CMS_hgg_mass < 180)   && %s)"
         self.Tree = tree
 
         self.Bins = cuts
@@ -24,7 +134,11 @@ class EfficiencyCalculator :
         self.NTot = CtCvCpInfo( "%s_%s" % (self.Sample  , "ntot") ) 
         for cut in self.Bins:
             self.Results[ cut ] = {"eff": CtCvCpInfo( "%s_%s_%s" % (self.Sample , cut , "eff") ) ,
-                                   "yield": CtCvCpInfo( "%s_%s_%s" % (self.Sample , cut , "yield") ) }
+                                   "yield": CtCvCpInfo( "%s_%s_%s" % (self.Sample , cut , "yield") ) ,
+                                   "syst" : {}}
+            for syst in self.Systematics :
+                self.Results[ cut ]["syst"][ syst ] = ROOT.TH1D( "%s_%s_%s" % (self.Sample , cut , syst) , "%s_%s_%s" % (self.Sample , cut , syst) , 2 , 0 , 2 )
+                
         self.AllHists = {}
         self.AllEffs = {}
         self.Purity = {}
@@ -44,8 +158,24 @@ class EfficiencyCalculator :
             cut = self.Cut % ( "%f" % (new_w ) , cut )
             return cut
             
-        
-    def Count(self, cut , ct , cv ):
+
+    def CountWS( self, cut , ct , cv , syst = None , var = None ):
+        xsecfactor = 1.0
+        if syst and var :
+            ct = -1.
+            cv = 1.
+            index = syst+"_"+var
+        else :
+            if hasattr( self, "TotalRatios" ) :
+                index = 50 if (ct == -1 and cv ==1) else self.TotalRatios.AllCtCVs.index( ( cv , ct ) )
+            else :
+                index = 50
+                xsecfactor = kappa.GetXSecBR( self.Sample , ct , cv )/kappa.GetXSecBR( self.Sample , -1 , 1 )
+                
+        Cut = self.CutForWS % cut
+        ds = self.Dataset.CTCVDS[index]["ds"]
+        return xsecfactor*ds.sumEntries( Cut )
+    def Count(self, cut , ct , cv  ):
         cut = self.MakeCut( cut , ct , cv )
 
         ROOT.gROOT.cd()
@@ -69,17 +199,30 @@ class EfficiencyCalculator :
             self.Purity[ bin ].hCtCv.Write()
             
     def CalcEffs(self, ct = -1 , cv = 1 ):
-        nTotal = self.Count( "1==1" , ct , cv )
+        nTotal = self.CountWS( "1==1" , ct , cv )
         w_id = -1 if (ct == -1 and cv ==1) else self.NTot.AllCtCVs.index( (cv , ct ) )
         self.NTot.SetValue( w_id , nTotal )
+        if ct==-1 and cv == 1 :
+            print self.Sample , nTotal, self.NormCentral
         for bin in self.Bins :
-            nBin = self.Count( self.Bins[bin] , ct , cv )
+            nBin = self.CountWS( self.Bins[bin] , ct , cv )
             if nTotal == 0 :
                 nTotal = 0.0001
+            if nBin == 0 :
+                nBin = 0.00005
             effBin = nBin/nTotal
             self.Results[ bin ]["eff"].SetValue( w_id , effBin )
             self.Results[ bin ]["yield"].SetValue( w_id , nBin )
+            if ct==-1 and cv == 1 :
+                print "\t", bin, nBin
+                for syst in self.Results[bin]["syst"]:
+                    up = self.CountWS( self.Bins[bin] ,  -1 , 1 , syst , "Up" )
+                    self.Results[bin]["syst"][syst].SetBinContent( 1 , 1.0-(up/nBin) )
 
+                    down = self.CountWS(self.Bins[bin] ,  -1 , 1 , syst , "Down" )
+                    self.Results[bin]["syst"][syst].SetBinContent( 2 , 1.0-(down/nBin) )
+                
+                    print "\t\t" , syst, "U:", up , "D:" , down
     def CalcAllEffs( self ):
         self.CalcEffs(-1 , 1)
         for i in self.NTot.AllCtCVs :
@@ -96,7 +239,9 @@ class EfficiencyCalculator :
             self.Results[cut]["eff"].GetCanvas().Write()
             self.Results[cut]["eff"].hCtCv.Write()
             self.Results[cut]["yield"].GetCanvas().Write()
-            
+            for syst in self.Results[cut]["syst"] :
+                self.Results[cut]["syst"][syst].Write()
+                
     def MakePlots(self , AdditionalCutName):
         dir_ = self.OutDir.mkdir( AdditionalCutName )
         for var1 in self.Vars :
@@ -179,19 +324,27 @@ class EfficiencyCalculator :
             
 
 class AllEfficiencies :
-    def __init__(self , Cuts):
-        self.TreeDIR = "/home/hbakhshi/Downloads/tHq_Georgios/output/24_04_17/signal/trees/"
+    def Print(self , writeToFile = False):
+        for sample in self.SampleFiles:
+            ec = self.SampleFiles[sample][-1]
+            ec.PrintSystematics(writeToFile)
+            
+    def __init__(self , Cuts , WSTypeSystematics , WeightTypeSystematics):
+        self.TreeDIR = "/home/hbakhshi/Downloads/tHq_Georgios/output/29June/signals/trees/" #24_04_17/signal/trees/"
+        self.WSDIR = "/home/hbakhshi/Downloads/tHq_Georgios/output/29June/signals/WS_"
         self.TreeName = "tagsDumper/trees/%s_125_13TeV_THQLeptonicTag"
-        self.SampleFiles = { "thq":["THQ.root" , 2], 
-                             "thw":["THW.root" , 3],
+        self.WSName = "tagsDumper/cms_hgg_13TeV"
+        self.SampleFiles = { "thq":["THQ.root" , 2 ],
+                             "thw":["THW.root" , 3 ],
                              "tth":["TTH.root" , 4],
                              #"vbf":["VBF.root" , 5],
                              #"ggh":["GGH.root" , 6],
                              "vh":["VH.root" , 7] }
-        self.Samples = ["thq", "tth" , "thw" , "vh" ]
+        self.Samples = ["thq" , "thw" , "vh" ,"tth"]
         self.Vars = {"nJets":["n_jets" , 4 , 2 , 6] , "nLooseBjets":["n_L_bjets"  , 4 , 1 , 5 ] , "jPrimeEta":["abs(fwdjet1_eta)" , 24 , 0 , 4.8 ] }
         self.Cuts = Cuts
-        
+
+        self.loadFromFile = ROOT.TFile.Open("signals/29June/AllDatasets.root")
         self.fOut = ROOT.TFile.Open("2dPlots.root" , "recreate")
 
         for sample in self.SampleFiles:
@@ -201,10 +354,31 @@ class AllEfficiencies :
             color = self.SampleFiles[sample][1]
             tree = f.Get( self.TreeName % (sample) )
             self.SampleFiles[sample].append( tree )
+
+            wsSysts = {}
+            for syst in WSTypeSystematics :
+                for variation in ["Up" , "Down" ] :
+                    treeName = self.TreeName + "_" + syst + variation + "01sigma"
+                    tree = f.Get( treeName % (sample) )
+                    self.SampleFiles[sample].append( tree )
+                    if syst in wsSysts:
+                        wsSysts[syst][variation] = {"tree":tree}
+                    else :
+                        wsSysts[syst] = {variation : {"tree":tree} }
+
+            weightsysts = {}
+            for syst in WeightTypeSystematics:
+                weightsysts[syst] = {"Up":{} , "Down":{} }
+                    
+            f2 = ROOT.TFile.Open( self.WSDIR + self.SampleFiles[sample][0] )
+            self.SampleFiles[sample].append( f2 )
+            ws = f2.Get( self.WSName )
+            self.SampleFiles[sample].append(ws)
             
             currentDir = self.fOut.mkdir( sample )
             currentDir.cd()
-            ec = EfficiencyCalculator( sample , tree , self.Cuts , self.Vars , color , currentDir  )
+            
+            ec = EfficiencyCalculator( sample , tree , self.Cuts , self.Vars , color , currentDir , ws , wsSysts , weightsysts , self.loadFromFile  )
             self.SampleFiles[sample].append( ec )
             
 
@@ -317,10 +491,13 @@ class AllEfficiencies :
 
     def Close(self):
         self.fOut.Close()
+        if self.loadFromFile :
+            self.loadFromFile.Close()
         for sample in self.SampleFiles:
             self.SampleFiles[sample][2].Close()
 
     def CalcEffsAndPurities(self):
+        ROOT.gROOT.SetBatch(True)
         hSum = {}
         hPurities = {}
         for sample in self.Samples :
@@ -335,20 +512,27 @@ class AllEfficiencies :
         for sample in self.Samples :
             ec = self.SampleFiles[sample][-1]
             ec.CalcPurities( hSum )
-        
-        
+        ROOT.gROOT.SetBatch(False)
+
+
+            
 allEffs = AllEfficiencies({"Preselection":"1==1" ,
                            "THQLeptonicTHQTag":"(n_jets == 2 && n_L_bjets == 1 && ( fwdjet1_eta > 2.5 || fwdjet1_eta < -2.5 ))",
                            "THQLeptonicTTHTag":"( (n_jets > 2 &&  abs(fwdjet1_eta)>2.5) || (abs(fwdjet1_eta)<=2.5) )",
-                           "MVATHQ":  "MVA_Medium > 0" ,
-                           "MVATTH":  "MVA_Medium <= 0",
+                           "MVATHQ":  "(MVA_Medium > 0)" ,
+                           "MVATTH":  "(MVA_Medium <= 0)",
                            "EtaNJetTTHTag":"!(n_jets == 2 && ( abs(fwdjet1_eta) >= 2.5 ) )",
                            "EtaNJetTHQTag":"(n_jets == 2 && ( abs(fwdjet1_eta) >= 2.5 ) )",
                            "EtaNbJetTTHTag":"!(n_L_bjets == 1 && ( abs(fwdjet1_eta) >= 2.5 ) )",
                            "EtaNbJetTHQTag":"(n_L_bjets == 1 && ( abs(fwdjet1_eta) >= 2.5 ) )",
                            "NJetNbJetTTHTag":"!(n_L_bjets == 1 && n_jets == 2)",
-                           "NJetNbJetTHQTag":"(n_L_bjets == 1 && n_jets == 2 )"})
+                           "NJetNbJetTHQTag":"(n_L_bjets == 1 && n_jets == 2 )"},
+                          ["JER", "JEC" , "metJerUncertainty" , "metUncUncertainty" , "metPhoUncertainty" , "metJecUncertainty" ],
+                          ["MvaLinearSyst","LooseMvaSF","PreselSF","electronVetoSF","TriggerWeight","ElectronWeight","MuonWeight","JetBTagCutWeight"]
+)
+skippedUncertainties = ["UnmatchedPUWeight","FracRVWeight","FracRVNvtxWeight","MuonMiniIsoWeight","JetBTagReshapeWeight"]
 #allEffs.MakePlots()
+allEffs.Print(False)
 allEffs.CalcEffsAndPurities()
 allEffs.Close()
 
