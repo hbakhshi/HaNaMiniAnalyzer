@@ -1,0 +1,8 @@
+0.000000    +0.39485  +0.39485    0.000000
+Error: closed range without finding crossing.
+RooRealVar::r = 1.00001 +/- 2.11981  L(0 - 10) 
+
+ --- MultiDimFit ---
+best fit parameter values and profile-likelihood uncertainties: 
+   r :    +1.000   -1.000/+2.815 (68%)
+Done in 0.02 min (cpu), 0.05 min (real)

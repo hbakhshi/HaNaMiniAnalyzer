@@ -1,0 +1,86 @@
+Checked with HIG-16-020
+
+YIELD ONLY : MET
+SHAPE ONLY : Photon energy scale and resolution, 
+
+------------------------ MET
+CMS_hgg_nuisance_metPhoUncertainty_13TeV param 0.0 1.0
+CMS_hgg_nuisance_metJecUncertainty_13TeV param 0.0 1.0
+CMS_hgg_nuisance_metJerUncertainty_13TeV param 0.0 1.0
+CMS_hgg_nuisance_metUncUncertainty_13TeV param 0.0 1.0
+
+----------------------- Photon energy scale and resolution
+MCSmearHighR9 -- photon energy resoultion? (AN-16-209, sec. 5.1)
+CMS_hgg_nuisance_MCSmearHighR9EEPhi_13TeV param 0.0 1.0  #Endcap
+CMS_hgg_nuisance_MCSmearHighR9EBPhi_13TeV param 0.0 1.0  #Barrel
+CMS_hgg_nuisance_MCSmearHighR9EBRho_13TeV param 0.0 1.0  #Barrel
+CMS_hgg_nuisance_MCSmearHighR9EERho_13TeV param 0.0 1.0  #Endcap
+
+MCSmearLowR9 -- photon energy resoultion? (AN-16-209, sec. 5.1)
+CMS_hgg_nuisance_MCSmearLowR9EERho_13TeV param 0.0 1.0   #Endcap
+CMS_hgg_nuisance_MCSmearLowR9EBRho_13TeV param 0.0 1.0   #Barrel
+CMS_hgg_nuisance_MCSmearLowR9EEPhi_13TeV param 0.0 1.0   #Endcap  
+CMS_hgg_nuisance_MCSmearLowR9EBPhi_13TeV param 0.0 1.0   #Barrel
+
+MCScaleHighR9 -- photon energy scale? (AN-16-209, sec. 5.1)
+CMS_hgg_nuisance_MCScaleHighR9EB_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCScaleHighR9EE_13TeV param 0.0 1.0
+
+MCScaleLowR9 -- photon energy scale? (AN-16-209, sec. 5.1)
+CMS_hgg_nuisance_MCScaleLowR9EB_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCScaleLowR9EE_13TeV param 0.0 1.0
+
+MCScaleGain  -- not clear, most probably photon energy scale (AN-16-209, sec. 5.1)
+CMS_hgg_nuisance_MCScaleGain1EB_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCScaleGain6EB_13TeV param 0.0 1.0
+
+=============================== Under the general photon-electron differences
+-------------------------- Showe shape
+ShowerShapeHighR9 -- Shower shape corrections
+CMS_hgg_nuisance_ShowerShapeHighR9EB_13TeV param 0.0 1.0
+CMS_hgg_nuisance_ShowerShapeHighR9EE_13TeV param 0.0 1.0
+
+ShowerShapeLowR9 -- Shower shape corrections
+CMS_hgg_nuisance_ShowerShapeLowR9EE_13TeV param 0.0 1.0
+CMS_hgg_nuisance_ShowerShapeLowR9EB_13TeV param 0.0 1.0
+
+-------------------------- Material modeling
+Material -- Modeling of the material budget
+CMS_hgg_nuisance_MaterialOuterBarrel_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MaterialCentralBarrel_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MaterialForward_13TeV param 0.0 1.0
+
+-------------------------- FNUF
+CMS_hgg_nuisance_FNUFEB_13TeV param 0.0 1.0
+CMS_hgg_nuisance_FNUFEE_13TeV param 0.0 1.0
+
+------------------------- Diphoton ID
+DiPhoton MVA or BDT (AN-16-209 LL933-936) -- In the PAS it is considered as yield changer. Why we have it in shape?
+CMS_hgg_nuisance_SigmaEOverEShift_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MvaShift_13TeV param 0.0 1.0
+
+====================================================================
+
+-------------------------- REST
+CMS_hgg_nuisance_JER_13TeV param 0.0 1.0
+CMS_hgg_nuisance_JEC_13TeV param 0.0 1.0
+
+
+===================> Good to know:
+https://hypernews.cern.ch/HyperNews/CMS/get/EGM-14-001/78/1/1/1/1/1/1/2/1.html
+
++ We list systematic uncertainties related to the photon vs electron
+difference (material, FNUF, shower shape), but we do not have any
+systematic uncertainty to take into account for a possible difference
+in the deviation of the MVA for electrons and photons.
+
+
+
+
+
+
+
+
+
+
+

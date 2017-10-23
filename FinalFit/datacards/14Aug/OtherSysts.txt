@@ -1,0 +1,35 @@
+
+CMS_hgg_nuisance_FNUFEB_13TeV
+CMS_hgg_nuisance_MCScaleGain6EB_13TeV
+CMS_hgg_nuisance_MCScaleHighR9EB_13TeV
+CMS_hgg_nuisance_MCScaleHighR9EE_13TeV
+CMS_hgg_nuisance_MCScaleLowR9EB_13TeV
+CMS_hgg_nuisance_MCScaleLowR9EE_13TeV
+CMS_hgg_nuisance_MCSmearHighR9EBPhi_13TeV
+CMS_hgg_nuisance_MCSmearHighR9EBRho_13TeV
+CMS_hgg_nuisance_MCSmearLowR9EBPhi_13TeV
+CMS_hgg_nuisance_MCSmearLowR9EEPhi_13TeV
+CMS_hgg_nuisance_MCSmearLowR9EERho_13TeV
+CMS_hgg_nuisance_MaterialCentralBarrel_13TeV
+CMS_hgg_nuisance_MaterialForward_13TeV
+CMS_hgg_nuisance_MaterialOuterBarrel_13TeV
+CMS_hgg_nuisance_ShowerShapeHighR9EB_13TeV
+CMS_hgg_nuisance_ShowerShapeHighR9EE_13TeV
+CMS_hgg_nuisance_ShowerShapeLowR9EB_13TeV
+
+
+CMS_hgg_nuisance_MaterialForward_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCSmearHighR9EEPhi_13TeV param 0.0 1.0
+CMS_hgg_nuisance_ShowerShapeLowR9EE_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCScaleGain1EB_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MaterialCentralBarrel_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCSmearLowR9EERho_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCScaleGain6EB_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCSmearLowR9EBRho_13TeV param 0.0 1.0
+CMS_hgg_nuisance_FNUFEE_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MaterialOuterBarrel_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCSmearLowR9EEPhi_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCScaleHighR9EE_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCSmearLowR9EBPhi_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCScaleLowR9EB_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCSmearHighR9EBRho_13TeV param 0.0 1.0

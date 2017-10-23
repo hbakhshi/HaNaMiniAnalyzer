@@ -1,0 +1,15 @@
+
+ -- Asymptotic -- 
+Expected  2.5%: r < 1.2597
+Expected 16.0%: r < 1.8946
+Expected 50.0%: r < 3.0859
+Expected 84.0%: r < 6.2103
+Expected 97.5%: r < 9.3591
+
+Done in 6.45 min (cpu), 6.47 min (real)
+
+Job finished at Sat Jul 22 14:54:03 CEST 2017 on node 
+ under linux version Scientific Linux CERN SLC release 6.9 (Carbon)
+
+CERN statistics: This process used approximately : 1:25:20 KSI2K hours (5120 KSI2K seconds)
+                 This process corresponds to     : 5:32:50 HS06  hours (19970 HS06  seconds)

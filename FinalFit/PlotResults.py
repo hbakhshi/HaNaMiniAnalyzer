@@ -4,7 +4,7 @@ import os
 import stat
 import math
 import sys
-from ROOT import RooWorkspace, TCanvas , RooFit, TColor, kBlue, kCyan,  kRed, kGreen, kYellow,kBlack, gROOT,  TObjArray, TList, TGraph, Double, gPad, RooWorkspace, RooArgList , RooAddPdf, TGraphAsymmErrors, kOrange, kAzure, kMagenta
+from ROOT import RooWorkspace, TCanvas , RooFit, TColor, kBlue, kCyan,  kRed, kGreen, kYellow,kBlack, gROOT,  TObjArray, TList, TGraph, Double, gPad, RooWorkspace, RooArgList , RooAddPdf, TGraphAsymmErrors, kOrange, kAzure, kMagenta, TPad, RooFormulaVar, TH1F , TH2F
 import array
 
 kappa = KappaFramework()
@@ -192,9 +192,8 @@ def Smoother( errors ):
     #print ret
     return ret
 
-def PlotLimits(Bin, color , style , date , canvas = None , dx = 0 , cv = 1):
-    DIR = "./datacards/"+date+"/ctcv%g/higgsCombine" + Bin + ".Asymptotic.mH125.5.root"
-    INPUT_FILE = "./datacards/"+date+"/ctcv%g/input.root"
+def PlotLimits(Bin, color , style , date , dx = 0 , cv = 1):
+    DIR = ""+date+"/ctcv%g/higgsCombine" + Bin + ".Asymptotic.mH125.root"
     
     x = array.array('d')
     y = array.array('d')
@@ -205,30 +204,13 @@ def PlotLimits(Bin, color , style , date , canvas = None , dx = 0 , cv = 1):
     ey2sigman = array.array('d')
     
     out = CtCvCpInfo("ResultsMedian%s%s" % (date, Bin ) )
-    out1sigmaP = CtCvCpInfo("Results1sigmaP%s%s" % (date,Bin) )
-    out1sigmaM = CtCvCpInfo("Results1sigmaM%s%s" % (date,Bin) )
 
-    nEvents = array.array('d')
     for ctcv in sorted(out.AllCtOverCVs):
-        #ct,cv,cp = out.GetCValues( index )
-        #if not ctcv in [ -1 ]:
-        #    continue
-        #CT = ct #0 if ct == 0 else -ct
         ct = ctcv
 
-        print INPUT_FILE%(ctcv)
-        input_file = TFile.Open( INPUT_FILE%( ctcv) )
-        #input_file.ls()
-        wsPreselection = input_file.Get("WSTHQLeptonicTag")
-        xsec_ = 1*(kappa.GetXSecBR( "thq" , ct, cv , False )+kappa.GetXSecBR( "tth" , ct, cv , False )+kappa.GetXSecBR( "thw" , ct, cv , False )+kappa.GetXSecBR( "vh" , ct, cv , False ))
         kappa.SetCtCv( ct , cv )
         xsec = kappa.SumXSections.getVal()
-
-        #wsPreselection.var("RVvh_mh125_norm").getVal() +
-        nevents = ( wsPreselection.var("RVthq_mh125_norm").getVal() + 1.02*wsPreselection.var("RVtth_mh125_norm").getVal() + wsPreselection.var("RVthw_mh125_norm").getVal() + cv*cv*0.1)
-        nEvents.append( nevents )
-        #xsec2 = nevents / (35900. )
-        input_file.Close()
+        
         path = DIR % (ctcv)
         print path
         
@@ -281,37 +263,19 @@ def PlotLimits(Bin, color , style , date , canvas = None , dx = 0 , cv = 1):
                 limits[ (ct,cv) ][ Bin ] = val
             else :
                 limits[ (ct,cv) ]= { Bin: val}
-            
-        print Bin, val, val1sigmam, val1sigmap, val2sigmam, val2sigmap
-        if val <= 0 :
-            val /= 1000
-        
-        #print cv,ct, path, val
-        cv_ = out.AllCtOverCVs[ctcv].keys()[0]
-        index = out.AllCtCVs.index( ( cv_ , ctcv*cv_) )
-        if val < 0 :
-            out.SetValue( index , val )
-        else :
-            #print Bin, "%.2f" % val, "+" , "%.2f" % abs(val2sigmap-val) , "-" , "%.2f" % abs(val2sigmam-val)
-            out.SetValue( index , val )
-            out1sigmaM.SetValue( index , val1sigmam )
-            out1sigmaP.SetValue( index , val1sigmap )
-            if val > 0 :
-                x.append( ctcv+dx )
-                y.append( val*xsec )
-                ex.append(0)
-                ey1sigmap.append( abs(val1sigmap-val)*xsec )
-                ey1sigman.append( abs(val1sigmam-val)*xsec )
-                ey2sigmap.append( abs(val2sigmap-val)*xsec )
-                ey2sigman.append( abs(val2sigmam-val)*xsec )
+                
+
+        out.SetValueByCtOverCv( ctcv , val if val > 0 else 0.01 )
+        if val > 0 :
+            x.append( ctcv+dx )
+            y.append( val*xsec )
+            ex.append(0)
+            ey1sigmap.append( abs(val1sigmap-val)*xsec )
+            ey1sigman.append( abs(val1sigmam-val)*xsec )
+            ey2sigmap.append( abs(val2sigmap-val)*xsec )
+            ey2sigman.append( abs(val2sigmam-val)*xsec )
 
     
-
-    print x
-    print y
-    print ex
-    print ey2sigman
-    print ey2sigmap
     graph_2sigma = TGraphAsymmErrors( len(x) , x , y , ex , ex , Smoother(ey2sigman) , Smoother(ey2sigmap) )
     graph_2sigma.SetName( "GraphAsym_%s_2SigmaBand_%s" % (date , Bin ))
     graph_2sigma.SetTitle( Bin+ "(" +date+ ")" )
@@ -330,226 +294,249 @@ def PlotLimits(Bin, color , style , date , canvas = None , dx = 0 , cv = 1):
     graph_1sigma.SetFillColor( color )
     graph_1sigma.SetFillStyle( 3005 )
     
-    options = "P SAME"
-    if canvas == None :
-        canvas = TCanvas()
-        options = "AP"
-    #canvas.Divide(2,1)
-    #canvas.cd(1)
-    out.GetCtOverCv(color , style , dx=dx , IgnoreNegatives = False).Draw(options)
-    #canvas.cd(2)
-    #out.hCtCv.Draw("COLZ text")
-    canvas.Update()
+    out.GetCtOverCv(color , style , dx=dx , IgnoreNegatives = False)
+    return out , graph_1sigma , graph_2sigma
 
-    graph_nevents = TGraph( len(nEvents) , x , nEvents )
+def PlotLimitResults(DIR_NAME = None , BIN_INDEX = None):
+    retobjects = []
+    bin_names = ["Preselection","THQLeptonicTHQTag","THQLeptonic","EtaNJetTHQTag","EtaNJet","EtaNbJetTHQTag","EtaNbJet","NJetNbJetTHQTag","NJetNbJet"]
+    bins = {"Preselection":[2, 23 , 0 , "Preselection"],
+            "THQLeptonicTHQTag":[3, 22 , 0.0005 , "|#eta_{forward jet}| > 2.5 + #jets=2 + #loose-bJets=1" ] , 
+            "THQLeptonic":[2 , 21 , 0.001 , "Combined results when |#eta_{forward jet}|, #jet and #loose-bJets are used"] ,
+            #"MVATHQ":[9,47 , 0.015 , "MVATHQ" ] , 
+            #"MVA":[9,46 , 0.02 , "MVA Combined"] ,
+            "EtaNJetTHQTag":[ 8 , 29 , 0.0025 , "|#eta_{forward jet}| > 2.5 + #jets=2" ] , 
+            "EtaNJet":[ 29 , 30 , 0.03 , "Combined results when |#eta_{forward jet}| and #jet are used"] ,
+            "EtaNbJetTHQTag":[ 46, 25 , 0.0035 , "|#eta_{forward jet}| > 2.5 + #loose-bJets=1" ] , 
+            "EtaNbJet":[ 46 , 21 , 0.004 , "Combined results when |#eta_{forward jet}| and #loose-bJets are used"], 
+            "NJetNbJetTHQTag":[ 30 , 2 , 0.0045 , "#jets=2 + #loose-bJets=1"] , 
+            "NJetNbJet":[ 30 , 5 , 0.005 , "Combined results when #jet and #loose-bJets are used"]
+    }
+
+    graphs_sigma_bands = {}
+    dir_name = DIR_NAME if DIR_NAME != None else sys.argv[1] 
+    bin_index = BIN_INDEX if BIN_INDEX != None else int( sys.argv[2] )
+    print bin_names
+    bin = bin_names[bin_index]
+    plotInfo = bins[bin]
+    if bin in ["THQLeptonicTHQTag" , "MVATHQ" , "EtaNJetTHQTag" , "EtaNbJetTHQTag" , "NJetNbJetTHQTag" ] and "CRInvLepCut" in dir_name :
+        bin = "CRInvertLepCut" + bin
+    if "CRInvLepCut" in dir_name :
+       plotInfo[3] += " (CR)" 
+    rValues , onesigma , twosigma = PlotLimits( bin , plotInfo[0] , plotInfo[1] , dir_name , plotInfo[2] )
+    rValuesHistFunc = rValues.CtOverCvDataHistFunc
+    retobjects.extend( [rValuesHistFunc , rValues , onesigma , twosigma] )
+    graphs_sigma_bands[(bin,dir_name)] = ( onesigma , twosigma )
+
+    kappa.SetCtCv( -1 , 1 )
+    frame = kappa.CtOverCv.frame()
+    retobjects.append( frame )
+    kappa.SumXSections.plotOn( frame , RooFit.DrawOption("same") , RooFit.LineColor(kOrange+1))
+    frame.SetAxisRange( -6 , 6 , "X" )
+    frame.SetAxisRange( 0.0001 , 1. , "Y" )
+
+    canvas2 = TCanvas("sigma_bands" , bin)
+    options = "ap"
+    x_intersection = -7
+    min_distance=1000000
+    nsteps , stepsize = 10000 , 6./10000
+    for i in range(0,nsteps):
+        ctOvercv = -6.+i*stepsize
+        kappa.SetCtCv( ctOvercv , 1 )
+        xsec = kappa.SumXSections.getVal()
+
+        limit = onesigma.Eval( ctOvercv )
+
+        distance = abs( limit - xsec )
+        if distance < min_distance :
+            x_intersection = ctOvercv
+            min_distance = distance
+
+    kappa.SetCtCv( -1 , 1 )        
+    limitAtNegativeOne = onesigma.Eval( -1 )/kappa.SumXSections.getVal()
+
+    for bin_ in graphs_sigma_bands :
+        graphs_sigma_bands[bin_][1].SetLineColor( kYellow-4)
+        graphs_sigma_bands[bin_][1].SetFillColor( kYellow -4)
+        graphs_sigma_bands[bin_][1].SetFillStyle( 1001 )
+        graphs_sigma_bands[bin_][1].SetTitle( plotInfo[3] )
+        graphs_sigma_bands[bin_][1].Draw( "a3" )
+        graphs_sigma_bands[bin_][1].GetYaxis().SetRangeUser( 0.001 ,2 )
+        graphs_sigma_bands[bin_][1].GetXaxis().SetRangeUser( -6.0 , 6.0 )
+        graphs_sigma_bands[bin_][1].GetHistogram().GetXaxis().SetTitle( "c_{t}/c_{v}")
+        graphs_sigma_bands[bin_][1].GetHistogram().GetYaxis().SetTitle( "pb")
+
+        graphs_sigma_bands[bin_][0].SetLineColor( kGreen - 4)
+        graphs_sigma_bands[bin_][0].SetFillColor( kGreen -4)
+        graphs_sigma_bands[bin_][0].SetFillStyle( 1001 )
+        graphs_sigma_bands[bin_][0].Draw( "3 same" )
+
+        graphs_sigma_bands[bin_][0].SetLineColor( kBlack )
+        graphs_sigma_bands[bin_][0].SetLineWidth( 2 )
+        graphs_sigma_bands[bin_][0].SetLineStyle( 2 )
+
+        graphs_sigma_bands[bin_][0].SetMarkerColor( kBlack )
+        graphs_sigma_bands[bin_][0].SetMarkerStyle( 0 )
+        graphs_sigma_bands[bin_][0].Draw("lp X")
+        #if not "same" in options :
+        #    options = "same p"
+
+    frame.Draw("SAME")
+
+    lineNegativeOne = TLine( -6 , onesigma.Eval( -1 ) , -1 , onesigma.Eval( -1 ) )
+    lineNegativeOne.SetLineColor( kCyan - 8 )
+    lineNegativeOne.SetLineStyle( 4 )
+    lineNegativeOne.SetLineWidth( 4 )
+    lineNegativeOne.Draw()
+
+    lineNegativeOneVertical = TLine( -1 , 0 , -1 , onesigma.Eval( -1 ) )
+    lineNegativeOneVertical.SetLineColor( kCyan - 8 )
+    lineNegativeOneVertical.SetLineStyle( 4 )
+    lineNegativeOneVertical.SetLineWidth( 4 )
+    lineNegativeOneVertical.Draw()
+
+    lineIntersection = TLine( x_intersection , 0 , x_intersection , onesigma.Eval( x_intersection ) )
+    lineIntersection.SetLineColor( kBlue )
+    lineIntersection.SetLineStyle( 5 )
+    lineIntersection.SetLineWidth( 2 )
+    lineIntersection.Draw()
+
+    lineIntersectionHorizontal = TLine( -6 , onesigma.Eval( x_intersection ) , x_intersection , onesigma.Eval( x_intersection ) )
+    lineIntersectionHorizontal.SetLineColor( kBlue )
+    lineIntersectionHorizontal.SetLineStyle( 5 )
+    lineIntersectionHorizontal.SetLineWidth( 2 )
+    lineIntersectionHorizontal.Draw()
+
+    InfoBox = TLatex()
+    InfoBox.SetNDC()
+    InfoBox.SetTextSize(0.03)
+    InfoBox.DrawLatex(0.14,0.85, "c_{t}/c_{v} < %.2f is excluded"%(x_intersection))
+    InfoBox.DrawLatex(0.14,0.8, "r(c_{t}/c_{v}=-1) = %.2f"%(limitAtNegativeOne))
+
+    retobjects.extend( [lineIntersectionHorizontal , lineIntersection , lineNegativeOneVertical , lineNegativeOne , InfoBox ] )
+    canvas2.SetLogy()
+    canvas2.SaveAs( "%s/%s.pdf" % (dir_name , bin) )
+
+    return canvas2 , retobjects 
     
-    return canvas, out.CtOverCvGraph, out.hCtCv , graph_1sigma , graph_2sigma, graph_nevents
+def PlotTotalNumberOfEvents( inputDirForLimit  , signalDir = "./signals/14August1percentSystLimit/"):
+    thqEff_File = TFile.Open( signalDir + "/out_ctcv_thq_syst.root" )
+    thqEff_Canvas = thqEff_File.Get("thq/Canvas_Efficiency_thq").GetListOfPrimitives().At(0)
+    thqEff_Canvas.Print()
+    thqEff_H2 = thqEff_Canvas.GetListOfPrimitives().At(1)
+    #thqEff_H2.Print("ALL")
+    thqEff = CtCvCpInfo("thqEff")
+    thqEff.FillFrom2DHisto( thqEff_H2 )
+    thqEff_File.Close()
+    thqEff.GetCtOverCv()
+    thqEff_Func = thqEff.CtOverCvDataHistFunc
+    thqFinalYield_List = RooArgList( thqEff_Func , kappa.tHqXSecValue , kappa.BRGammaGammaValue , kappa.LUMI  )
+    thqFinalYield = RooFormulaVar(  "thq_norm" , "thq Norm formula" ,  "1000.*@0*@1*@2*@3/100." , thqFinalYield_List )
+    
+    thwEff_File = TFile.Open( signalDir + "/out_ctcv_thw_syst.root" )
+    thwEff_Canvas = thwEff_File.Get("thw/Canvas_Efficiency_thw").GetListOfPrimitives().At(0)
+    thwEff_Canvas.Print()
+    thwEff_H2 = thwEff_Canvas.GetListOfPrimitives().At(1)
+    #thwEff_H2.Print("ALL")
+    thwEff = CtCvCpInfo("thwEff")
+    thwEff.FillFrom2DHisto( thwEff_H2 )
+    thwEff_File.Close()
+    thwEff.GetCtOverCv()
+    thwEff_Func = thwEff.CtOverCvDataHistFunc
+    thwFinalYield_List = RooArgList( thwEff_Func , kappa.tHWXSecValue , kappa.BRGammaGammaValue , kappa.LUMI  )
+    thwFinalYield = RooFormulaVar(  "thw_norm" , "thw Norm formula" ,  "1000.*@0*@1*@2*@3/100." , thwFinalYield_List )
 
-    arr = array.array('d' , [1,2,3] )
-    out.hCtCv.SetContour(3 , arr)
-    out.hCtCv.SetContourLevel(0,1)
+    tthAT_SM = 1.69902
+    vhAT_SM = 0.0640522
+    gghOverTTH = 0.0127844
+    tthAT_SM *= (1+gghOverTTH)
 
-    out.hCtCv.Draw("CONT Z LIST")
-    canvas.Update()
-    gPad.Update()
-    conts = gROOT.GetListOfSpecials().FindObject("contours")
+    otherHiggsYields = RooFormulaVar("otherHiggsYields" , "otherHiggsYields" , "@0*(%.5f*@1*@1 + %.5f*@2*@2)" % (tthAT_SM , vhAT_SM) , RooArgList( kappa.BRGammaGamma , kappa.CT, kappa.CV) )
 
-    TotalConts = 0
-    if conts:
-        TotalConts = conts.GetSize()
-    else :
-        print "contours is not set"
-        
-    vg = vGraph( out.hCtCv )
-    print TotalConts
-    for i in range( 0 ,  TotalConts ) :
-        contLevel = conts.At(i)
-        print contLevel.GetSize()
-        for j in range(0 , contLevel.GetSize() ) :
-            curv = contLevel.At(j)
-            np = curv.GetN()
-            vg.Add( TGraph(np) )
-            x0 = Double()
-            y0 = Double()
-            for k in range(0,  np):
-                curv.GetPoint(k, x0, y0)
-                vg.AddPoint( -1 , k, x0 , y0 )
-            vg.g[-1].SetLineColor(out.hCtCv.GetLineColor())
-            vg.g[-1].SetLineStyle(out.hCtCv.GetLineStyle())
-            vg.g[-1].SetLineWidth(out.hCtCv.GetLineWidth())
-    vg.draw( out.hCtCv )
-    print vg.h
-    return vg, canvas
+    totalYield = RooFormulaVar("TotalYield" , "Total Yield" , "@0+@1+@2" , RooArgList( otherHiggsYields , thwFinalYield , thqFinalYield ) )
 
-def PlotHiggsBkgs():
-    DIR = "./datacards/13May/ct%gcv%g/input.root"
-    out = CtCvCpInfo("HiggsBackgrounds")
+    INPUT_FILE = inputDirForLimit+"/ctcv%g/input.root"
+    YieldsInDataCards = CtCvCpInfo("YieldsInDataCards")
 
-    for index in range( -1, 50):
-        ct,cv,cp = out.GetCValues( index )
-        if not (ct == 1 and cv == 1):
-            continue
-        path = DIR % (ct, cv )
-        if os.path.exists( path ) :
-            f = TFile.Open( path )
-            ws = f.Get("WS")
-            val = 0
+    for ctcv in sorted(YieldsInDataCards.AllCtOverCVs):
+        ct = ctcv
+        input_file = TFile.Open( INPUT_FILE%( ctcv) )
+        nevents = 0
+        if input_file :
+            wsPreselection = input_file.Get("WSTHQLeptonicTag")
 
-            vhVal = ws.var("RVvh_mh125_norm").getVal()
-            tthVal = ws.var("RVtth_mh125_norm").getVal()
-            #gghVal = ws.var("RVggh_mh125_norm").getVal()
-            #vbfVal = ws.var("RVvbf_mh125_norm").getVal()
-            print vhVal, tthVal
-            val += (vhVal + tthVal ) # + gghVal + vbfVal)
+            factor = (1+gghOverTTH)
+            additive = vhAT_SM
+            additive *= kappa.GetXSecBR( "vh" , ct , 1. )
+
+            factor = 1.0
+            additive = 0.0
             
-            f.Close()
-        else:
-            val = -300
+            nevents = ( wsPreselection.var("RVthq_mh125_norm").getVal() + factor*wsPreselection.var("RVtth_mh125_norm").getVal() + wsPreselection.var("RVthw_mh125_norm").getVal() + additive )
+            input_file.Close()
+        YieldsInDataCards.SetValueByCtOverCv( ctcv , nevents )
+    YieldsInDataCards.GetCtOverCv()
+    YieldsInDataCards_HistFunc = YieldsInDataCards.CtOverCvDataHistFunc
+    
+    frame = kappa.CtOverCv.frame()
+    frame.SetAxisRange( -6 , 6 , "X" )
+    kappa.CV.setVal( 1. )
+    totalYield.plotOn( frame , RooFit.LineColor(kRed) ).getCurve().SetTitle("CV=1")
+    #kappa.CV.setVal( 2. )
+    #totalYield.plotOn( frame , RooFit.LineColor(kAzure) ).getCurve().SetTitle("CV=2")
+    #kappa.CV.setVal( 0.5 )
+    #totalYield.plotOn( frame , RooFit.LineColor(kOrange) ).getCurve().SetTitle("CV=0.5")
+    YieldsInDataCards_HistFunc.plotOn( frame , RooFit.LineColor(kBlue) ).getCurve().SetTitle("Input of datacards")
+    #kappa.SumXSectionsTimesLumi.plotOn (frame, RooFit.LineColor(kOrange) )
+    TotalEff = RooFormulaVar("TotalEff" , "TotalEff" , "100*@0/@1" , RooArgList( totalYield , kappa.SumXSectionsTimesLumi ) ) #YieldsInDataCards_HistFunc
+    TotalEff.plotOn( frame , RooFit.LineColor( kBlack ))
+    frame.SetAxisRange( 0.01 , 800 , "Y" )
 
-        print cv,ct, path, val
-        out.SetValue( index , val )
+    c = TCanvas("Yields" , "Yields")
+    #c.SetLogy()
+    #frame.Draw()
+    
+    return (frame,c, YieldsInDataCards)
 
-    canvas = TCanvas()
-    out.hCtCv.Draw("COLZ TEXT")
-    return canvas, out.hCtCv
-#a,b = PlotHiggsBkgs()
+def FinalPlotter(inputDirForLimit):
+    frame_nevents , canvas_nevents , YieldsInDataCards = PlotTotalNumberOfEvents(inputDirForLimit)
+    YieldsInDataCards_HistFunc = YieldsInDataCards.CtOverCvDataHistFunc
+    print frame_nevents
+    frame_nevents.Print()
+    canvas_limit , retobjects_limits = PlotLimitResults(inputDirForLimit.split("/")[1] , 3)
+    Limits_HistFunc = retobjects_limits[0]
+    print Limits_HistFunc
+    Limits_HistFunc.Print()
+    
+    rTimes_nEvents = RooFormulaVar("UpperLimitOnNEvents" , "UpperLimitOnNEvents" , "@0*@1" , RooArgList( Limits_HistFunc , YieldsInDataCards_HistFunc ) )
+    canvas_nevents.cd()
+    rTimes_nEvents.plotOn( frame_nevents , RooFit.LineColor( kGreen ) ).getCurve().SetTitle("Upper limit on #events")
+    frame_nevents.Draw()
 
-bins = {"Preselection":[2, 23 , 0 , "Preselection"],
-        "THQLeptonicTHQTag":[3, 22 , 0.0005 , "|#eta_{forward jet}| > 2.5 + #jets=2 + #loose-bJets=1" ] , 
-        "THQLeptonic":[2 , 21 , 0.001 , "Combined results when |#eta_{forward jet}|, #jet and #loose-bJets are used"] ,
-        #"MVATHQ":[9,47 , 0.015 , "MVATHQ" ] , 
-        #"MVA":[9,46 , 0.02 , "MVA Combined"] ,
-        "EtaNJetTHQTag":[ 8 , 29 , 0.0025 , "|#eta_{forward jet}| > 2.5 + #jets=2" ] , 
-        "EtaNJet":[ 29 , 30 , 0.03 , "Combined results when |#eta_{forward jet}| and #jet are used"] ,
-        "EtaNbJetTHQTag":[ 46, 25 , 0.0035 , "|#eta_{forward jet}| > 2.5 + #loose-bJets=1" ] , 
-        "EtaNbJet":[ 46 , 21 , 0.004 , "Combined results when |#eta_{forward jet}| and #loose-bJets are used"], 
-        "NJetNbJetTHQTag":[ 30 , 2 , 0.0045 , "#jets=2 + #loose-bJets=1"] , 
-        "NJetNbJet":[ 30 , 5 , 0.005 , "Combined results when #jet and #loose-bJets are used"]
-}
-canvas = None
-graphs = []
-graphs_sigma_bands = {}
-dir_name = sys.argv[1]
-bin_index = int( sys.argv[2] )
-print bins.keys()
-bin = bins.keys()[bin_index]
-plotInfo = bins[bin]
-if bin in ["THQLeptonicTHQTag" , "MVATHQ" , "EtaNJetTHQTag" , "EtaNbJetTHQTag" , "NJetNbJetTHQTag" ] and "CRInvLepCut" in dir_name :
-    bin = "CRInvertLepCut" + bin
-if "CRInvLepCut" in dir_name :
-   plotInfo[3] += " (CR)" 
-#for bin in bins :
-canvas, b, c , onesigma , twosigma , nevents = PlotLimits( bin , plotInfo[0] , plotInfo[1] , dir_name , canvas , plotInfo[2] )
-graphs.append( b )
-graphs.append( c )
-graphs_sigma_bands[(bin,dir_name)] = ( onesigma , twosigma )
+    return (frame_nevents, canvas_nevents, YieldsInDataCards, canvas_limit, retobjects_limits, Limits_HistFunc, rTimes_nEvents )
 
-
-frame = kappa.CtOverCv.frame()
-kappa.SumXSections.plotOn( frame , RooFit.DrawOption("same") , RooFit.LineColor(kOrange+1))
-frame.SetAxisRange( -6 , 6 , "X" )
-frame.SetAxisRange( 0.0001 , 1. , "Y" )
-
-# kappa.BRGammaGamma.plotOn( frame , RooFit.DrawOption("same") )
-# kappa.tHqXSecValue.plotOn( frame , RooFit.LineColor(kGreen+2), RooFit.DrawOption("same") )
-# kappa.tHWXSecValue.plotOn( frame , RooFit.LineColor(kOrange+1), RooFit.DrawOption("same") )
-# kappa.ttHXSecValue.plotOn( frame , RooFit.LineColor(kAzure+6), RooFit.DrawOption("same") )
-# kappa.vHXSecValue.plotOn( frame , RooFit.LineColor(kMagenta+3), RooFit.DrawOption("same") )
-
-#kappa2 = KappaFramework()
-#kappa2.SetCtCv( 2 , 2 )
-#kappa2.SumXSections.plotOn( frame ,  RooFit.LineColor(kGreen+2), RooFit.DrawOption("same") )
-
-# frame2 = kappa.CV.setRange( 0 , 10 )
-# frame2 = kappa.CV.frame()
-# kappa.SumXSections.plotOn( frame2 ,  RooFit.LineColor(kMagenta+3) )
-# kappa.BRGammaGamma.plotOn( frame , RooFit.DrawOption("same")  )
-# kappa.tHqXSecValue.plotOn( frame , RooFit.LineColor(kGreen+2), RooFit.DrawOption("same") )
-# kappa.tHWXSecValue.plotOn( frame , RooFit.LineColor(kOrange+1), RooFit.DrawOption("same") )
-# kappa.ttHXSecValue.plotOn( frame , RooFit.LineColor(kAzure+6), RooFit.DrawOption("same") )
-# kappa.vHXSecValue.plotOn( frame , RooFit.LineColor(kMagenta+3), RooFit.DrawOption("same") )
+def PlotAllXSectionsAndBR(cv=1.):
+    kappa.SetCtCv( -1 , cv )
+    frame = kappa.CtOverCv.frame()
+    kappa.BRGammaGamma.plotOn( frame , RooFit.Name("BR") , RooFit.LineStyle(9) ).getCurve().SetTitle( "Br(H #rightarrow #gamma#gamma)/Br_{SM}" )
+    kappa.tHqXSecValue.plotOn( frame , RooFit.LineColor(kGreen+2) ).getCurve().SetTitle("#sigma (tHq)") 
+    kappa.tHWXSecValue.plotOn( frame , RooFit.LineColor(kOrange+1), RooFit.DrawOption("same") ).getCurve().SetTitle("#sigma (tHW)")
+    kappa.ttHXSecValue.plotOn( frame , RooFit.LineColor(kAzure+6), RooFit.DrawOption("same") ).getCurve().SetTitle("#sigma (ttH)" )
+    kappa.vHXSecValue.plotOn( frame , RooFit.LineColor(kMagenta+3), RooFit.DrawOption("same") ).getCurve().SetTitle("#sigma (VH)")
+    kappa.SumXSections.plotOn( frame ,  RooFit.LineColor(kRed), RooFit.DrawOption("same") ).getCurve().SetTitle("#Sigma#sigma #times Br(H #rightarrow #gamma#gamma)")
+    frame.SetTitle("Cv=%.2f" % (cv))
+    frame.SetYTitle("")
+    frame.SetAxisRange( 0.0001 , 100 , "Y")
+    c = TCanvas("CanvasAllXSectionsAndBR%.1f" % (cv) , "theoryCurves%.1f" % (cv) , 600 , 700 )
+    c.SetLogy()
+    frame.Draw()
+    legend = c.BuildLegend( 0.12 , 0.12 , 0.38 , 0.5 , "",  "l")
+    legend.SetLineColor(0)
+    legend.SetFillStyle(0)
+    return c , frame
 
 
-canvas2 = TCanvas("sigma_bands")
-options = "ap"
-x_intersection = -7
-min_distance=1000000
-nsteps , stepsize = 10000 , 6./10000
-for i in range(0,nsteps):
-    ctOvercv = -6.+i*stepsize
-    kappa.SetCtCv( ctOvercv , 1 )
-    xsec = kappa.SumXSections.getVal()
 
-    limit = onesigma.Eval( ctOvercv )
-
-    distance = abs( limit - xsec )
-    if distance < min_distance :
-        x_intersection = ctOvercv
-        min_distance = distance
-
-kappa.SetCtCv( -1 , 1 )        
-limitAtNegativeOne = onesigma.Eval( -1 )/kappa.SumXSections.getVal()
-
-for bin_ in graphs_sigma_bands :
-    graphs_sigma_bands[bin_][1].SetLineColor( kYellow-4)
-    graphs_sigma_bands[bin_][1].SetFillColor( kYellow -4)
-    graphs_sigma_bands[bin_][1].SetFillStyle( 1001 )
-    graphs_sigma_bands[bin_][1].SetTitle( plotInfo[3] )
-    graphs_sigma_bands[bin_][1].Draw( "a3" )
-    graphs_sigma_bands[bin_][1].GetYaxis().SetRangeUser( 0.00004 ,0.8 )
-    graphs_sigma_bands[bin_][1].GetXaxis().SetRangeUser( -6.0 , 6.0 )
-    graphs_sigma_bands[bin_][1].GetHistogram().GetXaxis().SetTitle( "c_{t}/c_{v}")
-    graphs_sigma_bands[bin_][1].GetHistogram().GetYaxis().SetTitle( "pb")
-
-    graphs_sigma_bands[bin_][0].SetLineColor( kGreen - 4)
-    graphs_sigma_bands[bin_][0].SetFillColor( kGreen -4)
-    graphs_sigma_bands[bin_][0].SetFillStyle( 1001 )
-    graphs_sigma_bands[bin_][0].Draw( "3 same" )
-
-    graphs_sigma_bands[bin_][0].SetLineColor( kBlack )
-    graphs_sigma_bands[bin_][0].SetLineWidth( 2 )
-    graphs_sigma_bands[bin_][0].SetLineStyle( 2 )
-
-    graphs_sigma_bands[bin_][0].SetMarkerColor( kBlack )
-    graphs_sigma_bands[bin_][0].SetMarkerStyle( 0 )
-    graphs_sigma_bands[bin_][0].Draw("lp X")
-    #if not "same" in options :
-    #    options = "same p"
-frame.Draw("SAME")
-
-lineNegativeOne = TLine( -6 , onesigma.Eval( -1 ) , -1 , onesigma.Eval( -1 ) )
-lineNegativeOne.SetLineColor( kCyan - 8 )
-lineNegativeOne.SetLineStyle( 4 )
-lineNegativeOne.SetLineWidth( 4 )
-lineNegativeOne.Draw()
-
-lineNegativeOneVertical = TLine( -1 , 0 , -1 , onesigma.Eval( -1 ) )
-lineNegativeOneVertical.SetLineColor( kCyan - 8 )
-lineNegativeOneVertical.SetLineStyle( 4 )
-lineNegativeOneVertical.SetLineWidth( 4 )
-lineNegativeOneVertical.Draw()
-
-lineIntersection = TLine( x_intersection , 0 , x_intersection , onesigma.Eval( x_intersection ) )
-lineIntersection.SetLineColor( kBlue )
-lineIntersection.SetLineStyle( 5 )
-lineIntersection.SetLineWidth( 2 )
-lineIntersection.Draw()
-
-lineIntersectionHorizontal = TLine( -6 , onesigma.Eval( x_intersection ) , x_intersection , onesigma.Eval( x_intersection ) )
-lineIntersectionHorizontal.SetLineColor( kBlue )
-lineIntersectionHorizontal.SetLineStyle( 5 )
-lineIntersectionHorizontal.SetLineWidth( 2 )
-lineIntersectionHorizontal.Draw()
-
-InfoBox = TLatex()
-InfoBox.SetNDC()
-InfoBox.SetTextSize(0.03)
-InfoBox.DrawLatex(0.14,0.85, "c_{t}/c_{v} < %.2f is excluded"%(x_intersection))
-InfoBox.DrawLatex(0.14,0.8, "r(c_{t}/c_{v}=-1) = %.2f"%(limitAtNegativeOne))
-
-
-canvas2.SetLogy()
-canvas2.SaveAs( "datacards/%s/%s.pdf" % (dir_name , bin) )
 
 class BinDatacard:
     def __init__(self, binName):

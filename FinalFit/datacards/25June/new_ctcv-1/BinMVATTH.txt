@@ -1,0 +1,53 @@
+Combination of CMS-HGG_mva_13TeV_datacard.txt
+imax 1 number of bins
+jmax 4 number of processes minus 1
+kmax 31 number of nuisance parameters
+----------------------------------------------------------------------------------------------------------------------------------
+shapes bkg_mass                  MVATTH_13TeV  ../../../bkg/6June/MVATTH.root multipdf:CMS_hgg_MVATTH_13TeV_bkgshape
+shapes data_obs                  MVATTH_13TeV  ../../../bkg/6June/MVATTH.root multipdf:roohist_data_mass_MVATTH
+shapes thq_hgg                   MVATTH_13TeV  input.root WSMVATTH:RVthq_mh125
+shapes thw_hgg                   MVATTH_13TeV  input.root WSMVATTH:RVthw_mh125
+shapes tth_hgg                   MVATTH_13TeV  input.root WSMVATTH:RVtth_mh125
+shapes vh_hgg                    MVATTH_13TeV  input.root WSMVATTH:RVvh_mh125                                                       
+----------------------------------------------------------------------------------------------------------------------------------
+bin          MVATTH_13TeV
+observation  -1.0
+----------------------------------------------------------------------------------------------------------------------------------
+bin	MVATTH_13TeV	MVATTH_13TeV	MVATTH_13TeV	MVATTH_13TeV	MVATTH_13TeV
+process	thq_hgg	bkg_mass	tth_hgg			thw_hgg			vh_hgg
+process	0	1		-1			-2			-3
+rate	0.1681	1		0.7274			0.6234			0.2538
+----------------------------------------------------------------------------------------------------------------------------------
+CMS_hgg_nuisance_MaterialForward_13TeV param 0.0 1.0
+CMS_hgg_nuisance_metJerUncertainty_13TeV param 0.0 1.0
+CMS_hgg_nuisance_ShowerShapeHighR9EB_13TeV param 0.0 1.0
+CMS_hgg_nuisance_metUncUncertainty_13TeV param 0.0 1.0
+CMS_hgg_nuisance_SigmaEOverEShift_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCSmearHighR9EEPhi_13TeV param 0.0 1.0
+CMS_hgg_nuisance_ShowerShapeHighR9EE_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCSmearHighR9EBPhi_13TeV param 0.0 1.0
+CMS_hgg_nuisance_ShowerShapeLowR9EE_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCScaleGain1EB_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MaterialCentralBarrel_13TeV param 0.0 1.0
+CMS_hgg_nuisance_JER_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCSmearLowR9EERho_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MvaShift_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCSmearHighR9EBRho_13TeV param 0.0 1.0
+CMS_hgg_nuisance_JEC_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCScaleGain6EB_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCScaleLowR9EB_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCSmearLowR9EBRho_13TeV param 0.0 1.0
+CMS_hgg_nuisance_FNUFEB_13TeV param 0.0 1.0
+CMS_hgg_nuisance_FNUFEE_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCScaleLowR9EE_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCScaleHighR9EB_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MaterialOuterBarrel_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCSmearLowR9EEPhi_13TeV param 0.0 1.0
+CMS_hgg_nuisance_metPhoUncertainty_13TeV param 0.0 1.0
+CMS_hgg_nuisance_metJecUncertainty_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCScaleHighR9EE_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCSmearLowR9EBPhi_13TeV param 0.0 1.0
+CMS_hgg_nuisance_MCSmearHighR9EERho_13TeV param 0.0 1.0
+CMS_hgg_nuisance_ShowerShapeLowR9EB_13TeV param 0.0 1.0
+
+pdfindex_MVATTH_13TeV discrete

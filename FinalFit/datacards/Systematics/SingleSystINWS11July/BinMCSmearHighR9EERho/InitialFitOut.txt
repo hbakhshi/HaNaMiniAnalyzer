@@ -1,0 +1,7 @@
+Error: minimization failed at r = 1.02677
+RooRealVar::r = 1.03323 +/- 0.452532  L(0 - 10) 
+
+ --- MultiDimFit ---
+best fit parameter values and profile-likelihood uncertainties: 
+   r :    +1.033   -1.033/+8.967 (68%)
+Done in 0.04 min (cpu), 0.04 min (real)

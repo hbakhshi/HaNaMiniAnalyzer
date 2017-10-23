@@ -1,0 +1,60 @@
+Combination of BinCRInvertLepCutTHQLeptonicTHQTag.txt  BinCRInvertLepCutTHQLeptonicTTHTag.txt
+imax 2 number of bins
+jmax 4 number of processes minus 1
+kmax 32 number of nuisance parameters
+----------------------------------------------------------------------------------------------------------------------------------
+shapes bkg_mass  ch1       ../../../bkg/CRInvertLeptCut22July/CRInvertLepCut.root multipdf:CMS_hgg_CRInvertLepCutTHQLeptonicTHQTag_13TeV_bkgshape
+shapes data_obs  ch1       ../../../bkg/CRInvertLeptCut22July/CRInvertLepCut.root multipdf:roohist_data_mass_CRInvertLepCutTHQLeptonicTHQTag
+shapes thq_hgg   ch1       input.root WSCRInvertLepCutTHQLeptonicTHQTag:RVthq_mh125
+shapes thw_hgg   ch1       input.root WSCRInvertLepCutTHQLeptonicTHQTag:RVthw_mh125
+shapes tth_hgg   ch1       input.root WSCRInvertLepCutTHQLeptonicTHQTag:RVtth_mh125
+shapes vh_hgg    ch1       input.root WSCRInvertLepCutTHQLeptonicTHQTag:RVvh_mh125
+shapes bkg_mass  ch2       ../../../bkg/CRInvertLeptCut22July/CRInvertLepCut.root multipdf:CMS_hgg_CRInvertLepCutTHQLeptonicTTHTag_13TeV_bkgshape
+shapes data_obs  ch2       ../../../bkg/CRInvertLeptCut22July/CRInvertLepCut.root multipdf:roohist_data_mass_CRInvertLepCutTHQLeptonicTTHTag
+shapes thq_hgg   ch2       input.root WSCRInvertLepCutTHQLeptonicTTHTag:RVthq_mh125
+shapes thw_hgg   ch2       input.root WSCRInvertLepCutTHQLeptonicTTHTag:RVthw_mh125
+shapes tth_hgg   ch2       input.root WSCRInvertLepCutTHQLeptonicTTHTag:RVtth_mh125
+shapes vh_hgg    ch2       input.root WSCRInvertLepCutTHQLeptonicTTHTag:RVvh_mh125
+----------------------------------------------------------------------------------------------------------------------------------
+bin          ch1    ch2  
+observation  -1.0   -1.0 
+----------------------------------------------------------------------------------------------------------------------------------
+bin                             ch1       ch1       ch1       ch1       ch1       ch2       ch2       ch2       ch2       ch2     
+process                         tth_hgg   thw_hgg   thq_hgg   vh_hgg    bkg_mass  tth_hgg   thw_hgg   thq_hgg   vh_hgg    bkg_mass
+process                         -3        -2        -1        0         1         -3        -2        -1        0         1       
+rate                            0.0140    0.0205    0.2847    0.1138    0.4300    0.9850    0.9782    0.7086    0.8862    0.4300  
+----------------------------------------------------------------------------------------------------------------------------------
+DiPhotonID              lnN     1.01      1.01      1.01      1.01      -         1.01      1.01      1.01      1.01      -       
+JEC                     lnN     1.01      1.01      1.01      1.01      -         1.01      1.01      1.01      1.01      -       
+JET                     lnN     1.01      1.01      1.01      1.01      -         1.01      1.01      1.01      1.01      -       
+LeptonID                lnN     1.01      1.01      1.01      1.01      -         1.01      1.01      1.01      1.01      -       
+Lumi                    lnN     1.025     1.025     1.025     1.025     -         1.025     1.025     1.025     1.025     -       
+MET                     lnN     1.01      1.01      1.01      1.01      -         1.01      1.01      1.01      1.01      -       
+PDF                     lnN     1.04      1.04      1.037     1.04      -         1.04      1.04      1.037     1.04      -       
+PileUp                  lnN     1.01      1.01      1.01      1.01      -         1.01      1.01      1.01      1.01      -       
+bTag                    lnN     1.01      1.01      1.01      1.01      -         1.01      1.01      1.01      1.01      -       
+CMS_hgg_nuisance_ShowerShapeLowR9EE_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCScaleGain1EB_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCSmearLowR9EEPhi_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCSmearHighR9EBRho_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_ShowerShapeHighR9EB_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCSmearLowR9EERho_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCSmearLowR9EBRho_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_ShowerShapeLowR9EB_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCSmearHighR9EEPhi_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MaterialOuterBarrel_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_FNUFEB_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCSmearHighR9EERho_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCScaleHighR9EB_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_FNUFEE_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MaterialForward_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCScaleLowR9EE_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCScaleGain6EB_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCSmearLowR9EBPhi_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_ShowerShapeHighR9EE_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCScaleLowR9EB_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MaterialCentralBarrel_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCScaleHighR9EE_13TeV  param  0.0 1.0
+CMS_hgg_nuisance_MCSmearHighR9EBPhi_13TeV  param  0.0 1.0
+pdfindex_CRInvertLepCutTHQLeptonicTTHTag_13TeV  discrete
+pdfindex_CRInvertLepCutTHQLeptonicTHQTag_13TeV  discrete

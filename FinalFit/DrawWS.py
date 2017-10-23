@@ -19,7 +19,7 @@ DSName = "%s_125_13TeV_THQLeptonicTag"
 WSFiles = {}
 if sys.argv[1] == "thq":
     WSFiles["thq"] ="WS_THQ.root"
-    DOSysts = 4
+    DOSysts = 1
 elif sys.argv[1] == "thw":
     WSFiles["thw"] = "WS_THW.root"
     DOSysts = 4

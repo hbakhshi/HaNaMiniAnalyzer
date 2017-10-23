@@ -1,5 +1,5 @@
 from ROOT import RooWorkspace, RooDataSet, RooPlot, RooRealVar, RooFit, RooExtendPdf, RooAbsPdf, RooFitResult, RooFormulaVar , RooGaussian, RooArgList, RooAddPdf, RooConstVar , RooArgSet ,  Roo2DMomentMorphFunction, RooDataHist, RooHistFunc
-from ROOT import TFile, gSystem, TH1D, TCanvas,  kRed, kGreen, kBlack , TMath , TLegend, TGraphErrors, kBlue, kGray, TMatrixD, TH2D, gROOT, TPaveText
+from ROOT import TFile, gSystem, TH1D, TH1F, TCanvas,  kRed, kGreen, kBlack , TMath , TLegend, TGraphErrors, kBlue, kGray, TMatrixD, TH2D, gROOT, TPaveText
 import re
 import sys
 from math import sqrt
@@ -50,6 +50,7 @@ class KappaFramework:
         self.vHXSecValue = RooFormulaVar( "vHXSecValue" , "vHXSecValue" , "@0*@0*@1" , RooArgList(self.CV , self.SMvHXSec ) )
         
         self.SumXSections = RooFormulaVar( "SumXSections" , "SumXSections" , "@0*(@1+@2+@3+@4)" , RooArgList( self.BRGammaGammaValue , self.tHqXSecValue , self.tHWXSecValue , self.ttHXSecValue , self.vHXSecValue )  )
+        self.SumXSectionsTimesLumi = RooFormulaVar( "SumXSectionsTimesLumi" , "SumXSectionsTimesLumi" , "1000*@0*@1" , RooArgList( self.SumXSections , self.LUMI )  )
         
     def SetCtCv(self, ct, cv ):
         self.CV.setVal( cv )
@@ -217,6 +218,14 @@ class CtCvCpInfo :
             return -100
         else :
             return self.ValuesCp[ Cp ]
+
+
+    def SetValueByCtOverCv(self, ctOvercv , value):
+        cvs = self.AllCtOverCVs[ ctOvercv ]
+        for cv in cvs :
+            ct = ctOvercv*cv
+            index = self.AllCtCVs.index( (cv , ct) )
+            self.SetValue( index , value )
     
     def SetValue(self, weight_id , value):
         Ct, Cv, Cp = self.GetCValues(weight_id)
@@ -530,8 +539,29 @@ class Variable:
         self.Value = value
         self.Systs = systuncert
         self.Stat = statuncert
-        self.Title = title if title else name
 
+        title = ""
+        if "thq" in name :
+            title = "tHq "
+        elif "thw" in name :
+            title = "tHW "
+        elif "tth" in name :
+            title = "ttH "
+            
+        if "dm" in name :
+            title += "#deltam_{g"
+        elif "sigma" in name :
+            title += "#sigma_{g"
+        elif "frac" in name :
+            title += "fraction_{g"
+
+        for i in range(0 , 10 ):
+            if "_g%d" % (i) in name :
+                title += "%d}" % (i)
+
+        
+        self.Title = title
+        
 
     def MakeSimpleVariable(self , finalname , lowerlimit = -99999. ):
         totaluncert = self.Stat*self.Stat
@@ -590,7 +620,15 @@ class Variable:
         #centralErr = self.Central.FitParams[param].getAsymErrorHi()
         centralErr = self.Stat
         counter = 0
-        labels = []
+        self.HistOfGraph = TH1F( "GraphHistCentral_" + param , "" , len(self.Systs) , -1 , len(self.Systs) )
+        for syst in self.Systs :
+            systName = syst.Name.replace( param , "")
+            #labels.append( systName )
+            counter += 1
+            self.HistOfGraph.GetXaxis().SetBinLabel( counter , systName )
+        #self.gSystem.SetHistogram( self.HistOfGraph )
+        
+        counter = 0
         for syst in self.Systs :
             systUp = syst.ValUp
             systLo = syst.ValDown
@@ -601,26 +639,29 @@ class Variable:
 
             self.gCentral.SetPoint( counter , counter , centralval )
             self.gCentral.SetPointError( counter , 0.5 , centralErr )
-            systName = syst.Name.replace( param , "")
-            labels.append( systName )
             counter += 1
-
+        
+        self.HistOfGraph.SetTitle(self.Title)
+        self.HistOfGraph.SetMaximum(centralval + 10*centralErr)
+        self.HistOfGraph.SetMinimum(centralval - 10*centralErr)
+        self.gCentral.SetHistogram( self.HistOfGraph )
         c.cd()
         self.gCentral.SetFillColor( kGreen )
         self.gCentral.SetFillStyle( 3005 )
         self.gCentral.Draw("A3*")
-        xax = self.gCentral.GetHistogram().GetXaxis()
-        minXax = xax.GetBinLowEdge(1)
-        maxXax = xax.GetBinUpEdge( xax.GetNbins() )
-        xax.Set( len(labels) , minXax , maxXax )
-        i = 1
-        for lbl in labels:
-            xax.SetBinLabel(i, lbl)
-            i+=1
+        #xax = self.gCentral.GetHistogram().GetXaxis()
+        #minXax = xax.GetBinLowEdge(1)
+        #maxXax = xax.GetBinUpEdge( xax.GetNbins() )
+        #xax.Set( len(labels) , minXax , maxXax )
+        #i = 1
+        #for lbl in labels:
+        #    xax.SetBinLabel(i, lbl)
+        #    i+=1
 
         self.gSystem.SetLineWidth( 2 )
         self.gSystem.Draw("P")
         return self.Canvas
+
     
 class nGaussians :
     def MakeName(self, var = "" , rank = -1 ):
@@ -672,12 +713,21 @@ class nGaussians :
                 elif g == 2 :
                     dmRangeN , dmRangeP , dmCentral = -15 , 0 , -10
             elif "thq" in self.Name :
-                if g == 0 :
-                    dmRangeN , dmRangeP , dmCentral = -0.5 , 0.2 , -0.2
-                elif g == 1 :
-                    dmRangeN , dmRangeP , dmCentral = -5 , -1.5 , -2
-                elif g == 2 :
-                    dmRangeN , dmRangeP , dmCentral = -105 , -95 , -100
+                if n == 3 :
+                    if g == 0 :
+                        dmRangeN , dmRangeP , dmCentral = -0.5 , 0.2 , -0.2
+                    elif g == 1 :
+                        dmRangeN , dmRangeP , dmCentral = -5 , -1.5 , -2
+                    elif g == 2 :
+                        dmRangeN , dmRangeP , dmCentral = -105 , -95 , -100
+                elif n == 2 :
+                    if g == 0 :
+                        dmRangeN , dmRangeP , dmCentral = -5 , 5 , 0
+                    elif g == 1 :
+                        dmRangeN , dmRangeP , dmCentral = -5 , 5 , 0
+                elif n == 1 :
+                    if g == 0 :
+                        dmRangeN , dmRangeP , dmCentral = -5 , 5 , 0
             elif "thw" in self.Name :
                 if g == 0 :
                     dmRangeN , dmRangeP , dmCentral = -0.5 , 0.2 , -0.2
@@ -710,12 +760,21 @@ class nGaussians :
                 elif g == 2 :
                     max_sigma , min_sigma , sigma_central = 25 , 15 , 20
             elif "thq" in self.Name :
-                if g == 0 :
-                    max_sigma , min_sigma , sigma_central = 1.6 , 0.6 , 1.2
-                elif g == 1 :
-                    max_sigma , min_sigma , sigma_central = 2 , 0.8 , 1.6
-                elif g == 2 :
-                    max_sigma , min_sigma , sigma_central = 50 , 25 , 35
+                if n == 3 :
+                    if g == 0 :
+                        max_sigma , min_sigma , sigma_central = 1.6 , 0.6 , 1.2
+                    elif g == 1 :
+                        max_sigma , min_sigma , sigma_central = 2 , 0.8 , 1.6
+                    elif g == 2 :
+                        max_sigma , min_sigma , sigma_central = 50 , 25 , 35
+                elif n == 2 :
+                    if g == 0 :
+                        max_sigma , min_sigma , sigma_central = 10 , 0.01 , 2
+                    elif g == 1 :
+                        max_sigma , min_sigma , sigma_central = 6 , 0.01 , 1
+                elif n == 1 :
+                    if g == 0 :
+                        max_sigma , min_sigma , sigma_central = 10 , 0 , 2
             elif "thw" in self.Name :
                 if g == 0 :
                     max_sigma , min_sigma , sigma_central = 1.6 , 0.6 , 1.2
@@ -827,7 +886,7 @@ class SignalModel:
                 #initial_stderr = sys.stderr
                 #sys.stdout = open( '%s_%s' % (self.Name, self.SystName) , 'w')
                 #sys.stderr = sys.stdout
-                self.Res = self.Signal.fitTo( DS , RooFit.Minimizer("Minuit","minimize"),RooFit.SumW2Error(True),RooFit.Save(True) ,RooFit.PrintLevel(verbose) )
+                self.Res = self.Signal.fitTo( DS , RooFit.Minimizer("Minuit","minimize"), RooFit.Hesse(True) ,RooFit.SumW2Error(True),RooFit.Save(True) ,RooFit.PrintLevel(verbose) )
                 #sys.stdout.close()
                 #sys.stdout = initial_stdout
                 #sys.stderr = initial_stderr
@@ -1086,6 +1145,7 @@ class Dataset :
     def Plot(self, var):
         self.Canvases = self.All2DFitResults
         self.Canvases.append( self.CorrelationMatrix )
+        self.Canvases.append( self.CovarianceMatrix )
         
         self.Plot = var.frame( RooFit.Title(self.Name) , RooFit.Name(self.Name) , RooFit.Bins(20) )
         self.DS.plotOn( self.Plot , RooFit.Name("Data") )
@@ -1156,6 +1216,10 @@ class Dataset :
         self.Central = SignalModel( rv , wv , self.Name  , mass , kBlack ,  "Central" )
         self.Central.fitTo( self.DS , self.DSRV , self.DSWV, self.RVFraction , "Central" , False , -1 , True )
         self.CorrelationMatrix = self.Central.Res.correlationHist()
+        self.CovarianceMatrix_ = self.Central.Res.covarianceMatrix()
+        self.CovarianceMatrix = TCanvas("CovarianceMatrix" , "CovarianceMatrix")
+        self.CovarianceMatrix.cd()
+        self.CovarianceMatrix_.Draw("colz text")
         self.All2DFitResults = self.Central.All2DFitResults
         self.CentralMinNLL = self.Central.Res.minNll()
         self.Central.Signal.Print()
@@ -1166,8 +1230,9 @@ class Dataset :
         self.Params = {}
         for param in self.Central.FitParams :
             var = self.Central.FitParams[ param ]
-            self.Params[ param ] = Variable( param , var.getVal() , (abs(var.getErrorLo())+abs(var.getErrorHi()))/2 , [] )
-
+            self.Params[ param ] = Variable( param , var.getVal() , var.getError() , [] )
+            err_old = (abs(var.getErrorLo())+abs(var.getErrorHi()))/2
+            
         if self.DoCtCvFits:
             color = 1
             self.CTCVRWParams = {}
@@ -1176,7 +1241,8 @@ class Dataset :
             for param in self.Central.FitParams :
                 var = self.Central.FitParams[ param ]
                 self.CTCVRWParams[ param  ] = Variable2D( param + "_%s" % (self.Name) ) #CtCvCpInfo
-                self.CTCVRWParams[ param  ].SetValue( -1 , var.getVal() , (abs(var.getErrorLo())+abs(var.getErrorHi()))/2 )
+                self.CTCVRWParams[ param  ].SetValue( -1 , var.getVal() , var.getError() )
+                err_old = (abs(var.getErrorLo())+abs(var.getErrorHi()))/2
                 
             for i in self.CTCVDS:
                 color += 1
@@ -1195,7 +1261,8 @@ class Dataset :
                 for param in signal.FitParams :
                     var = signal.FitParams[ param ]
                     val = var.getVal()
-                    self.CTCVRWParams[ param ].SetValue( -1 if i==50 else i , val , (abs(var.getErrorLo())+abs(var.getErrorHi()))/2 )
+                    self.CTCVRWParams[ param ].SetValue( -1 if i==50 else i , val , var.getError() )
+                    err_old = (abs(var.getErrorLo())+abs(var.getErrorHi()))/2
                     
        
         if self.DOSysts:
